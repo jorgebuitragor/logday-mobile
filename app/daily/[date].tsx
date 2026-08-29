@@ -2,7 +2,8 @@ import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { DailyActivityList, parseActivityItems, serializeActivityItems } from '../../src/components/DailyActivityList';
@@ -27,23 +28,22 @@ export default function DailyEditorScreen() {
 
   // Arrastre entre paneles (mantener presionado el grip + mover) —
   // segunda forma de mover una actividad, además del swipe existente
-  // (`movePreviousToSelected`/`moveSelectedToPrevious`). A diferencia
-  // del swipe, acá `DailyActivityList` no toca su propio estado: solo
-  // reporta índice + coordenadas absolutas de pantalla, y es esta
-  // pantalla (que ya tiene `content`/`previousContent` de ambos
-  // paneles) quien decide en `handleDragEnd` si el soltar cayó sobre
-  // el OTRO panel — usando `measureInWindow` sobre estas refs — y
-  // hace el `splice`+`push` con las mismas utilidades de serialización
-  // que ya usa el swipe.
+  // (`movePreviousToSelected`/`moveSelectedToPrevious`). `dragX`/`dragY`
+  // son *shared values* de Reanimated: `DailyActivityList` los escribe
+  // en cada frame directo desde el hilo de UI (sin re-render de React,
+  // ver DailyActivityList.tsx) y el fantasma flotante los lee con
+  // `useAnimatedStyle` — el único estado de React acá es qué actividad
+  // se está arrastrando (`dragItem`, cambia solo al empezar/terminar,
+  // no por frame). Es esta pantalla (que ya tiene `content`/
+  // `previousContent` de ambos paneles) quien decide en `handleDragEnd`
+  // si el soltar cayó sobre el OTRO panel — usando `measureInWindow`
+  // sobre estas refs — y hace el `splice`+`push` con las mismas
+  // utilidades de serialización que ya usa el swipe.
   const previousPanelRef = useRef<View>(null);
   const selectedPanelRef = useRef<View>(null);
-  const [dragState, setDragState] = useState<{
-    panel: 'previous' | 'selected';
-    index: number;
-    item: string;
-    x: number;
-    y: number;
-  } | null>(null);
+  const dragX = useSharedValue(0);
+  const dragY = useSharedValue(0);
+  const [dragItem, setDragItem] = useState<string | null>(null);
 
   // "Previo" es siempre `date - 1 día` (no "la entrada anterior no
   // vacía más reciente", como en la primera versión) — el usuario debe
@@ -88,39 +88,33 @@ export default function DailyEditorScreen() {
     handlePreviousChange(next);
   }
 
-  function handleDragStart(panel: 'previous' | 'selected', index: number, item: string, x: number, y: number) {
-    setDragState({ panel, index, item, x, y });
-  }
-
-  function handleDragMove(x: number, y: number) {
-    setDragState((prev) => (prev ? { ...prev, x, y } : prev));
+  function handleDragStart(item: string) {
+    setDragItem(item);
   }
 
   // El soltar solo "cuenta" si cayó dentro de los límites del panel
   // CONTRARIO al de origen — medidos en vivo con `measureInWindow`
   // (no basta con guardar el layout una vez: el scroll pudo mover los
   // paneles desde que empezó el arrastre... salvo que acá el scroll ya
-  // está bloqueado, ver `scrollEnabled={!dragState}` más abajo, pero
+  // está bloqueado, ver `scrollEnabled={!dragItem}` más abajo, pero
   // medir en vivo igual es más robusto que asumir un layout fijo).
-  function handleDragEnd(x: number, y: number) {
-    const active = dragState;
-    setDragState(null);
-    if (!active) return;
-    const targetRef = active.panel === 'previous' ? selectedPanelRef : previousPanelRef;
+  function handleDragEnd(panel: 'previous' | 'selected', index: number, x: number, y: number) {
+    setDragItem(null);
+    const targetRef = panel === 'previous' ? selectedPanelRef : previousPanelRef;
     targetRef.current?.measureInWindow((tx, ty, tw, th) => {
       const hit = x >= tx && x <= tx + tw && y >= ty && y <= ty + th;
       if (!hit) return;
-      if (active.panel === 'previous') {
+      if (panel === 'previous') {
         const sourceItems = parseActivityItems(previousContent);
-        const item = sourceItems[active.index];
+        const item = sourceItems[index];
         if (item === undefined) return;
-        handlePreviousChange(serializeActivityItems(sourceItems.filter((_, i) => i !== active.index)));
+        handlePreviousChange(serializeActivityItems(sourceItems.filter((_, i) => i !== index)));
         handleContentChange(serializeActivityItems([...parseActivityItems(content), item]));
       } else {
         const sourceItems = parseActivityItems(content);
-        const item = sourceItems[active.index];
+        const item = sourceItems[index];
         if (item === undefined) return;
-        handleContentChange(serializeActivityItems(sourceItems.filter((_, i) => i !== active.index)));
+        handleContentChange(serializeActivityItems(sourceItems.filter((_, i) => i !== index)));
         handlePreviousChange(serializeActivityItems([...parseActivityItems(previousContent), item]));
       }
     });
@@ -154,7 +148,7 @@ export default function DailyEditorScreen() {
     <ScrollView
       style={{ backgroundColor: theme.bgBase }}
       contentContainerStyle={styles.content}
-      scrollEnabled={!dragState}
+      scrollEnabled={!dragItem}
     >
       <View style={styles.dateRow}>
         <Text style={[styles.dateLabel, { color: theme.textPrimary }]}>{date}</Text>
@@ -179,9 +173,10 @@ export default function DailyEditorScreen() {
           deleteLabel={t('dailyForm.deleteActivity')}
           moveToOtherLabel={t('dailyForm.moveToSelected')}
           onMoveItemToOther={movePreviousToSelected}
-          onItemDragStart={(index, item, x, y) => handleDragStart('previous', index, item, x, y)}
-          onItemDragMove={handleDragMove}
-          onItemDragEnd={handleDragEnd}
+          dragX={dragX}
+          dragY={dragY}
+          onItemDragStart={(_index, item) => handleDragStart(item)}
+          onItemDragEnd={(index, _item, x, y) => handleDragEnd('previous', index, x, y)}
         />
       </View>
 
@@ -203,9 +198,10 @@ export default function DailyEditorScreen() {
           deleteLabel={t('dailyForm.deleteActivity')}
           moveToOtherLabel={t('dailyForm.moveToPrevious')}
           onMoveItemToOther={moveSelectedToPrevious}
-          onItemDragStart={(index, item, x, y) => handleDragStart('selected', index, item, x, y)}
-          onItemDragMove={handleDragMove}
-          onItemDragEnd={handleDragEnd}
+          dragX={dragX}
+          dragY={dragY}
+          onItemDragStart={(_index, item) => handleDragStart(item)}
+          onItemDragEnd={(index, _item, x, y) => handleDragEnd('selected', index, x, y)}
         />
       </View>
 
@@ -243,23 +239,51 @@ export default function DailyEditorScreen() {
         }}
       />
     </ScrollView>
-    {dragState ? (
-      // Renderizado como hermano del ScrollView (no dentro) para que su
-      // posición dependa solo de coordenadas absolutas de pantalla
-      // (`absoluteX`/`absoluteY` del gesto), sin verse afectada por el
-      // offset de scroll del contenido.
-      <View
-        pointerEvents="none"
-        style={[
-          styles.dragGhost,
-          { left: dragState.x - 90, top: dragState.y - 20, backgroundColor: theme.accentStrong },
-        ]}
-      >
-        <Text style={styles.dragGhostText} numberOfLines={1}>
-          {dragState.item}
-        </Text>
-      </View>
+    {dragItem ? (
+      // El fantasma se renderiza dentro de un `Modal` (no como View
+      // absoluta hija de la pantalla) porque esta pantalla se presenta
+      // con `presentation: 'modal'` y tiene su propio header — eso
+      // desplaza el origen de coordenadas del contenido respecto al de
+      // la ventana completa, así que una View absoluta posicionada con
+      // `absoluteX`/`absoluteY` (coordenadas de ventana) quedaba
+      // notoriamente lejos del dedo. Un `Modal` nativo (con
+      // `statusBarTranslucent`) es su propia superficie a pantalla
+      // completa con origen (0,0) en la esquina de la ventana, así que
+      // esas mismas coordenadas caen exactas.
+      <Modal transparent visible animationType="none" statusBarTranslucent>
+        <DragGhost text={dragItem} dragX={dragX} dragY={dragY} accent={theme.accentStrong} />
+      </Modal>
     ) : null}
+    </View>
+  );
+}
+
+// Aparte para poder usar `useAnimatedStyle` (un hook — no puede
+// llamarse condicionalmente dentro del render de la pantalla). Lee
+// `dragX`/`dragY` en el hilo de UI en cada frame sin pasar por React,
+// así que seguir el dedo no compite con el resto de la pantalla.
+function DragGhost({
+  text,
+  dragX,
+  dragY,
+  accent,
+}: {
+  text: string;
+  dragX: SharedValue<number>;
+  dragY: SharedValue<number>;
+  accent: string;
+}) {
+  const style = useAnimatedStyle(() => ({
+    transform: [{ translateX: dragX.value - 90 }, { translateY: dragY.value - 20 }],
+  }));
+
+  return (
+    <View pointerEvents="none" style={styles.dragGhostLayer}>
+      <Animated.View style={[styles.dragGhost, { backgroundColor: accent }, style]}>
+        <Text style={styles.dragGhostText} numberOfLines={1}>
+          {text}
+        </Text>
+      </Animated.View>
     </View>
   );
 }
@@ -336,8 +360,17 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     fontWeight: '600',
   },
+  dragGhostLayer: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
   dragGhost: {
     position: 'absolute',
+    left: 0,
+    top: 0,
     width: 180,
     paddingVertical: 8,
     paddingHorizontal: 10,

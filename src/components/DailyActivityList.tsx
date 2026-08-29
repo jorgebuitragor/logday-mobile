@@ -2,6 +2,7 @@ import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Plus, Trash2 } fr
 import { useRef, useState } from 'react';
 import { Gesture, GestureDetector, Swipeable } from 'react-native-gesture-handler';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { runOnJS, type SharedValue } from 'react-native-reanimated';
 
 import { useTheme } from '../theme/ThemeContext';
 
@@ -51,18 +52,21 @@ interface DailyActivityListProps {
   /**
    * Mantener presionado el grip (`GripVertical`) y arrastrar — segunda
    * forma de mover una actividad al otro panel, alternativa al swipe.
-   * Este componente solo reporta el gesto (índice + coordenadas
-   * absolutas de pantalla); no toca su propio estado. `value`/
-   * `onChange` son controlados por el padre (`app/daily/[date].tsx`),
-   * que ya conoce el contenido de AMBOS paneles y los límites de sus
-   * layouts, así que es quien decide en `onItemDragEnd` si el soltar
-   * cayó sobre el otro panel y, de ser así, hace el `splice`+`push`
-   * directamente sobre `content`/`previousContent` — sin que este
-   * componente necesite saber nada del panel destino.
+   * `dragX`/`dragY` son *shared values* de Reanimated: el gesto los
+   * escribe directo en el hilo de UI en cada frame (`onUpdate`), sin
+   * cruzar el puente hacia JS ni disparar un re-render de React — el
+   * padre (`app/daily/[date].tsx`) los usa para mover un "fantasma"
+   * flotante con `useAnimatedStyle`. Solo el inicio (`onItemDragStart`,
+   * para mostrar el texto del fantasma) y el final (`onItemDragEnd`,
+   * para decidir si el soltar cayó en el otro panel y hacer el
+   * movimiento real) cruzan a JS, vía `runOnJS`, una sola vez cada uno
+   * — nunca por frame. Ver design.md ("por qué Reanimated") para el
+   * problema de rendimiento que esto corrige.
    */
-  onItemDragStart?: (index: number, item: string, pageX: number, pageY: number) => void;
-  onItemDragMove?: (pageX: number, pageY: number) => void;
-  onItemDragEnd?: (pageX: number, pageY: number) => void;
+  dragX?: SharedValue<number>;
+  dragY?: SharedValue<number>;
+  onItemDragStart?: (index: number, item: string) => void;
+  onItemDragEnd?: (index: number, item: string, pageX: number, pageY: number) => void;
 }
 
 /**
@@ -92,8 +96,9 @@ export function DailyActivityList({
   deleteLabel,
   moveToOtherLabel,
   onMoveItemToOther,
+  dragX,
+  dragY,
   onItemDragStart,
-  onItemDragMove,
   onItemDragEnd,
 }: DailyActivityListProps) {
   const theme = useTheme();
@@ -156,21 +161,24 @@ export function DailyActivityList({
     <View style={styles.container}>
       {items.map((item, index) => {
         const dragGesture =
-          onItemDragStart && onItemDragEnd
+          dragX && dragY && onItemDragStart && onItemDragEnd
             ? Gesture.Pan()
-                .activateAfterLongPress(350)
+                .activateAfterLongPress(300)
                 .onStart((e) => {
-                  setDraggingIndex(index);
-                  onItemDragStart(index, item, e.absoluteX, e.absoluteY);
+                  dragX.value = e.absoluteX;
+                  dragY.value = e.absoluteY;
+                  runOnJS(setDraggingIndex)(index);
+                  runOnJS(onItemDragStart)(index, item);
                 })
                 .onUpdate((e) => {
-                  onItemDragMove?.(e.absoluteX, e.absoluteY);
+                  dragX.value = e.absoluteX;
+                  dragY.value = e.absoluteY;
                 })
                 .onEnd((e) => {
-                  onItemDragEnd(e.absoluteX, e.absoluteY);
+                  runOnJS(onItemDragEnd)(index, item, e.absoluteX, e.absoluteY);
                 })
                 .onFinalize(() => {
-                  setDraggingIndex(null);
+                  runOnJS(setDraggingIndex)(null);
                 })
             : null;
 

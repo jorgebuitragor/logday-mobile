@@ -82,7 +82,7 @@ desktop, y viceversa):
   probar el swipe: "también es posible moverlo manteniendo presionado
   y arrastrando" — no reemplaza el swipe, ambos gestos conviven).
   Implementado con la API moderna de `react-native-gesture-handler`
-  (`Gesture.Pan().activateAfterLongPress(350)` + `GestureDetector`),
+  (`Gesture.Pan().activateAfterLongPress(300)` + `GestureDetector`),
   no con una librería de listas arrastrables — se descartó
   `react-native-draggable-flatlist` (mencionada como alternativa en la
   versión anterior de esta nota) porque acá no hace falta reordenar
@@ -95,15 +95,12 @@ desktop, y viceversa):
   `DailyActivityList.tsx`): el componente de lista es controlado
   (`value`/`onChange`) y solo conoce SU propio panel — no puede saber
   si un soltar cayó "sobre el otro panel" sin conocer los límites de
-  ambos. Por eso `DailyActivityList` solo reporta el gesto
-  (`onItemDragStart(index, item, x, y)` / `onItemDragMove(x, y)` /
-  `onItemDragEnd(x, y)`, con `x`/`y` en coordenadas absolutas de
-  pantalla — `e.absoluteX`/`e.absoluteY` del gesto, no relativas al
-  `ScrollView`) sin tocar su propio estado, y es la pantalla — que ya
-  tiene `content` y `previousContent` de AMBOS paneles — quien decide
-  en `handleDragEnd` si el soltar cayó dentro de los límites del panel
-  contrario (medidos en vivo con `measureInWindow` sobre una ref por
-  panel) y, de ser así, hace el mismo `splice`+`push` con
+  ambos. Por eso `DailyActivityList` solo reporta el gesto sin tocar
+  su propio estado, y es la pantalla — que ya tiene `content` y
+  `previousContent` de AMBOS paneles — quien decide en `handleDragEnd`
+  si el soltar cayó dentro de los límites del panel contrario (medidos
+  en vivo con `measureInWindow` sobre una ref por panel) y, de ser así,
+  hace el mismo `splice`+`push` con
   `parseActivityItems`/`serializeActivityItems` que ya usa el swipe —
   cero lógica de persistencia nueva, ambos gestos terminan en el mismo
   camino (`handleContentChange`/`handlePreviousChange`).
@@ -112,21 +109,59 @@ desktop, y viceversa):
   fila**: la fila ya tiene tres gestos activos (tap para editar, swipe
   horizontal para mover, botones subir/bajar) — activar el drag desde
   cualquier punto habría competido con todos ellos. Con el grip como
-  único disparador, y `activateAfterLongPress(350)` como
-  desambiguador temporal (un swipe rápido no se sostiene 350ms quieto,
+  único disparador, y `activateAfterLongPress(300)` como
+  desambiguador temporal (un swipe rápido no se sostiene 300ms quieto,
   así que el `Swipeable` sigue activándose normal; solo una
   presión-y-espera deliberada dispara el `Pan`), los tres gestos
   conviven sin `disallowInterruption` ni configuración adicional de
   prioridad entre reconocedores.
 
-  **Fantasma flotante y bloqueo de scroll**: mientras hay un arrastre
-  activo, el `ScrollView` de la pantalla pasa a `scrollEnabled={false}`
-  (evita que el scroll nativo compita por los mismos eventos táctiles
-  que el `Pan`) y se muestra una vista flotante con el texto de la
-  actividad, posicionada con `position: 'absolute'` como **hermana**
-  del `ScrollView` (no dentro) — así su posición depende solo de las
-  coordenadas absolutas que reporta el gesto, sin verse afectada por
-  el offset de scroll del contenido debajo.
+  **Bloqueo de scroll**: mientras hay un arrastre activo, el
+  `ScrollView` de la pantalla pasa a `scrollEnabled={false}` (evita que
+  el scroll nativo compita por los mismos eventos táctiles que el
+  `Pan`).
+
+  ### Por qué Reanimated, y por qué el fantasma vive en un `Modal` (corregido 2026-08-29)
+
+  La primera versión de esta feature actualizaba la posición del
+  fantasma con `useState` de React en el callback `onUpdate` del
+  `Pan` — cada milímetro de movimiento del dedo disparaba un
+  `setState` en `app/daily/[date].tsx`, que re-renderizaba **toda la
+  pantalla** (ambos paneles completos, con `parseActivityItems`
+  recalculando sobre el string entero en cada re-render) decenas de
+  veces por segundo, cruzando el puente JS en cada frame. El usuario
+  reportó que se sentía notoriamente lento — diagnóstico confirmado:
+  no era el dispositivo, era el patrón de actualización.
+
+  Se instaló `react-native-reanimated` (+ `react-native-worklets`,
+  paquete separado que reanimated 4.x requiere como peer dependency) y
+  se reescribió el seguimiento de posición con *shared values*
+  (`useSharedValue`): `DailyActivityList` ahora escribe `dragX.value`/
+  `dragY.value` directo en el hilo de UI dentro de `onUpdate` — sin
+  cruzar a JS, sin re-render de React — y el fantasma lee esos valores
+  con `useAnimatedStyle` (`DragGhost` en `app/daily/[date].tsx`), que
+  Reanimated actualiza también en el hilo de UI. Solo el inicio del
+  arrastre (`onItemDragStart`, para fijar el texto del fantasma) y el
+  final (`onItemDragEnd`, para el hit-test + `splice`+`push`) cruzan a
+  JS vía `runOnJS` — una vez cada uno, no por frame. `babel-preset-expo`
+  (v57.0.9, ya en el proyecto) detecta `react-native-reanimated`
+  instalado y agrega su plugin de Babel automáticamente — no hizo
+  falta crear un `babel.config.js` propio.
+
+  El usuario también reportó que el fantasma aparecía **lejos del
+  dedo**, no debajo de él. Causa: esta pantalla se presenta con
+  `presentation: 'modal'` (tiene su propio header/título de
+  navegación) — una `View` con `position: 'absolute'` posicionada con
+  `absoluteX`/`absoluteY` (coordenadas de toda la ventana) queda
+  desplazada por la altura de ese header más la barra de estado,
+  porque su propio origen `(0,0)` empieza *debajo* de ambos, no en la
+  esquina real de la ventana. Solución: el fantasma se renderiza
+  dentro de un `<Modal transparent statusBarTranslucent>` de React
+  Native (no el `presentation: 'modal'` de la navegación — un
+  `Modal` nativo, una superficie aparte a pantalla completa) — su
+  origen `(0,0)` sí coincide con la esquina real de la ventana, así
+  que las mismas coordenadas del gesto caen exactas debajo del dedo,
+  sin necesidad de medir y restar manualmente la altura del header.
 
   **Qué NO es esto todavía**: no hay reordenamiento por arrastre
   *dentro* del mismo panel (eso lo cubren los botones subir/bajar,

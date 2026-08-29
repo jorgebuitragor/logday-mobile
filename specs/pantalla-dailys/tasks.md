@@ -38,16 +38,26 @@ Estado: implementado, pendiente de confirmación en vivo.
 - [x] Mantener presionado y arrastrar como segunda forma de mover
       entre paneles (agregado 2026-08-29, a pedido del usuario tras
       probar el swipe): ícono `GripVertical` por fila en
-      `DailyActivityList.tsx` con `Gesture.Pan().activateAfterLongPress(350)`
-      + `GestureDetector`, reporta el gesto hacia arriba
-      (`onItemDragStart`/`onItemDragMove`/`onItemDragEnd`, coordenadas
-      absolutas de pantalla) sin tocar su propio estado; orquestación
-      completa (refs de ambos paneles, `measureInWindow` para
-      hit-testing, fantasma flotante fuera del `ScrollView`,
-      `scrollEnabled={false}` durante el arrastre, `splice`+`push` con
+      `DailyActivityList.tsx` con `Gesture.Pan().activateAfterLongPress(300)`
+      + `GestureDetector`; orquestación completa (refs de ambos
+      paneles, `measureInWindow` para hit-testing, `splice`+`push` con
       `parseActivityItems`/`serializeActivityItems`) en
       `app/daily/[date].tsx`.
 - [x] `npx tsc --noEmit` sin errores.
+- [x] Corregido el mismo día (usuario reportó lentitud al arrastrar y
+      el fantasma lejos del dedo): instalado
+      `react-native-reanimated` + `react-native-worklets` (peer
+      dependency de reanimated 4.x); reescrita la posición del
+      fantasma con `useSharedValue`/`useAnimatedStyle` (hilo de UI, sin
+      re-render de React en cada frame — ver design.md, "Por qué
+      Reanimated") en vez de `useState`; el fantasma ahora se renderiza
+      dentro de un `<Modal transparent statusBarTranslucent>` de React
+      Native en vez de una `View absoluta` hija de la pantalla (el
+      header del `presentation: 'modal'` de la navegación desplazaba
+      las coordenadas — ver design.md). `npx tsc --noEmit` sin errores
+      tras el cambio; dev server reiniciado con caché limpia (`expo
+      start -c`, obligatorio tras instalar un paquete con plugin de
+      Babel).
 - [ ] Verificar en vivo: abrir un día sin daily previo registrado y
       confirmar que el panel "Previo" ya deja añadir actividades
       directo (no muestra el mensaje de "sin daily anterior"); deslizar
@@ -55,9 +65,9 @@ Estado: implementado, pendiente de confirmación en vivo.
       confirmar que se guarda en la fecha correcta en ambos lados;
       reordenar con subir/bajar sigue funcionando dentro de cada panel;
       mantener presionado el grip de una actividad y arrastrarla hasta
-      el otro panel — confirmar que se mueve solo si se suelta dentro
-      de los límites del panel contrario (si se suelta afuera, no pasa
-      nada y la actividad vuelve a su posición), que el swipe sigue
-      funcionando normal para un deslizar rápido sin mantener
-      presionado, y que el scroll de la pantalla se bloquea mientras se
-      arrastra.
+      el otro panel — confirmar que ahora sigue el dedo de cerca y sin
+      lag, que se mueve solo si se suelta dentro de los límites del
+      panel contrario (si se suelta afuera, no pasa nada y la actividad
+      vuelve a su posición), que el swipe sigue funcionando normal para
+      un deslizar rápido sin mantener presionado, y que el scroll de la
+      pantalla se bloquea mientras se arrastra.

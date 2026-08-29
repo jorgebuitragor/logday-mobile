@@ -1,5 +1,6 @@
-import { ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react-native';
-import { useState } from 'react';
+import { ArrowLeftRight, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react-native';
+import { useRef, useState } from 'react';
+import { Swipeable } from 'react-native-gesture-handler';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
@@ -44,6 +45,9 @@ interface DailyActivityListProps {
   moveUpLabel: string;
   moveDownLabel: string;
   deleteLabel: string;
+  /** Si se pasan, cada actividad se puede deslizar para moverla al otro panel (Previo ⇄ Seleccionado). */
+  moveToOtherLabel?: string;
+  onMoveItemToOther?: (item: string) => void;
 }
 
 /**
@@ -54,11 +58,17 @@ interface DailyActivityListProps {
  * Puerto del modelo de interacción de `ActivityList` en
  * `DailyEditor.tsx` de desktop, adaptado a táctil: el drag-and-drop con
  * mouse (grip + arrastrar) no tiene un equivalente táctil directo y
- * fiable sin una librería adicional, así que se reemplaza por botones
- * subir/bajar por actividad — más simple, sin dependencias nuevas, y
- * funciona igual de bien en cualquier dispositivo. Ver design.md para
- * el resto de reducciones de alcance (promover a tarea, autocompletar
- * tareas existentes, menú contextual de actividad).
+ * fiable sin una librería adicional, así que **reordenar dentro del
+ * mismo panel** se hace con botones subir/bajar; **mover entre
+ * paneles** (Previo ⇄ Seleccionado, ver `onMoveItemToOther`) sí se
+ * implementa como gesto de deslizar (swipe), reusando el mismo
+ * mecanismo (`react-native-gesture-handler` `Swipeable`) que
+ * `SwipeableRow` ya usa para eliminar en las listas — un "arrastre"
+ * direccional consistente con el resto de la app, sin necesitar
+ * drag-and-drop de posición libre entre dos `ScrollView` separados.
+ * Ver design.md para el resto de reducciones de alcance (promover a
+ * tarea, autocompletar tareas existentes, menú contextual de
+ * actividad).
  *
  * Tanto el input de "nueva actividad" como el de edición in-line son de
  * una sola línea — desktop soporta Shift+Enter en el textarea de edición
@@ -75,6 +85,8 @@ export function DailyActivityList({
   moveUpLabel,
   moveDownLabel,
   deleteLabel,
+  moveToOtherLabel,
+  onMoveItemToOther,
 }: DailyActivityListProps) {
   const theme = useTheme();
   const items = parseActivityItems(value);
@@ -124,50 +136,67 @@ export function DailyActivityList({
     commit(next);
   }
 
+  function moveToOther(index: number) {
+    if (!onMoveItemToOther) return;
+    const item = items[index];
+    commit(items.filter((_, i) => i !== index));
+    onMoveItemToOther(item);
+  }
+
   return (
     <View style={styles.container}>
-      {items.map((item, index) => (
-        <View key={index} style={[styles.row, { borderColor: theme.border, backgroundColor: theme.bgBase }]}>
-          {editingIndex === index ? (
-            <TextInput
-              style={[styles.editInput, { color: theme.textPrimary }]}
-              value={editText}
-              onChangeText={setEditText}
-              onSubmitEditing={commitEdit}
-              onBlur={commitEdit}
-              autoFocus
-              returnKeyType="done"
-            />
-          ) : (
-            <Pressable style={styles.textWrap} onPress={() => startEdit(index)}>
-              <Text style={{ color: theme.textBody }}>{item}</Text>
-            </Pressable>
-          )}
-          <View style={styles.actions}>
-            <Pressable
-              accessibilityLabel={moveUpLabel}
-              disabled={index === 0}
-              onPress={() => moveItem(index, -1)}
-              hitSlop={6}
-              style={styles.iconButton}
-            >
-              <ChevronUp size={16} color={index === 0 ? theme.textFaint : theme.textHint} />
-            </Pressable>
-            <Pressable
-              accessibilityLabel={moveDownLabel}
-              disabled={index === items.length - 1}
-              onPress={() => moveItem(index, 1)}
-              hitSlop={6}
-              style={styles.iconButton}
-            >
-              <ChevronDown size={16} color={index === items.length - 1 ? theme.textFaint : theme.textHint} />
-            </Pressable>
-            <Pressable accessibilityLabel={deleteLabel} onPress={() => removeItem(index)} hitSlop={6} style={styles.iconButton}>
-              <Trash2 size={14} color="#dc2626" />
-            </Pressable>
+      {items.map((item, index) => {
+        const row = (
+          <View style={[styles.row, { borderColor: theme.border, backgroundColor: theme.bgBase }]}>
+            {editingIndex === index ? (
+              <TextInput
+                style={[styles.editInput, { color: theme.textPrimary }]}
+                value={editText}
+                onChangeText={setEditText}
+                onSubmitEditing={commitEdit}
+                onBlur={commitEdit}
+                autoFocus
+                returnKeyType="done"
+              />
+            ) : (
+              <Pressable style={styles.textWrap} onPress={() => startEdit(index)}>
+                <Text style={{ color: theme.textBody }}>{item}</Text>
+              </Pressable>
+            )}
+            <View style={styles.actions}>
+              <Pressable
+                accessibilityLabel={moveUpLabel}
+                disabled={index === 0}
+                onPress={() => moveItem(index, -1)}
+                hitSlop={6}
+                style={styles.iconButton}
+              >
+                <ChevronUp size={16} color={index === 0 ? theme.textFaint : theme.textHint} />
+              </Pressable>
+              <Pressable
+                accessibilityLabel={moveDownLabel}
+                disabled={index === items.length - 1}
+                onPress={() => moveItem(index, 1)}
+                hitSlop={6}
+                style={styles.iconButton}
+              >
+                <ChevronDown size={16} color={index === items.length - 1 ? theme.textFaint : theme.textHint} />
+              </Pressable>
+              <Pressable accessibilityLabel={deleteLabel} onPress={() => removeItem(index)} hitSlop={6} style={styles.iconButton}>
+                <Trash2 size={14} color="#dc2626" />
+              </Pressable>
+            </View>
           </View>
-        </View>
-      ))}
+        );
+
+        if (!onMoveItemToOther || !moveToOtherLabel) return <View key={index}>{row}</View>;
+
+        return (
+          <MoveSwipeWrapper key={index} label={moveToOtherLabel} onMove={() => moveToOther(index)}>
+            {row}
+          </MoveSwipeWrapper>
+        );
+      })}
 
       <View style={[styles.addRow, { borderColor: accent ? theme.accent : theme.borderCard }]}>
         <Plus size={14} color={accent ? theme.accent : theme.textFaint} />
@@ -183,6 +212,39 @@ export function DailyActivityList({
         />
       </View>
     </View>
+  );
+}
+
+function MoveSwipeWrapper({
+  label,
+  onMove,
+  children,
+}: {
+  label: string;
+  onMove: () => void;
+  children: React.ReactNode;
+}) {
+  const theme = useTheme();
+  const ref = useRef<Swipeable>(null);
+
+  return (
+    <Swipeable
+      ref={ref}
+      overshootRight={false}
+      rightThreshold={80}
+      onSwipeableOpen={() => {
+        ref.current?.close();
+        onMove();
+      }}
+      renderRightActions={() => (
+        <View style={[styles.moveAction, { backgroundColor: theme.accentStrong }]}>
+          <ArrowLeftRight color="#fff" size={16} />
+          <Text style={styles.moveActionText}>{label}</Text>
+        </View>
+      )}
+    >
+      {children}
+    </Swipeable>
   );
 }
 
@@ -227,5 +289,19 @@ const styles = StyleSheet.create({
   addInput: {
     flex: 1,
     padding: 0,
+  },
+  moveAction: {
+    width: 96,
+    marginLeft: 8,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+  },
+  moveActionText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 11,
+    textAlign: 'center',
   },
 });

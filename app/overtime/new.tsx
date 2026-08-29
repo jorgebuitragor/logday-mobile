@@ -3,11 +3,7 @@ import { useTranslation } from 'react-i18next';
 
 import { OvertimeForm } from '../../src/components/OvertimeForm';
 import { createOvertimeEntry, type OvertimeInput } from '../../src/db/overtime';
-
-function todayISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+import { todayISO } from '../../src/lib/dates';
 
 export default function NewOvertimeScreen() {
   const { t } = useTranslation();

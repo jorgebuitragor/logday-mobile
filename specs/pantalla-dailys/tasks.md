@@ -23,9 +23,22 @@ Estado: implementado, pendiente de confirmación en vivo.
       `previewTitle`); claves `placeholder`/`save` retiradas por dejar
       de usarse (el textarea plano y el botón "Guardar" ya no
       existen).
+- [x] "Previo" = `date - 1` siempre (no la entrada no vacía más
+      reciente) — `getPreviousDailyEntry` eliminado de
+      `src/db/dailyEntries.ts`, reemplazado por `addDaysISO` en
+      `src/lib/dates.ts` (nuevo, también consolida los 4 `todayISO()`
+      duplicados que había en `dailys.tsx`/`daily/[date].tsx`/
+      `overtime/new.tsx`/`AppDatePicker.tsx`). El panel "Previo" ya
+      nunca muestra el mensaje `noPrevious` (clave retirada) — siempre
+      es una `DailyActivityList` editable, exista o no contenido.
+- [x] Mover actividades entre "Previo" y "Seleccionado" deslizando
+      (`onMoveItemToOther`/`moveToOtherLabel` en
+      `DailyActivityList.tsx`, mismo `Swipeable` que `SwipeableRow`).
+- [x] i18n: nuevas claves `dailyForm.moveToSelected`/`moveToPrevious`.
 - [x] `npx tsc --noEmit` sin errores.
-- [ ] Verificar en vivo: crear el daily de hoy añadiendo varias
-      actividades, reordenarlas con los botones subir/bajar, editar
-      una actividad del panel "Previo", copiar el formato y pegarlo en
-      otra app, eliminar una actividad individual, eliminar el daily
-      completo.
+- [ ] Verificar en vivo: abrir un día sin daily previo registrado y
+      confirmar que el panel "Previo" ya deja añadir actividades
+      directo (no muestra el mensaje de "sin daily anterior"); deslizar
+      una actividad de "Seleccionado" hacia "Previo" y viceversa y
+      confirmar que se guarda en la fecha correcta en ambos lados;
+      reordenar con subir/bajar sigue funcionando dentro de cada panel.

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { todayISO } from '../lib/dates';
 import { useTheme } from '../theme/ThemeContext';
 
 // Puerto de task-manager/src/components/shared/AppDatePicker.tsx — la
@@ -26,11 +27,6 @@ function getDayNames(language: string): string[] {
     d.setDate(baseSunday.getDate() + idx);
     return fmt.format(d).replace('.', '');
   });
-}
-
-function todayISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
 function formatDateDisplay(iso: string, language: string, placeholder: string): string {

@@ -32,15 +32,6 @@ export async function getDailyEntry(date: string): Promise<DailyEntry | null> {
   return row ? rowToDailyEntry(row) : null;
 }
 
-/** Entrada no vacía más reciente antes de `date` — referencia de "día anterior". */
-export async function getPreviousDailyEntry(date: string): Promise<DailyEntry | null> {
-  const row = await getDb().getFirstAsync<DailyEntryRow>(
-    "SELECT * FROM daily_entries WHERE date < ? AND deleted_at IS NULL AND content != '' ORDER BY date DESC LIMIT 1",
-    date
-  );
-  return row ? rowToDailyEntry(row) : null;
-}
-
 /** Upsert — mismo patrón que el servidor (`PUT /daily-entries/:date`, sin POST separado). */
 export async function upsertDailyEntry(date: string, content: string): Promise<void> {
   const now = new Date().toISOString();

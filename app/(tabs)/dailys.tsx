@@ -11,14 +11,10 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { listDailyEntries, softDeleteDailyEntry } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { todayISO } from '../../src/lib/dates';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { DailyEntry } from '../../src/types/dailyEntry';
-
-function todayISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 // El contenido almacenado es una lista de actividades ("- item1\n- item2");
 // se muestra como una vista previa de una línea uniendo los items en vez

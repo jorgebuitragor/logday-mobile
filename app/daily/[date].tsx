@@ -5,17 +5,13 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
-import { DailyActivityList } from '../../src/components/DailyActivityList';
-import { getDailyEntry, getPreviousDailyEntry, softDeleteDailyEntry, upsertDailyEntry } from '../../src/db/dailyEntries';
+import { DailyActivityList, parseActivityItems, serializeActivityItems } from '../../src/components/DailyActivityList';
+import { getDailyEntry, softDeleteDailyEntry, upsertDailyEntry } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { buildDailyCopyText } from '../../src/lib/dailyCopyText';
+import { addDaysISO, todayISO } from '../../src/lib/dates';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
-
-function todayISO(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
 
 export default function DailyEditorScreen() {
   const { t } = useTranslation();
@@ -25,40 +21,51 @@ export default function DailyEditorScreen() {
   const { confirmDestructiveActions } = usePreferences();
   const [loaded, setLoaded] = useState(false);
   const [content, setContent] = useState('');
-  // "Previo" == entrada no vacía más reciente antes de `date` (ver
-  // src/db/dailyEntries.ts) — cuando existe, es totalmente editable, no
-  // solo de referencia. Cuando no existe (no hay ningún daily anterior
-  // registrado) no hay una fecha conocida a la que guardar, así que el
-  // panel se muestra como mensaje informativo, no como lista editable
-  // vacía; ver specs/pantalla-dailys/design.md.
-  const [previousDate, setPreviousDate] = useState<string | null>(null);
   const [previousContent, setPreviousContent] = useState('');
   const [copied, setCopied] = useState(false);
   const confirmDelete = useConfirmDelete<true>(confirmDestructiveActions);
 
+  // "Previo" es siempre `date - 1 día` (no "la entrada anterior no
+  // vacía más reciente", como en la primera versión) — el usuario debe
+  // poder registrar el día previo al que está viendo aunque nunca haya
+  // tenido contenido, no solo consultar/editar el último registrado
+  // hace tiempo. Igual que `date`, se crea recién al guardar la
+  // primera actividad (upsert), no hace falta que ya exista.
+  const previousDate = addDaysISO(date, -1);
+
   useEffect(() => {
-    Promise.all([getDailyEntry(date), getPreviousDailyEntry(date)]).then(([entry, prev]) => {
+    Promise.all([getDailyEntry(date), getDailyEntry(previousDate)]).then(([entry, prev]) => {
       setContent(entry?.content ?? '');
-      setPreviousDate(prev?.date ?? null);
       setPreviousContent(prev?.content ?? '');
       setLoaded(true);
     });
-  }, [date]);
+  }, [date, previousDate]);
 
-  // Autosave por operación (añadir/editar/reordenar/eliminar actividad),
-  // como el autosave con debounce de desktop pero sin debounce: cada
-  // cambio de lista ya es una operación discreta (no tecla por tecla),
-  // así que se persiste directo. Reemplaza el botón "Guardar" manual de
-  // la primera versión de esta pantalla.
+  // Autosave por operación (añadir/editar/reordenar/eliminar/mover
+  // actividad), como el autosave con debounce de desktop pero sin
+  // debounce: cada cambio de lista ya es una operación discreta (no
+  // tecla por tecla), así que se persiste directo.
   function handleContentChange(next: string) {
     setContent(next);
     void upsertDailyEntry(date, next);
   }
 
   function handlePreviousChange(next: string) {
-    if (!previousDate) return;
     setPreviousContent(next);
     void upsertDailyEntry(previousDate, next);
+  }
+
+  // Mover una actividad entre paneles (swipe, ver DailyActivityList) —
+  // quita del panel de origen (ya lo hizo el propio componente antes
+  // de llamar este callback) y la agrega al final del otro.
+  function movePreviousToSelected(item: string) {
+    const next = serializeActivityItems([...parseActivityItems(content), item]);
+    handleContentChange(next);
+  }
+
+  function moveSelectedToPrevious(item: string) {
+    const next = serializeActivityItems([...parseActivityItems(previousContent), item]);
+    handlePreviousChange(next);
   }
 
   async function performDelete() {
@@ -98,22 +105,18 @@ export default function DailyEditorScreen() {
       <View style={[styles.panel, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}>
         <View style={styles.panelHeader}>
           <Text style={[styles.panelTitle, { color: theme.textHint }]}>{t('dailyForm.previousPanel')}</Text>
-          {previousDate ? (
-            <Text style={[styles.panelDate, { color: theme.textSecondary }]}>{previousDate}</Text>
-          ) : null}
+          <Text style={[styles.panelDate, { color: theme.textSecondary }]}>{previousDate}</Text>
         </View>
-        {previousDate ? (
-          <DailyActivityList
-            value={previousContent}
-            onChange={handlePreviousChange}
-            addPlaceholder={t('dailyForm.newActivityPlaceholder')}
-            moveUpLabel={t('dailyForm.moveUp')}
-            moveDownLabel={t('dailyForm.moveDown')}
-            deleteLabel={t('dailyForm.deleteActivity')}
-          />
-        ) : (
-          <Text style={{ color: theme.textFaint }}>{t('dailyForm.noPrevious')}</Text>
-        )}
+        <DailyActivityList
+          value={previousContent}
+          onChange={handlePreviousChange}
+          addPlaceholder={t('dailyForm.newActivityPlaceholder')}
+          moveUpLabel={t('dailyForm.moveUp')}
+          moveDownLabel={t('dailyForm.moveDown')}
+          deleteLabel={t('dailyForm.deleteActivity')}
+          moveToOtherLabel={t('dailyForm.moveToSelected')}
+          onMoveItemToOther={movePreviousToSelected}
+        />
       </View>
 
       <View style={[styles.panel, styles.accentPanel, { backgroundColor: theme.bgPanel, borderColor: theme.accent }]}>
@@ -129,6 +132,8 @@ export default function DailyEditorScreen() {
           moveUpLabel={t('dailyForm.moveUp')}
           moveDownLabel={t('dailyForm.moveDown')}
           deleteLabel={t('dailyForm.deleteActivity')}
+          moveToOtherLabel={t('dailyForm.moveToPrevious')}
+          onMoveItemToOther={moveSelectedToPrevious}
         />
       </View>
 

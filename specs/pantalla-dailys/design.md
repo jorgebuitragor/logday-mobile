@@ -13,12 +13,16 @@ abajo).
 
 - `listDailyEntries()` — no eliminados y `content != ''`, orden por
   `date DESC`.
-- `getDailyEntry(date)` / `getPreviousDailyEntry(date)` — el segundo
-  es `WHERE date < ? AND content != '' ORDER BY date DESC LIMIT 1`,
-  la aproximación simplificada mencionada en `requirements.md`.
+- `getDailyEntry(date)`.
 - `upsertDailyEntry(date, content)` — `INSERT ... ON CONFLICT(date) DO UPDATE`,
   mismo upsert que el endpoint del servidor.
 - `softDeleteDailyEntry(date)`.
+
+`getPreviousDailyEntry(date)` (la búsqueda de "entrada no vacía más
+reciente antes de `date`") existió en una revisión anterior y se
+**eliminó** 2026-08-29 — ver "Previo = día calendario anterior" abajo,
+ya no hace falta ninguna búsqueda, `previousDate` es pura aritmética de
+fechas (`addDaysISO(date, -1)`, `src/lib/dates.ts`).
 
 ## `src/components/DailyActivityList.tsx` (nuevo)
 
@@ -64,12 +68,20 @@ desktop, y viceversa):
   (unas pocas actividades) hace que el costo de "varios taps" sea
   bajo frente a la complejidad y el riesgo de una librería de drag
   táctil.
-- Arrastrar una actividad entre el panel "Previo" y el "Seleccionado"
-  (cross-panel drag de desktop) — **no portado**: es una extensión
-  directa del drag-and-drop ya no portado: en su lugar, mover una
-  actividad de día se hace editándola manualmente en ambos paneles
-  (eliminar de uno, añadir en el otro) — engorroso pero infrecuente,
-  y evita añadir una segunda mecánica de drag entre componentes.
+- **Mover una actividad entre el panel "Previo" y el "Seleccionado"**
+  (agregado 2026-08-29, corrige una decisión anterior de no portarlo):
+  cada fila, cuando el padre pasa `onMoveItemToOther`/`moveToOtherLabel`,
+  se envuelve en un `Swipeable` (mismo mecanismo de
+  `react-native-gesture-handler` que ya usa `SwipeableRow` para
+  eliminar en las 4 listas) — deslizar revela una acción con ícono
+  `ArrowLeftRight` y el label del panel destino; deslizar del todo
+  (`onSwipeableOpen`, mismo patrón que `SwipeableRow`) dispara el
+  movimiento sin necesitar un segundo tap. No es drag-and-drop de
+  posición libre (que requeriría medir coordenadas de dos
+  `ScrollView` separados con `measureInWindow` y seguir el dedo con un
+  "fantasma" del ítem — mucho más frágil) sino un gesto direccional,
+  igual de "arrastrar el ítem hacia el otro lado" en la práctica, pero
+  implementado con el mismo primitivo ya usado en el resto de la app.
 
 **No portado** (ver "Fuera de este spec" en requirements.md):
 promover a task, autocompletar tasks existentes (`#codigo-tarea`),
@@ -102,14 +114,18 @@ Copiado al portapapeles vía `expo-clipboard` (`Clipboard.setStringAsync`).
 Dos paneles apilados (no lado a lado como desktop — pantalla angosta),
 ambos usando `DailyActivityList`:
 
-- **"Previo"**: si `getPreviousDailyEntry(date)` devuelve una entrada,
-  el panel es una `DailyActivityList` completamente editable sobre esa
-  fecha (cada cambio hace `upsertDailyEntry(previousDate, ...)`
-  directo). Si no hay ninguna entrada anterior no vacía, se muestra el
-  mensaje `noPrevious` en vez de una lista vacía — no hay una fecha
-  conocida a la que guardar en ese caso (limitación heredada de la
-  simplificación "entrada no vacía más reciente" en vez de "día hábil
-  anterior").
+- **"Previo"** (corregido 2026-08-29): `previousDate = addDaysISO(date, -1)`
+  — siempre calculable, no requiere que exista una entrada previa en
+  la base. El panel es una `DailyActivityList` completamente editable
+  sobre esa fecha desde el primer render (cada cambio hace
+  `upsertDailyEntry(previousDate, ...)` directo, igual que
+  "Seleccionado"), exista o no contenido todavía — ya no hay un estado
+  "sin daily anterior" que bloquee registrar uno. Antes, `previousDate`
+  salía de `getPreviousDailyEntry` (la entrada no vacía más reciente,
+  potencialmente muchos días atrás) y si no existía ninguna, el panel
+  mostraba un mensaje fijo sin forma de crear una — el usuario reportó
+  explícitamente que no podía registrar el día previo al que estaba
+  viendo, que es justo lo que esto corrige.
 - **"Seleccionado"**: `DailyActivityList` con `accent` (borde
   destacado) sobre `date`.
 - Insignia "HOY" junto a la fecha cuando `date` es el día actual (como

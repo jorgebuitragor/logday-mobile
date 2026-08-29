@@ -37,9 +37,10 @@ extendido acá porque no hay una referencia de desktop que copiar.
 
 - El sistema DEBERÁ ofrecer, en el tab de Ajustes, una elección entre
   formato 24 horas y 12 horas (AM/PM) — sin equivalente en desktop
-  (usa el formato del SO/navegador automáticamente); default **24
-  horas**, mismo formato en que ya se guarda `HH:MM` en
-  `overtime_entries`.
+  (usa el formato del SO/navegador automáticamente); default **12
+  horas** (decidido con el usuario 2026-08-29). El dato sigue
+  guardándose siempre en 24 horas (`HH:MM`, mismo formato que
+  `overtime_entries`) sin importar la preferencia de visualización.
 - El componente `AppTimePicker` DEBERÁ mostrar y permitir seleccionar
   la hora según esa preferencia (columna 1-12 + AM/PM, o columna 0-23)
   — el valor que entrega (`onChange`) DEBERÁ seguir siendo siempre

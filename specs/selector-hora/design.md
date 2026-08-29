@@ -42,8 +42,9 @@ todavía.
 
 `timeFormat: '24h' | '12h'` en `src/settings/PreferencesContext.tsx`
 (mismo patrón que `confirmDestructiveActions`: estado + persistencia
-en AsyncStorage, default `'24h'`), con su sección propia en Ajustes
-(ícono `Clock`).
+en AsyncStorage, default `'12h'` — pedido explícito del usuario, sin
+relación con el dato almacenado que sigue siendo 24h), con su sección
+propia en Ajustes (ícono `Clock`).
 
 `AppTimePicker` lee `timeFormat` de `usePreferences()` y decide qué
 columna de horas mostrar:

@@ -8,10 +8,11 @@ const CONFIRM_DEFAULT = true;
 export type TimeFormat = '24h' | '12h';
 const TIME_FORMAT_STORAGE_KEY = 'timeFormat';
 // Sin equivalente en desktop (usa el <input type="time"> nativo del
-// navegador, que sigue el locale del SO) — 24h por default acá porque
-// es el formato en el que ya se guarda `HH:MM` en overtime_entries,
-// sin conversión de por medio para el caso más común.
-const TIME_FORMAT_DEFAULT: TimeFormat = '24h';
+// navegador, que sigue el locale del SO). Default 12h por pedido
+// explícito del usuario (2026-08-29) — el dato sigue guardándose
+// siempre en 24h (`HH:MM`) sin importar esta preferencia, ver
+// AppTimePicker.tsx.
+const TIME_FORMAT_DEFAULT: TimeFormat = '12h';
 
 interface PreferencesContextValue {
   confirmDestructiveActions: boolean;

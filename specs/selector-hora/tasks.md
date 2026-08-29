@@ -5,8 +5,8 @@ Estado: implementado, pendiente de confirmación en vivo.
 - [x] `src/components/AppTimePicker.tsx` (columnas hora/minuto,
       pasos de 5 minutos, scroll automático al valor actual).
 - [x] Reusado en `OvertimeForm.tsx` (`horaInicio`, `horaFinal`).
-- [x] `timeFormat` en `PreferencesContext.tsx` (default `24h`,
-      persistido).
+- [x] `timeFormat` en `PreferencesContext.tsx` (default `12h` —
+      cambiado de `24h` el mismo día a pedido del usuario, persistido).
 - [x] Sección "Formato de hora" en Ajustes (24h / 12h).
 - [x] `AppTimePicker` cambia de columna (0-23 vs 1-12 + AM/PM) y de
       formato del trigger según la preferencia, sin afectar el valor

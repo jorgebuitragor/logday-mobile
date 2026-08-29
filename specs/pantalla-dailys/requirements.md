@@ -47,15 +47,21 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
   modelo de interacción que `ActivityList` en `DailyEditor.tsx` de
   desktop, adaptado a táctil (ver design.md: botones subir/bajar en
   vez de drag-and-drop con mouse).
-- El sistema DEBERÁ mostrar, al editar un día, el registro **anterior
-  no vacío** más reciente (panel "Previo") como una lista de
-  actividades **igual de editable** que la del día seleccionado — no
-  solo de lectura, corrigiendo la limitación de la primera versión.
-  Simplificación mantenida frente a desktop: "entrada anterior más
-  reciente" en vez de "día hábil anterior respetando festivos
-  colombianos" (ver design.md).
+- El sistema DEBERÁ mostrar, al editar un día, el registro del **día
+  calendario inmediatamente anterior** (`date - 1`, panel "Previo")
+  como una lista de actividades **igual de editable** que la del día
+  seleccionado, exista o no contenido todavía — el usuario DEBERÁ
+  poder registrar el daily del día previo aunque nunca haya tenido
+  actividades, no solo consultar/editar uno que ya las tenía
+  (corregido 2026-08-29: la versión anterior usaba "la entrada no
+  vacía más reciente", que podía saltarse el día inmediato anterior
+  entero si estaba vacío, y no dejaba crear uno nuevo — ver design.md).
 - El sistema DEBERÁ permitir reordenar actividades dentro de cada
   panel mediante botones subir/bajar por actividad.
+- El sistema DEBERÁ permitir **mover una actividad entre el panel
+  "Previo" y el "Seleccionado"** deslizándola (swipe) — agregado
+  2026-08-29, mismo mecanismo (`Swipeable`) que ya usan las listas
+  para eliminar, ver design.md.
 - El sistema DEBERÁ permitir copiar al portapapeles un mensaje
   formateado combinando el día anterior y el de hoy — mismo propósito
   que `copyFormattedTitle`/`buildDailyCopyText` de desktop — y
@@ -66,8 +72,11 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
 
 ## Fuera de este spec
 
-- Drag-and-drop con puntero/mouse para reordenar — se usan botones
-  subir/bajar (ver "Contexto" y design.md).
+- Drag-and-drop con puntero/mouse para **reordenar dentro de un mismo
+  panel** — se usan botones subir/bajar (ver "Contexto" y design.md).
+  Sí se implementó un gesto de deslizar para **mover entre paneles**
+  (ver arriba) — son dos cosas distintas, no la misma reducción de
+  alcance.
 - Promover una actividad a Task.
 - Autocompletar/sugerir tasks existentes al escribir una actividad
   (incluida la sintaxis `#codigo-tarea`).
@@ -78,4 +87,5 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
   fecha, no un calendario mensual.
 - Exportar mes a PDF/Markdown/texto.
 - Cálculo de "día hábil anterior" respetando festivos colombianos —
-  se usa "entrada no vacía más reciente" como aproximación.
+  "Previo" es el día calendario anterior sin más (ver arriba), no el
+  día hábil/laboral anterior.

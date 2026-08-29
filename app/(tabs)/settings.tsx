@@ -1,10 +1,10 @@
-import { Languages, Moon, ShieldAlert, Smartphone, Sun } from 'lucide-react-native';
+import { Clock, Languages, Moon, ShieldAlert, Smartphone, Sun } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
-import { usePreferences } from '../../src/settings/PreferencesContext';
+import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useTheme, useThemePreference, type ThemePreference } from '../../src/theme/ThemeContext';
 
 const THEME_PREFERENCES: ThemePreference[] = ['system', 'light', 'dark'];
@@ -15,11 +15,13 @@ const THEME_ICONS: Record<ThemePreference, ComponentType<{ size?: number; color?
   dark: Moon,
 };
 
+const TIME_FORMATS: TimeFormat[] = ['24h', '12h'];
+
 export default function SettingsScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const { preference, setPreference } = useThemePreference();
-  const { confirmDestructiveActions, setConfirmDestructiveActions } = usePreferences();
+  const { confirmDestructiveActions, setConfirmDestructiveActions, timeFormat, setTimeFormat } = usePreferences();
 
   return (
     <ScrollView style={{ backgroundColor: theme.bgBase }} contentContainerStyle={styles.content}>
@@ -44,6 +46,18 @@ export default function SettingsScreen() {
             selected={i18n.language === lang}
             onPress={() => setLanguagePreference(lang as SupportedLanguage)}
             isLast={i === SUPPORTED_LANGUAGES.length - 1}
+          />
+        ))}
+      </Section>
+
+      <Section title={t('settings.timeFormat')} icon={Clock}>
+        {TIME_FORMATS.map((format, i) => (
+          <OptionRow
+            key={format}
+            label={t(`settings.timeFormat${format}`)}
+            selected={timeFormat === format}
+            onPress={() => setTimeFormat(format)}
+            isLast={i === TIME_FORMATS.length - 1}
           />
         ))}
       </Section>

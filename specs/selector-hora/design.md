@@ -38,6 +38,32 @@ almacenado.
 patrón para `horaFinal`). No hay otro campo de hora en la app
 todavía.
 
+## Preferencia 12h/24h (agregado 2026-08-29)
+
+`timeFormat: '24h' | '12h'` en `src/settings/PreferencesContext.tsx`
+(mismo patrón que `confirmDestructiveActions`: estado + persistencia
+en AsyncStorage, default `'24h'`), con su sección propia en Ajustes
+(ícono `Clock`).
+
+`AppTimePicker` lee `timeFormat` de `usePreferences()` y decide qué
+columna de horas mostrar:
+
+- `'24h'`: columna `0`-`23`, igual que antes.
+- `'12h'`: columna `1`-`12` + una tercera columna angosta con dos
+  botones `AM`/`PM` (no una lista scrolleable — solo 2 opciones, un
+  `ScrollView` sería excesivo). `to12(hour24)`/`from12(hour12, period)`
+  son las únicas dos funciones de conversión; el estado interno
+  (`hour24`) sigue siendo siempre 24 horas — la columna de 12h y el
+  AM/PM son una vista derivada, nunca la fuente de verdad, así que
+  `onChange` (y por lo tanto lo que se guarda en `overtime_entries`)
+  nunca depende de la preferencia activa.
+- El botón-trigger también formatea según la preferencia
+  (`formatTimeDisplay`): `"18:00"` en 24h, `"6:00 PM"` en 12h.
+
+Cambiar la preferencia mientras el modal está cerrado no requiere
+ninguna sincronización especial — `AppTimePicker` la lee en cada
+render, así que el próximo `open` ya usa el formato nuevo.
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.

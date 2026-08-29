@@ -33,9 +33,23 @@ extendido acá porque no hay una referencia de desktop que copiar.
   mismo criterio que se corrigió para el selector de fecha
   (`selector-fecha/design.md`, "Grilla de alto fijo").
 
+### Formato 12h/24h (agregado 2026-08-29)
+
+- El sistema DEBERÁ ofrecer, en el tab de Ajustes, una elección entre
+  formato 24 horas y 12 horas (AM/PM) — sin equivalente en desktop
+  (usa el formato del SO/navegador automáticamente); default **24
+  horas**, mismo formato en que ya se guarda `HH:MM` en
+  `overtime_entries`.
+- El componente `AppTimePicker` DEBERÁ mostrar y permitir seleccionar
+  la hora según esa preferencia (columna 1-12 + AM/PM, o columna 0-23)
+  — el valor que entrega (`onChange`) DEBERÁ seguir siendo siempre
+  `HH:MM` en 24 horas sin importar la preferencia, para no tocar el
+  esquema de datos ni `overtimeCalc.ts`.
+- Cambiar la preferencia DEBERÁ aplicar de inmediato a cualquier
+  `AppTimePicker` abierto después del cambio — es una preferencia
+  global (`PreferencesContext`), no por pantalla.
+
 ## Fuera de este spec
 
 - Selección de segundos — ningún campo actual los usa.
-- Formato de 12 horas (AM/PM) — se mantiene 24 horas, igual que el
-  `<input type="time">` de desktop y que el formato `HH:MM` ya
-  almacenado en `overtime_entries`.
+

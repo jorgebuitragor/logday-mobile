@@ -253,6 +253,57 @@ llevó a revertir el editor WYSIWYG). Se acepta el deprecation warning
 por ahora; si en una versión futura de Reanimated se elimina la
 función, este es el punto a revisar.
 
+## Vista previa (agregado 2026-08-29)
+
+Pedido del usuario tras la reversión del editor WYSIWYG: poder ver el
+markdown renderizado, ya que ahora se edita como texto crudo con
+símbolos visibles.
+
+**Librería**: `react-native-markdown-display` — a diferencia de
+`@10play/tentap-editor`, renderiza con componentes `Text`/`View`
+nativos de React Native (internamente parsea con `markdown-it`, el
+mismo parser que ya se había evaluado al investigar el editor
+WYSIWYG), **sin WebView**. No arrastra el riesgo que llevó a revertir
+el editor WYSIWYG (issues de Android sobre inicialización/teclado de
+WebViews) porque no hay ningún WebView involucrado — es JS puro
+renderizando árboles de componentes nativos, igual categoría de
+librería que `markdown-it`/`turndown` que ya se habían evaluado como
+seguras antes de descartarlas por otro motivo (no por riesgo, sino
+porque ya no hacían falta tras revertir tentap-editor).
+
+Nota sobre auditoría de dependencias: `npm install` reportó una
+vulnerabilidad "high" (`linkify-it`, ReDoS por complejidad cuadrática
+en su scanner de `mailto:`, sin fix disponible todavía) arrastrada por
+`markdown-it` (dependencia de `react-native-markdown-display`). Riesgo
+aceptado por ahora: es un problema de negación de servicio explotable
+con texto adversarial, y el contenido que se renderiza acá es siempre
+del propio usuario en su propio dispositivo (no hay sync ni contenido
+remoto todavía) — no hay una superficie de ataque real hoy. Si en el
+futuro las notas empiezan a sincronizarse desde otros dispositivos o
+un servidor, este punto se vuelve relevante y hay que revisarlo de
+nuevo.
+
+**Toggle, no modos múltiples**: desktop ofrece tres modos
+(WYSIWYG/Fuente/Split) porque su editor de fuente y el WYSIWYG son
+piezas separadas que coexisten. Acá solo hay edición de texto plano,
+así que el único par de estados con sentido es "editando" vs "viendo
+el resultado" — un botón `Eye`/`EyeOff` en la barra superior
+(`previewMode`, `app/note/[id].tsx`) alterna entre mostrar
+`TextInput` de contenido + `MarkdownToolbar`, o un `ScrollView` con
+`<Markdown>{content}</Markdown>`. El título nunca entra en el
+toggle — sigue siendo un `TextInput` editable en ambos modos, arriba
+del área que sí cambia.
+
+**Tema**: `buildMarkdownStyle(theme)` (función a nivel de módulo en
+`app/note/[id].tsx`) mapea `ThemeTokens` a las claves de estilo que
+reconoce la librería (`body`, `heading1`-`6`, `strong`, `blockquote`,
+`code_inline`, `code_block`, `fence`, `link`, etc. — nombres fijos de
+la librería, no inventados, ver
+`node_modules/react-native-markdown-display/src/lib/styles.js` para
+la lista completa). No se tematizaron `table`/`th`/`td` (mobile no
+tiene UI para crear tablas desde la toolbar, así que no hace falta
+pulir su renderizado más allá del default de la librería).
+
 ## Explícitamente pendiente
 
 - Picker/autocompletado de `folder` a partir de carpetas existentes
@@ -263,10 +314,10 @@ función, este es el punto a revisar.
   separado, en progreso).
 - Exportación (Markdown/TXT/PDF, como desktop) — cubierto por
   `exportacion/` (spec separado, en progreso).
-- Formato multilínea desde la toolbar, vista previa renderizada del
-  markdown, y reintroducir un editor WYSIWYG — ver "Fuera de este
-  spec" en requirements.md.
-- **Verificación en vivo pendiente** de esta nueva implementación
-  (toolbar de markdown): confirmar que envolver texto con cada botón
-  se siente natural, que el cursor no salta de forma inesperada tras
-  usar un botón, y que el resultado se ve bien al reabrir la nota.
+- Formato multilínea desde la toolbar, modo "Split", y reintroducir un
+  editor WYSIWYG — ver "Fuera de este spec" en requirements.md.
+- **Verificación en vivo pendiente** de la toolbar de markdown
+  (confirmar que envolver texto con cada botón se siente natural, que
+  el cursor no salta de forma inesperada) y de la vista previa
+  (confirmar que el tema se ve bien en modo oscuro, y que el toggle no
+  pierde la posición de scroll ni la selección al alternar).

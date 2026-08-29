@@ -1,9 +1,10 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Folder, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
+import { Eye, EyeOff, Folder, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
+import Markdown from 'react-native-markdown-display';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { MarkdownToolbar, type TextSelection } from '../../src/components/MarkdownToolbar';
@@ -11,6 +12,7 @@ import { getNote, setNotePinned, softDeleteNote, updateNote, type NoteInput } fr
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
+import type { ThemeTokens } from '../../src/theme/tokens';
 import type { Note } from '../../src/types/note';
 
 // Mismo ámbar que desktop usa para el indicador de nota anclada
@@ -23,6 +25,42 @@ const SAVE_DEBOUNCE_MS = 600;
 
 function normalizeTag(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, '-');
+}
+
+// `react-native-markdown-display` renderiza con `Text`/`View` nativos
+// (basado en `markdown-it`, el mismo parser que ya se evaluó al
+// investigar el editor WYSIWYG) — no usa WebView, así que no arrastra
+// el mismo riesgo que llevó a revertir `tentap-editor` (ver design.md,
+// "Vista previa"). El objeto de estilos se mapea desde `ThemeTokens`
+// una vez por render; las claves son las que la librería reconoce
+// (`body`, `heading1`, `code_inline`, etc.), no inventadas.
+function buildMarkdownStyle(theme: ThemeTokens) {
+  const codeBlock = {
+    backgroundColor: theme.bgInput,
+    borderColor: theme.border,
+    borderRadius: 6,
+  };
+  return {
+    body: { color: theme.textBody, fontSize: 15, lineHeight: 22 },
+    heading1: { color: theme.textPrimary, fontSize: 26, fontWeight: '700' as const },
+    heading2: { color: theme.textPrimary, fontSize: 21, fontWeight: '700' as const },
+    heading3: { color: theme.textPrimary, fontSize: 18, fontWeight: '700' as const },
+    heading4: { color: theme.textPrimary, fontSize: 16, fontWeight: '700' as const },
+    heading5: { color: theme.textPrimary, fontSize: 14, fontWeight: '700' as const },
+    heading6: { color: theme.textPrimary, fontSize: 13, fontWeight: '700' as const },
+    hr: { backgroundColor: theme.border },
+    strong: { fontWeight: '700' as const },
+    em: { fontStyle: 'italic' as const },
+    s: { textDecorationLine: 'line-through' as const },
+    blockquote: { backgroundColor: theme.bgPanel, borderColor: theme.accent, borderLeftWidth: 3, paddingHorizontal: 10 },
+    bullet_list_icon: { color: theme.textSecondary },
+    ordered_list_icon: { color: theme.textSecondary },
+    code_inline: { ...codeBlock, color: theme.textBody, paddingHorizontal: 4, paddingVertical: 1 },
+    code_block: { ...codeBlock, color: theme.textBody },
+    fence: { ...codeBlock, color: theme.textBody },
+    link: { color: theme.accent },
+    text: { color: theme.textBody },
+  };
 }
 
 /**
@@ -56,7 +94,9 @@ export default function NoteEditorScreen() {
   const [folderDraft, setFolderDraft] = useState('');
   const [tagsModalOpen, setTagsModalOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
+  const [previewMode, setPreviewMode] = useState(false);
   const confirmDelete = useConfirmDelete<true>(confirmDestructiveActions);
+  const markdownStyle = buildMarkdownStyle(theme);
 
   // `KeyboardAvoidingView` (behavior "height"/"padding") no funcionó
   // en el dispositivo del usuario: con edge-to-edge en Android, el
@@ -238,6 +278,20 @@ export default function NoteEditorScreen() {
             <Text style={[styles.toolbarButtonText, { color: theme.textSecondary }]}>{note.tags.length}</Text>
           ) : null}
         </Pressable>
+        <Pressable
+          style={[
+            styles.toolbarButton,
+            { borderColor: previewMode ? theme.accent : theme.border, backgroundColor: previewMode ? theme.accentSoft : 'transparent' },
+          ]}
+          onPress={() => setPreviewMode((prev) => !prev)}
+          accessibilityLabel={t('noteForm.previewToggle')}
+        >
+          {previewMode ? (
+            <EyeOff size={14} color={theme.accentInk} />
+          ) : (
+            <Eye size={14} color={theme.textSecondary} />
+          )}
+        </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable style={[styles.toolbarButton, { borderColor: '#dc2626' }]} onPress={() => confirmDelete.request(true, performDelete)}>
           <Text style={{ color: '#dc2626', fontWeight: '600', fontSize: 12 }}>{t('noteForm.delete')}</Text>
@@ -260,19 +314,31 @@ export default function NoteEditorScreen() {
           multiline
         />
 
-        <TextInput
-          style={[styles.contentInput, { color: theme.textBody }]}
-          value={content}
-          onChangeText={handleContentChange}
-          onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
-          selection={selection}
-          placeholder={t('noteForm.contentPlaceholder')}
-          placeholderTextColor={theme.textFaint}
-          multiline
-          textAlignVertical="top"
-        />
+        {previewMode ? (
+          <ScrollView style={styles.previewScroll} contentContainerStyle={styles.previewContent}>
+            {content.trim() ? (
+              <Markdown style={markdownStyle}>{content}</Markdown>
+            ) : (
+              <Text style={{ color: theme.textFaint }}>{t('noteForm.previewEmpty')}</Text>
+            )}
+          </ScrollView>
+        ) : (
+          <>
+            <TextInput
+              style={[styles.contentInput, { color: theme.textBody }]}
+              value={content}
+              onChangeText={handleContentChange}
+              onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+              selection={selection}
+              placeholder={t('noteForm.contentPlaceholder')}
+              placeholderTextColor={theme.textFaint}
+              multiline
+              textAlignVertical="top"
+            />
 
-        <MarkdownToolbar value={content} selection={selection} onChange={handleToolbarChange} />
+            <MarkdownToolbar value={content} selection={selection} onChange={handleToolbarChange} />
+          </>
+        )}
       </Animated.View>
 
       <Modal visible={folderModalOpen} transparent animationType="fade" onRequestClose={() => setFolderModalOpen(false)}>
@@ -396,6 +462,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     minHeight: 200,
+  },
+  previewScroll: {
+    flex: 1,
+  },
+  previewContent: {
+    padding: 16,
   },
   backdrop: {
     flex: 1,

@@ -91,6 +91,21 @@ Se porta ese mismo modelo, no el formulario anterior:
   alternativa liviana que se le había recomendado originalmente. Ver
   design.md, "Reversión a toolbar de markdown".
 
+### Vista previa (agregado 2026-08-29)
+
+- El sistema DEBERÁ ofrecer un botón que alterne entre editar el
+  contenido (`TextInput` + `MarkdownToolbar`) y ver el markdown
+  renderizado (títulos, negrita, cursiva, código, listas, citas,
+  enlaces con estilo, no el texto crudo con símbolos) — mismo
+  concepto que los modos "Fuente"/"WYSIWYG" de desktop, simplificado a
+  un toggle de dos estados en vez de tres modos (no hay modo "Split"
+  — la pantalla es angosta).
+- El título NO entra en el toggle — sigue siendo siempre un
+  `TextInput` editable, en ambos modos (no es markdown, no tiene nada
+  que "previsualizar").
+- Vista previa vacía (nota sin contenido) DEBERÁ mostrar un mensaje,
+  no un área en blanco indistinguible de un error.
+
 ## Fuera de este spec
 
 - Navegador/selector de carpetas existentes ("Mover a…", picker con
@@ -111,6 +126,8 @@ Se porta ese mismo modelo, no el formulario anterior:
 - Formato multilínea desde la toolbar (aplicar cabecera/lista/cita a
   cada línea de una selección de varias líneas a la vez) — cada botón
   solo afecta la línea donde empieza la selección, ver design.md.
-- Vista previa renderizada del markdown (preview) — el `TextInput`
-  muestra el texto crudo con los símbolos de markdown visibles,
-  igual que cualquier editor de texto plano.
+- Modo "Split" (edición y vista previa lado a lado, como desktop) —
+  solo hay un toggle de dos estados, ver "Vista previa" arriba.
+- Tablas, Mermaid, imágenes remotas y el resto de extensiones que
+  `react-native-markdown-display` no cubre de fábrica sin
+  configuración adicional.

@@ -140,3 +140,34 @@ específico de esta pantalla.
       dev server con caché limpia.
 - [ ] Verificar en vivo: la toolbar de markdown queda visible arriba
       del teclado al escribir en el contenido, sin quedar tapada.
+
+## Vista previa (agregado 2026-08-29)
+
+Pedido del usuario ("podemos añadir vista previa del .md?") tras
+revertir el editor WYSIWYG. Ver design.md, "Vista previa".
+
+- [x] Instalado `react-native-markdown-display` (renderiza con
+      `Text`/`View` nativos, sin WebView — no repite el riesgo de
+      `tentap-editor`).
+- [x] `app/note/[id].tsx`: botón `Eye`/`EyeOff` en la barra superior
+      (`previewMode`, junto a destacar/carpeta/tags); en preview
+      muestra `<Markdown>{content}</Markdown>` dentro de un
+      `ScrollView` (con mensaje si está vacío) en vez de
+      `TextInput`+`MarkdownToolbar`; el título queda fuera del toggle,
+      siempre editable. `buildMarkdownStyle(theme)` mapea
+      `ThemeTokens` a las claves de estilo de la librería.
+- [x] i18n: agregadas `noteForm.previewToggle`/`previewEmpty`. Paridad
+      de claves es/en verificada (165 = 165).
+- [x] `npx tsc --noEmit` sin errores.
+- [x] Dev server reiniciado con caché limpia (`expo start -c`,
+      paquete nuevo).
+- [x] Auditoría: `npm install` reportó una vulnerabilidad "high" en
+      `linkify-it` (ReDoS, sin fix), arrastrada por `markdown-it` vía
+      esta librería — riesgo aceptado y documentado en design.md (sin
+      superficie de ataque real hoy: contenido siempre local, sin
+      sync todavía).
+- [ ] Verificar en vivo: el toggle cambia de modo sin perder el
+      contenido; el markdown renderiza legible en modo oscuro y modo
+      claro (títulos, negrita, cursiva, código, listas, citas,
+      enlaces); una nota vacía en preview muestra el mensaje, no un
+      área en blanco.

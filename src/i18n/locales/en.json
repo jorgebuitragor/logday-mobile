@@ -109,6 +109,8 @@
     "formatOrderedList": "Numbered list",
     "formatQuote": "Quote",
     "formatLink": "Link",
+    "previewToggle": "Preview",
+    "previewEmpty": "Nothing to preview yet.",
     "folderModalTitle": "Move to folder",
     "folderSave": "Save folder",
     "tagsModalTitle": "Edit tags",

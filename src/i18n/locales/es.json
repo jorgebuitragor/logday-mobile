@@ -109,6 +109,8 @@
     "formatOrderedList": "Lista numerada",
     "formatQuote": "Cita",
     "formatLink": "Enlace",
+    "previewToggle": "Vista previa",
+    "previewEmpty": "Nada que previsualizar todavía.",
     "folderModalTitle": "Mover a carpeta",
     "folderSave": "Guardar carpeta",
     "tagsModalTitle": "Editar tags",

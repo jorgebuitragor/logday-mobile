@@ -71,11 +71,20 @@
   },
   "noteList": {
     "empty": "Sin notas. ¡Crea la primera!",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "pinnedLabel": "Nota destacada"
   },
   "noteForm": {
     "title": "Título",
     "titlePlaceholder": "Título de la nota",
+    "folder": "Carpeta",
+    "folderPlaceholder": "Carpeta de la nota (opcional)",
+    "tags": "Tags",
+    "tagPlaceholder": "Nuevo tag...",
+    "addTag": "Añadir",
+    "removeTag": "Quitar tag",
+    "pin": "Destacar",
+    "unpin": "Quitar destacado",
     "content": "Contenido",
     "contentPlaceholder": "Escribe en markdown...",
     "createSubmit": "Crear nota",

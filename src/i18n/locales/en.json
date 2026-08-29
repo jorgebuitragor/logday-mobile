@@ -71,11 +71,20 @@
   },
   "noteList": {
     "empty": "No notes yet. Create the first one!",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "pinnedLabel": "Pinned note"
   },
   "noteForm": {
     "title": "Title",
     "titlePlaceholder": "Note title",
+    "folder": "Folder",
+    "folderPlaceholder": "Note folder (optional)",
+    "tags": "Tags",
+    "tagPlaceholder": "New tag...",
+    "addTag": "Add",
+    "removeTag": "Remove tag",
+    "pin": "Pin",
+    "unpin": "Unpin",
     "content": "Content",
     "contentPlaceholder": "Write in markdown...",
     "createSubmit": "Create note",

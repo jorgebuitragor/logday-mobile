@@ -81,19 +81,17 @@ detrás.
 
 `task/new.tsx` y `task/[id].tsx` comparten un componente
 `src/components/TaskForm.tsx` (título, estado como 3 botones
-segmentados, `project` y `taskCode` como texto libre, `due` como texto
-libre `YYYY-MM-DD`, `tags` como chips + input de agregar, contenido
-como `TextInput multiline`) que recibe `initialValue` (vacío en
-creación, la task cargada en edición), `currentId` (id de la task en
-edición, para el chequeo de `taskCode` duplicado — ausente al crear) y
-`onSubmit`. `[id].tsx` además ofrece un botón "Eliminar" que llama
-`softDeleteTask` y vuelve a la lista.
+segmentados, `project` y `taskCode` como texto libre, `due` con el
+selector de fecha compartido (ver `selector-fecha/`), `tags` como
+chips + input de agregar, contenido como `TextInput multiline`) que
+recibe `initialValue` (vacío en creación, la task cargada en edición),
+`currentId` (id de la task en edición, para el chequeo de `taskCode`
+duplicado — ausente al crear) y `onSubmit`. `[id].tsx` además ofrece un
+botón "Eliminar" que llama `softDeleteTask` y vuelve a la lista.
 
-`due` como texto libre en vez de un date picker nativo: reducción de
-alcance deliberada — un date picker decente en RN implica elegir
-librería (`@react-native-community/datetimepicker` u otra) y no hay
-señal de que la fricción de escribir `YYYY-MM-DD` a mano sea un
-problema real todavía. Se revisita si resulta molesto en el uso real.
+`due` usaba texto libre `YYYY-MM-DD` originalmente (reducción de
+alcance deliberada); reemplazado 2026-08-29 por `AppDatePicker` — ver
+`selector-fecha/design.md`, no se repite acá.
 
 ### `project`/`taskCode`/`tags` (agregado 2026-08-29)
 

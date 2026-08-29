@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { AppDatePicker } from './AppDatePicker';
 import { listOvertimeEntries, type OvertimeInput } from '../db/overtime';
 import { calcOvertimeBreakdown } from '../lib/overtimeCalc';
 import { useTheme } from '../theme/ThemeContext';
@@ -112,7 +113,7 @@ export function OvertimeForm({ initialValue, onSubmit, submitLabel, entryId }: O
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
       <Text style={[styles.label, { color: theme.textSecondary }]}>{t('overtimeForm.date')}</Text>
-      <TextInput style={inputStyle} value={fecha} onChangeText={setFecha} placeholder="2026-09-01" placeholderTextColor={theme.textFaint} />
+      <AppDatePicker value={fecha} onChange={setFecha} />
 
       <View style={styles.timeRow}>
         <View style={styles.timeField}>

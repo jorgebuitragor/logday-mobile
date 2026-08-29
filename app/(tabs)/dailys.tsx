@@ -2,8 +2,9 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { CalendarDays, CalendarPlus } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { AppCalendarGrid } from '../../src/components/AppDatePicker';
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { parseActivityItems } from '../../src/components/DailyActivityList';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -95,31 +96,16 @@ export default function DailysScreen() {
             onPress={(e) => e.stopPropagation()}
           >
             <Text style={[styles.pickerTitle, { color: theme.textPrimary }]}>{t('dailyForm.pickDateTitle')}</Text>
-            <TextInput
-              autoFocus
-              style={[styles.pickerInput, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
+            <AppCalendarGrid
               value={pickerDate}
-              onChangeText={setPickerDate}
-              placeholder="2026-08-25"
-              placeholderTextColor={theme.textFaint}
-              selectionColor={theme.accent}
+              onChange={(iso) => {
+                setPickerVisible(false);
+                router.push(`/daily/${iso}`);
+              }}
             />
-            <View style={styles.pickerButtonRow}>
-              <Pressable style={styles.pickerCancel} onPress={() => setPickerVisible(false)}>
-                <Text style={{ color: theme.textSecondary }}>{t('common.cancel')}</Text>
-              </Pressable>
-              <Pressable
-                style={[styles.pickerGo, { backgroundColor: theme.accentStrong }]}
-                onPress={() => {
-                  const date = pickerDate.trim();
-                  if (!date) return;
-                  setPickerVisible(false);
-                  router.push(`/daily/${date}`);
-                }}
-              >
-                <Text style={styles.pickerGoText}>{t('dailyForm.goToDate')}</Text>
-              </Pressable>
-            </View>
+            <Pressable style={styles.pickerCancel} onPress={() => setPickerVisible(false)}>
+              <Text style={{ color: theme.textSecondary, fontSize: 12 }}>{t('common.cancel')}</Text>
+            </Pressable>
           </Pressable>
         </Pressable>
       </Modal>
@@ -201,30 +187,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 12,
   },
-  pickerInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-  },
-  pickerButtonRow: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
-    marginTop: 16,
-  },
   pickerCancel: {
-    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginTop: 12,
     paddingVertical: 8,
-  },
-  pickerGo: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  pickerGoText: {
-    color: '#fff',
-    fontWeight: '600',
   },
 });

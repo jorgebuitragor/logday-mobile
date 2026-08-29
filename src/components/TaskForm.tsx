@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
+import { AppDatePicker } from './AppDatePicker';
 import { listTasks, type TaskInput } from '../db/tasks';
 import { useTheme } from '../theme/ThemeContext';
 import type { TaskStatus } from '../types/task';
@@ -118,13 +119,7 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
       />
 
       <Text style={[styles.label, { color: theme.textSecondary }]}>{t('taskForm.due')}</Text>
-      <TextInput
-        style={inputStyle}
-        value={due}
-        onChangeText={setDue}
-        placeholder="2026-09-01"
-        placeholderTextColor={theme.textFaint}
-      />
+      <AppDatePicker value={due} onChange={setDue} allowClear />
 
       <Text style={[styles.label, { color: theme.textSecondary }]}># {t('taskForm.taskCode')}</Text>
       <TextInput

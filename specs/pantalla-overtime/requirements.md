@@ -32,10 +32,13 @@ extra (diurnas/nocturnas/festivas, festivos colombianos) se porta
   solicitada por, actividad realizada (obligatoria), y un selector de
   3 opciones para `observaciones` (compensatorio/pago/otro) — mismos
   campos que `OvertimeEditor.tsx`.
+- `fecha` DEBERÁ usar el selector de fecha compartido (agregado
+  2026-08-29, ver `selector-fecha/requirements.md`) — ya no es texto
+  libre.
 - El sistema NO DEBERÁ usar un time-picker nativo para las horas —
-  campo de texto libre `HH:MM`, mismo criterio de reducción de alcance
-  que `due` en `pantalla-tasks/` (sin evidencia de que sea un problema
-  real todavía).
+  campo de texto libre `HH:MM` (sin evidencia de que sea un problema
+  real todavía; a diferencia de `fecha`, no se pidió selector para
+  esto).
 
 ### Listado y eliminación
 

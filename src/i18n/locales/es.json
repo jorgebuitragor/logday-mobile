@@ -3,7 +3,10 @@
     "edit": "Editar",
     "delete": "Eliminar",
     "cancel": "Cancelar",
-    "save": "Guardar"
+    "save": "Guardar",
+    "selectDate": "Seleccionar fecha",
+    "clearDate": "Quitar fecha",
+    "today": "Hoy"
   },
   "tabs": {
     "tasks": "Tareas",
@@ -43,7 +46,7 @@
     "title": "Título",
     "titlePlaceholder": "Título de la tarea",
     "status": "Estado",
-    "due": "Vencimiento (YYYY-MM-DD, opcional)",
+    "due": "Vencimiento (opcional)",
     "content": "Contenido",
     "contentPlaceholder": "Notas en markdown...",
     "createSubmit": "Crear tarea",

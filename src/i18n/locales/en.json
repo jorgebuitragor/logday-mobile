@@ -3,7 +3,10 @@
     "edit": "Edit",
     "delete": "Delete",
     "cancel": "Cancel",
-    "save": "Save"
+    "save": "Save",
+    "selectDate": "Select date",
+    "clearDate": "Clear date",
+    "today": "Today"
   },
   "tabs": {
     "tasks": "Tasks",
@@ -43,7 +46,7 @@
     "title": "Title",
     "titlePlaceholder": "Task title",
     "status": "Status",
-    "due": "Due date (YYYY-MM-DD, optional)",
+    "due": "Due date (optional)",
     "content": "Content",
     "contentPlaceholder": "Markdown notes...",
     "createSubmit": "Create task",

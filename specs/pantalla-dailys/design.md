@@ -151,11 +151,12 @@ FAB "Hoy" — no había forma de abrir/crear el registro de un día
 anterior olvidado (el listado solo muestra entradas que **ya**
 tienen contenido, así que un día pasado sin registrar era invisible e
 inalcanzable). Agregado un segundo botón (ícono `CalendarPlus`, junto
-al FAB "Hoy") que abre un modal simple con un campo de fecha en texto
-libre (`YYYY-MM-DD`, mismo criterio de fecha-como-texto que `due` en
-Task/`fecha` en Overtime — sin date-picker nativo) y un botón "Ir" que
-navega a `/daily/<fecha escrita>`. Mismo propósito que
-`addOtherDate`/`pickDateTitle` en `DailyList.tsx` de desktop.
+al FAB "Hoy") que abre un modal con el calendario compartido
+(`AppCalendarGrid`, ver `selector-fecha/design.md` — inicialmente era
+un campo de texto libre `YYYY-MM-DD`, reemplazado el mismo día por el
+selector real). Tocar un día navega directo a `/daily/<fecha>` y
+cierra el modal. Mismo propósito que `addOtherDate`/`pickDateTitle` en
+`DailyList.tsx` de desktop.
 
 No hizo falta ningún cambio en `app/daily/[date].tsx` ni en
 `src/db/dailyEntries.ts` — esa pantalla ya funcionaba correctamente

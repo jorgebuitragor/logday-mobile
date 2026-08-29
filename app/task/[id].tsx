@@ -53,7 +53,16 @@ export default function EditTaskScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
       <TaskForm
-        initialValue={{ title: task.title, status: task.status, due: task.due, content: task.content }}
+        initialValue={{
+          title: task.title,
+          taskCode: task.taskCode,
+          status: task.status,
+          tags: task.tags,
+          project: task.project,
+          due: task.due,
+          content: task.content,
+        }}
+        currentId={task.id}
         onSubmit={handleSubmit}
         submitLabel={t('taskForm.editSubmit')}
       />

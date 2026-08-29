@@ -54,7 +54,20 @@
     "loadingTask": "Cargando...",
     "notFound": "Tarea no encontrada.",
     "confirmDeleteTitle": "Eliminar tarea",
-    "confirmDeleteMessage": "¿Eliminar esta tarea? Esta acción no se puede deshacer."
+    "confirmDeleteMessage": "¿Eliminar esta tarea? Esta acción no se puede deshacer.",
+    "statusTodo": "Por hacer",
+    "statusInProgress": "En progreso",
+    "statusDone": "Hecho",
+    "project": "Proyecto",
+    "projectPlaceholder": "p. ej. inbox",
+    "taskCode": "Código",
+    "taskCodePlaceholder": "1234",
+    "taskCodeHint": "Opcional · único por tarea",
+    "taskCodeDuplicate": "Este código ya está en uso",
+    "tags": "Tags",
+    "tagPlaceholder": "nuevo tag…",
+    "addTag": "tag",
+    "removeTag": "Quitar tag"
   },
   "noteList": {
     "empty": "Sin notas. ¡Crea la primera!",

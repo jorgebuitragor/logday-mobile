@@ -54,7 +54,20 @@
     "loadingTask": "Loading...",
     "notFound": "Task not found.",
     "confirmDeleteTitle": "Delete task",
-    "confirmDeleteMessage": "Delete this task? This action cannot be undone."
+    "confirmDeleteMessage": "Delete this task? This action cannot be undone.",
+    "statusTodo": "To do",
+    "statusInProgress": "In progress",
+    "statusDone": "Done",
+    "project": "Project",
+    "projectPlaceholder": "e.g. inbox",
+    "taskCode": "Code",
+    "taskCodePlaceholder": "1234",
+    "taskCodeHint": "Optional · unique per task",
+    "taskCodeDuplicate": "This code is already in use",
+    "tags": "Tags",
+    "tagPlaceholder": "new tag…",
+    "addTag": "tag",
+    "removeTag": "Remove tag"
   },
   "noteList": {
     "empty": "No notes yet. Create the first one!",

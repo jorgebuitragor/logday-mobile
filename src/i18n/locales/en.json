@@ -97,15 +97,19 @@
     "previousPanel": "Previous",
     "selectedPanel": "Selected",
     "previewEmpty": "(write your activities above)",
-    "placeholder": "Write today's activities...",
     "noPrevious": "No previous daily recorded.",
     "copyFormat": "Copy format",
     "copiedLong": "Copied!",
-    "save": "Save",
     "delete": "Delete",
     "loadingDaily": "Loading...",
     "confirmDeleteTitle": "Delete daily",
-    "confirmDeleteMessage": "This day's entry will be deleted. This action cannot be undone."
+    "confirmDeleteMessage": "This day's entry will be deleted. This action cannot be undone.",
+    "newActivityPlaceholder": "New activity…",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "deleteActivity": "Delete activity",
+    "todayBadge": "TODAY",
+    "previewTitle": "Preview"
   },
   "overtimeList": {
     "empty": "No overtime entries yet.",

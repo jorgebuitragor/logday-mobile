@@ -1,9 +1,12 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { CalendarDays } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
+import { parseActivityItems } from '../../src/components/DailyActivityList';
+import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { listDailyEntries, softDeleteDailyEntry } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
@@ -16,8 +19,11 @@ function todayISO(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+// El contenido almacenado es una lista de actividades ("- item1\n- item2");
+// se muestra como una vista previa de una línea uniendo los items en vez
+// de mostrar los guiones "- " crudos.
 function preview(content: string): string {
-  const flat = content.replace(/\s+/g, ' ').trim();
+  const flat = parseActivityItems(content).join(' · ');
   return flat.length > 80 ? `${flat.slice(0, 80)}…` : flat;
 }
 
@@ -46,9 +52,7 @@ export default function DailysScreen() {
         data={entries}
         keyExtractor={(entry) => entry.date}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={[styles.empty, { color: theme.textMuted }]}>{t('dailyList.empty')}</Text>
-        }
+        ListEmptyComponent={<EmptyState icon={CalendarDays} message={t('dailyList.empty')} />}
         renderItem={({ item }) => (
           <SwipeableRow
             editLabel={t('common.edit')}
@@ -96,10 +100,6 @@ const styles = StyleSheet.create({
   list: {
     padding: 16,
     gap: 8,
-  },
-  empty: {
-    textAlign: 'center',
-    marginTop: 32,
   },
   row: {
     padding: 12,

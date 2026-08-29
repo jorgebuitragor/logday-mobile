@@ -97,15 +97,19 @@
     "previousPanel": "Previo",
     "selectedPanel": "Seleccionado",
     "previewEmpty": "(escribe tus actividades arriba)",
-    "placeholder": "Escribe tus actividades del día...",
     "noPrevious": "Sin daily anterior registrado.",
     "copyFormat": "Copiar formato",
     "copiedLong": "¡Copiado!",
-    "save": "Guardar",
     "delete": "Eliminar",
     "loadingDaily": "Cargando...",
     "confirmDeleteTitle": "Eliminar daily",
-    "confirmDeleteMessage": "Se eliminará el registro de este día. Esta acción no se puede deshacer."
+    "confirmDeleteMessage": "Se eliminará el registro de este día. Esta acción no se puede deshacer.",
+    "newActivityPlaceholder": "Nueva actividad…",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "deleteActivity": "Eliminar actividad",
+    "todayBadge": "HOY",
+    "previewTitle": "Vista previa"
   },
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",

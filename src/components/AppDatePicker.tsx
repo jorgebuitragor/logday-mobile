@@ -83,10 +83,16 @@ export function AppCalendarGrid({ value, max, onChange }: CalendarGridProps) {
     new Date(viewYear, viewMonth, 1)
   );
 
-  const cells: (number | null)[] = [
-    ...Array(firstDay).fill(null),
-    ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
-  ];
+  // Siempre 6 filas (42 celdas) sin importar cuántas semanas ocupe el
+  // mes real (algunos meses caben en 4-5 filas) — si el número de
+  // filas variara según el mes, el panel/modal cambiaría de alto al
+  // navegar entre meses, un salto visual molesto. Se rellena con
+  // celdas vacías tanto al inicio (antes del día 1) como al final.
+  const CELL_COUNT = 42;
+  const cells: (number | null)[] = Array.from({ length: CELL_COUNT }, (_, i) => {
+    const day = i - firstDay + 1;
+    return day >= 1 && day <= daysInMonth ? day : null;
+  });
 
   return (
     <View>

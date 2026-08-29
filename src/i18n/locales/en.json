@@ -6,6 +6,7 @@
     "save": "Save",
     "selectDate": "Select date",
     "clearDate": "Clear date",
+    "selectTime": "Select time",
     "today": "Today"
   },
   "tabs": {

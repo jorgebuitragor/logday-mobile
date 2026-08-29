@@ -35,10 +35,12 @@ extra (diurnas/nocturnas/festivas, festivos colombianos) se porta
 - `fecha` DEBERÁ usar el selector de fecha compartido (agregado
   2026-08-29, ver `selector-fecha/requirements.md`) — ya no es texto
   libre.
-- El sistema NO DEBERÁ usar un time-picker nativo para las horas —
-  campo de texto libre `HH:MM` (sin evidencia de que sea un problema
-  real todavía; a diferencia de `fecha`, no se pidió selector para
-  esto).
+- `horaInicio`/`horaFinal` DEBERÁN usar el selector de hora compartido
+  (agregado 2026-08-29, ver `selector-hora/requirements.md`) — ya no
+  son texto libre. No es un time-picker nativo del SO (mismo criterio
+  que `fecha`: no se puede re-temizar), es un componente propio nuevo
+  (desktop tampoco tiene uno propio de hora que portar, usa el
+  `<input type="time">` nativo del navegador).
 
 ### Listado y eliminación
 

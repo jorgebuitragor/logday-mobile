@@ -45,3 +45,4 @@ hasta tres archivos:
 | Acciones desde la lista | implementado (pendiente confirmación en vivo) | [`acciones-lista/`](./acciones-lista/requirements.md) |
 | Búsqueda global | implementado (pendiente confirmación en vivo) | [`busqueda/`](./busqueda/requirements.md) |
 | Selector de fecha | implementado (pendiente confirmación en vivo) | [`selector-fecha/`](./selector-fecha/requirements.md) |
+| Selector de hora | implementado (pendiente confirmación en vivo) | [`selector-hora/`](./selector-hora/requirements.md) |

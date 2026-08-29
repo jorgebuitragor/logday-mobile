@@ -45,6 +45,20 @@ usa desktop (`bg-indigo-600` seleccionado, borde indigo para "hoy").
   el modal, sin paso de confirmación aparte (a diferencia de la
   versión anterior con input de texto + botón "Ir").
 
+## Grilla de alto fijo (corregido 2026-08-29)
+
+La primera versión generaba solo las celdas necesarias (relleno vacío
+antes del día 1 + un día por celda), así que un mes de 4 filas y uno
+de 6 filas hacían que el panel/modal cambiara de alto al navegar entre
+meses — un salto visual que el usuario reportó. Corregido: `cells`
+ahora siempre tiene 42 elementos (6 filas × 7 columnas) sin importar
+el mes, calculado como `day = i - firstDay + 1` y `null` fuera de rango
+`[1, daysInMonth]` (relleno tanto al inicio como al final). Este es el
+mismo problema que desktop no tiene porque ahí el dropdown no está
+dentro de un modal centrado — un cambio de alto en un dropdown que
+"crece hacia abajo" no se nota igual que en un panel centrado en
+pantalla, así que esta corrección es específica de mobile, no un port.
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { AppDatePicker } from './AppDatePicker';
+import { AppTimePicker } from './AppTimePicker';
 import { listOvertimeEntries, type OvertimeInput } from '../db/overtime';
 import { calcOvertimeBreakdown } from '../lib/overtimeCalc';
 import { useTheme } from '../theme/ThemeContext';
@@ -118,11 +119,11 @@ export function OvertimeForm({ initialValue, onSubmit, submitLabel, entryId }: O
       <View style={styles.timeRow}>
         <View style={styles.timeField}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>{t('overtimeForm.startTime')}</Text>
-          <TextInput style={inputStyle} value={horaInicio} onChangeText={setHoraInicio} placeholder="18:00" placeholderTextColor={theme.textFaint} />
+          <AppTimePicker value={horaInicio} onChange={setHoraInicio} />
         </View>
         <View style={styles.timeField}>
           <Text style={[styles.label, { color: theme.textSecondary }]}>{t('overtimeForm.endTime')}</Text>
-          <TextInput style={inputStyle} value={horaFinal} onChangeText={setHoraFinal} placeholder="20:00" placeholderTextColor={theme.textFaint} />
+          <AppTimePicker value={horaFinal} onChange={setHoraFinal} />
         </View>
       </View>
 

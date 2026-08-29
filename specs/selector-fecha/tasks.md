@@ -10,8 +10,11 @@ Estado: implementado, pendiente de confirmación en vivo.
       `app/(tabs)/dailys.tsx`.
 - [x] Simplificado el label de `taskForm.due` (ya no menciona
       `YYYY-MM-DD` — el formato ya no es visible para el usuario).
+- [x] Grilla de alto fijo (42 celdas siempre) — corrige el salto
+      visual al cambiar de mes reportado por el usuario.
 - [x] `npx tsc --noEmit` sin errores.
 - [ ] Verificar en vivo: elegir fecha en Task (y quitarla con "Quitar
       fecha"), en Overtime, y en "otra fecha" de Dailys; navegar entre
-      meses; confirmar que el mes/día aparece en español (o inglés
-      según el idioma activo).
+      meses y confirmar que el panel ya no cambia de alto; confirmar
+      que el mes/día aparece en español (o inglés según el idioma
+      activo).

@@ -2,7 +2,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Folder, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { MarkdownToolbar, type TextSelection } from '../../src/components/MarkdownToolbar';
@@ -226,28 +226,38 @@ export default function NoteEditorScreen() {
         </Pressable>
       </View>
 
-      <TextInput
-        style={[styles.titleInput, { color: theme.textPrimary }]}
-        value={title}
-        onChangeText={handleTitleChange}
-        placeholder={t('noteForm.titlePlaceholder')}
-        placeholderTextColor={theme.textFaint}
-        multiline
-      />
+      {/* `behavior="height"` en Android (no "padding"): reduce el alto
+          disponible cuando aparece el teclado, así el TextInput de
+          contenido (flex:1) se encoge y la toolbar de markdown queda
+          empujada arriba del teclado en vez de tapada — antes no
+          había ningún manejo de teclado acá y la toolbar quedaba
+          debajo. No depende de `windowSoftInputMode` del sistema
+          (que con edge-to-edge en Android no siempre redimensiona
+          solo), es RN escuchando los eventos de teclado directo. */}
+      <KeyboardAvoidingView style={styles.body} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <TextInput
+          style={[styles.titleInput, { color: theme.textPrimary }]}
+          value={title}
+          onChangeText={handleTitleChange}
+          placeholder={t('noteForm.titlePlaceholder')}
+          placeholderTextColor={theme.textFaint}
+          multiline
+        />
 
-      <TextInput
-        style={[styles.contentInput, { color: theme.textBody }]}
-        value={content}
-        onChangeText={handleContentChange}
-        onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
-        selection={selection}
-        placeholder={t('noteForm.contentPlaceholder')}
-        placeholderTextColor={theme.textFaint}
-        multiline
-        textAlignVertical="top"
-      />
+        <TextInput
+          style={[styles.contentInput, { color: theme.textBody }]}
+          value={content}
+          onChangeText={handleContentChange}
+          onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+          selection={selection}
+          placeholder={t('noteForm.contentPlaceholder')}
+          placeholderTextColor={theme.textFaint}
+          multiline
+          textAlignVertical="top"
+        />
 
-      <MarkdownToolbar value={content} selection={selection} onChange={handleToolbarChange} />
+        <MarkdownToolbar value={content} selection={selection} onChange={handleToolbarChange} />
+      </KeyboardAvoidingView>
 
       <Modal visible={folderModalOpen} transparent animationType="fade" onRequestClose={() => setFolderModalOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setFolderModalOpen(false)}>
@@ -325,6 +335,9 @@ export default function NoteEditorScreen() {
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+  },
+  body: {
     flex: 1,
   },
   center: {

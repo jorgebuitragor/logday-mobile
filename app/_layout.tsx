@@ -4,20 +4,29 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import '../src/i18n';
 import { initDb } from '../src/db';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { ThemeProvider, useTheme, useThemeScheme } from '../src/theme/ThemeContext';
 
+// `SafeAreaProvider` no estaba montado en ningún lado — nada en la
+// app leía los insets del sistema (gestos/barra de navegación de
+// Android, notch de iOS). Pasó desapercibido hasta que
+// `MarkdownToolbar` quedó pegada al borde inferior real de la
+// pantalla, invadiendo la zona de gestos de Android (ver
+// specs/pantalla-notes/design.md, "Safe area").
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <ThemeProvider>
-        <PreferencesProvider>
-          <RootLayoutInner />
-        </PreferencesProvider>
-      </ThemeProvider>
+      <SafeAreaProvider>
+        <ThemeProvider>
+          <PreferencesProvider>
+            <RootLayoutInner />
+          </PreferencesProvider>
+        </ThemeProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

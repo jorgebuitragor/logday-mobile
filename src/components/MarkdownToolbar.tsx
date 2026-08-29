@@ -1,6 +1,7 @@
 import { Bold, Code, Heading1, Heading2, Italic, Link as LinkIcon, List, ListOrdered, Quote } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '../theme/ThemeContext';
 
@@ -58,6 +59,7 @@ function toggleLinePrefix(value: string, selection: TextSelection, prefix: strin
 export function MarkdownToolbar({ value, selection, onChange }: MarkdownToolbarProps) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   function wrap(prefix: string, suffix?: string) {
     const result = wrapSelection(value, selection, prefix, suffix);
@@ -94,10 +96,15 @@ export function MarkdownToolbar({ value, selection, onChange }: MarkdownToolbarP
   ];
 
   return (
-    <View style={[styles.container, { borderColor: theme.border, backgroundColor: theme.bgPanel }]}>
+    <View
+      style={[
+        styles.container,
+        { borderColor: theme.border, backgroundColor: theme.bgPanel, paddingBottom: Math.max(insets.bottom, 8) },
+      ]}
+    >
       {items.map(({ icon: Icon, onPress, key, label }) => (
         <Pressable key={key} onPress={onPress} hitSlop={4} style={styles.button} accessibilityLabel={label}>
-          <Icon size={18} color={theme.textSecondary} />
+          <Icon size={22} color={theme.textSecondary} />
         </Pressable>
       ))}
     </View>
@@ -108,12 +115,14 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
     borderTopWidth: 1,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
+    paddingHorizontal: 4,
+    paddingTop: 8,
   },
   button: {
-    padding: 8,
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
   },
 });

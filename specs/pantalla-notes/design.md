@@ -180,6 +180,43 @@ de `app/note/[id].tsx`:
   real el cursor "salta" de forma rara tras usar un botón, es el punto
   a revisar primero.
 
+## Safe area y teclado (agregado 2026-08-29)
+
+Primera versión de `MarkdownToolbar`: el usuario reportó que quedaba
+"muy abajo y muy pequeña", que el teclado la tapaba, y que "molesta un
+poco con los gestos/botones de navegación de Android". Investigado:
+**nada en la app montaba `SafeAreaProvider`** (`grep` en `app/`/`src/`
+no encontró ni un solo uso de `useSafeAreaInsets`/`SafeAreaView` en
+toda la app, a pesar de tener `react-native-safe-area-context` como
+dependencia transitiva) — cualquier contenido pegado al borde inferior
+quedaba literalmente debajo de la barra de gestos de Android, no solo
+"cerca". Y no había ningún manejo de teclado (`KeyboardAvoidingView` o
+equivalente) en esta pantalla — con edge-to-edge en Android,
+`windowSoftInputMode=adjustResize` no siempre redimensiona solo el
+árbol de vistas, así que la toolbar quedaba tapada en vez de empujada
+arriba.
+
+Dos fixes:
+
+- **`SafeAreaProvider`** agregado en `app/_layout.tsx` (envolviendo
+  todo, dentro de `GestureHandlerRootView`) — no existía en ningún
+  lado del árbol, así que `useSafeAreaInsets()` no podía funcionar en
+  ninguna pantalla hasta ahora. `MarkdownToolbar` usa
+  `useSafeAreaInsets().bottom` como `paddingBottom` (con un mínimo de
+  8px si el inset es 0, p.ej. en un dispositivo con barra de
+  navegación clásica de 3 botones en vez de gestos).
+- **`KeyboardAvoidingView`** envolviendo título + contenido + toolbar
+  en `app/note/[id].tsx` (`behavior: 'padding'` en iOS, `'height'` en
+  Android) — no depende de `windowSoftInputMode` del sistema, es RN
+  escuchando los eventos de teclado directamente y encogiendo el alto
+  disponible, así el `TextInput` de contenido (que tiene `flex:1`) se
+  encoge y la toolbar queda empujada arriba del teclado.
+
+También se agrandaron los botones (ícono `18→22`, y cada botón pasa a
+`flex:1` en vez de `padding:8` fijo, para que la barra ocupe todo el
+ancho en vez de verse como un grupo pequeño de íconos apretados a la
+izquierda) — atiende el "muy pequeña" del reporte.
+
 ## Explícitamente pendiente
 
 - Picker/autocompletado de `folder` a partir de carpetas existentes

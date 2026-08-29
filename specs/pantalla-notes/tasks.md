@@ -90,9 +90,32 @@ se le había recomendado originalmente.
 - [x] Dev server reiniciado con caché limpia (`expo start -c`,
       obligatorio: se removió `react-native-webview`, un módulo
       nativo).
-- [ ] Verificar en vivo: el editor carga sin los bugs reportados
-      contra la versión WYSIWYG; los 9 botones de formato envuelven/
-      anteponen el token correcto sobre la selección; el cursor no
-      salta de forma rara después de usar un botón (ver design.md,
-      riesgo señalado sobre `selection` controlada en RN); cerrar y
-      reabrir una nota conserva el markdown escrito.
+- [x] Verificar en vivo: la toolbar apareció, pero el usuario reportó
+      3 problemas — "muy abajo y muy pequeña", tapada por el teclado,
+      y molestando con los gestos de navegación de Android. Corregido
+      el mismo día, ver abajo.
+
+## Safe area y teclado (agregado 2026-08-29)
+
+Ver design.md, "Safe area y teclado", para el diagnóstico completo:
+`SafeAreaProvider` no estaba montado en ningún lado de la app (cero
+usos de `useSafeAreaInsets`/`SafeAreaView` en todo el código), y esta
+pantalla no manejaba el teclado en absoluto.
+
+- [x] `app/_layout.tsx`: agregado `SafeAreaProvider` (envolviendo todo
+      dentro de `GestureHandlerRootView`) — primera vez que se monta
+      en la app.
+- [x] `src/components/MarkdownToolbar.tsx`: `useSafeAreaInsets().bottom`
+      como `paddingBottom` (mínimo 8px); íconos `18→22`; botones
+      pasan de `padding:8` fijo a `flex:1` para ocupar todo el ancho.
+- [x] `app/note/[id].tsx`: título + contenido + toolbar envueltos en
+      `KeyboardAvoidingView` (`behavior: 'padding'` iOS / `'height'`
+      Android) — nuevo `styles.body`.
+- [x] `npx tsc --noEmit` sin errores. No hizo falta reinstalar
+      dependencias (`react-native-safe-area-context` ya estaba en
+      package.json como transitiva) ni reiniciar el dev server con
+      caché limpia (sin paquete nuevo).
+- [ ] Verificar en vivo: la toolbar ya no invade la zona de gestos de
+      Android, se ve del tamaño esperado (span completo del ancho,
+      íconos más grandes), y queda visible arriba del teclado al
+      escribir en el contenido.

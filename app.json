@@ -2,16 +2,19 @@
   "expo": {
     "name": "Logday Mobile",
     "slug": "logday-mobile",
+    "scheme": "logdaymobile",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "userInterfaceStyle": "automatic"
     },
     "android": {
+      "userInterfaceStyle": "automatic",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#6366f1",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -24,7 +27,8 @@
     "plugins": [
       "expo-sqlite",
       "expo-status-bar",
-      "expo-router"
+      "expo-router",
+      "expo-localization"
     ]
   }
 }

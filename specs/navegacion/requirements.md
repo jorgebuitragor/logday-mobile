@@ -19,9 +19,13 @@ aquí).
 - El sistema DEBERÁ usar **Expo Router** (routing basado en archivos
   bajo `app/`) — decidido con el usuario 2026-08-29, no React
   Navigation manual.
-- El sistema DEBERÁ exponer 4 secciones de primer nivel como
-  **tabs inferiores**: Tasks, Notes, Dailys, Overtime — decidido con
-  el usuario 2026-08-29, no drawer/menú lateral.
+- El sistema DEBERÁ exponer secciones de primer nivel como **tabs
+  inferiores**, no drawer/menú lateral — decidido con el usuario
+  2026-08-29. Originalmente 4 (Tasks, Notes, Dailys, Overtime); se
+  agregó un 5º tab **Ajustes** el mismo día al construir el selector
+  manual de tema/idioma (ver `pantalla-ajustes/`) — no ameritó volver
+  a preguntar por el patrón de navegación en sí (tabs), solo agregó
+  una entrada más.
 
 ### Alcance de esta fase
 

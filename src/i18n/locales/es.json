@@ -1,0 +1,137 @@
+{
+  "common": {
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "cancel": "Cancelar",
+    "save": "Guardar"
+  },
+  "tabs": {
+    "tasks": "Tareas",
+    "notes": "Notas",
+    "dailys": "Dailys",
+    "overtime": "Extras",
+    "settings": "Ajustes"
+  },
+  "settings": {
+    "theme": "Tema",
+    "themeSystem": "Sistema",
+    "themeLight": "Claro",
+    "themeDark": "Oscuro",
+    "language": "Idioma",
+    "languageEs": "Español",
+    "languageEn": "English",
+    "behavior": "Comportamiento",
+    "confirmDeleteTitle": "Confirmar eliminaciones",
+    "confirmDeleteDesc": "Muestra un diálogo antes de borrar notas, tareas, dailys y registros de extras.",
+    "confirmDeleteEnabled": "Activado",
+    "confirmDeleteDisabled": "Desactivado"
+  },
+  "search": {
+    "placeholder": "Buscar en tareas, notas, dailys, extras...",
+    "typeHint": "Escribe para buscar",
+    "noResultsFor": "Sin resultados para",
+    "tasksTitle": "Tareas",
+    "notesTitle": "Notas",
+    "dailysTitle": "Dailys",
+    "overtimeTitle": "Extras"
+  },
+  "taskList": {
+    "empty": "Sin tareas. ¡Crea la primera!",
+    "loading": "Cargando..."
+  },
+  "taskForm": {
+    "title": "Título",
+    "titlePlaceholder": "Título de la tarea",
+    "status": "Estado",
+    "due": "Vencimiento (YYYY-MM-DD, opcional)",
+    "content": "Contenido",
+    "contentPlaceholder": "Notas en markdown...",
+    "createSubmit": "Crear tarea",
+    "editSubmit": "Guardar cambios",
+    "delete": "Eliminar",
+    "newTitle": "Nueva tarea",
+    "editTitle": "Editar tarea",
+    "loadingTask": "Cargando...",
+    "notFound": "Tarea no encontrada.",
+    "confirmDeleteTitle": "Eliminar tarea",
+    "confirmDeleteMessage": "¿Eliminar esta tarea? Esta acción no se puede deshacer."
+  },
+  "noteList": {
+    "empty": "Sin notas. ¡Crea la primera!",
+    "loading": "Cargando..."
+  },
+  "noteForm": {
+    "title": "Título",
+    "titlePlaceholder": "Título de la nota",
+    "content": "Contenido",
+    "contentPlaceholder": "Escribe en markdown...",
+    "createSubmit": "Crear nota",
+    "editSubmit": "Guardar cambios",
+    "delete": "Eliminar",
+    "newTitle": "Nueva nota",
+    "editTitle": "Editar nota",
+    "loadingNote": "Cargando...",
+    "notFound": "Nota no encontrada.",
+    "confirmDeleteTitle": "Eliminar nota",
+    "confirmDeleteMessage": "Esta acción no se puede deshacer."
+  },
+  "dailyList": {
+    "empty": "Sin dailys todavía.",
+    "loading": "Cargando..."
+  },
+  "dailyForm": {
+    "today": "Hoy",
+    "previousPanel": "Previo",
+    "selectedPanel": "Seleccionado",
+    "previewEmpty": "(escribe tus actividades arriba)",
+    "placeholder": "Escribe tus actividades del día...",
+    "noPrevious": "Sin daily anterior registrado.",
+    "copyFormat": "Copiar formato",
+    "copiedLong": "¡Copiado!",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "loadingDaily": "Cargando...",
+    "confirmDeleteTitle": "Eliminar daily",
+    "confirmDeleteMessage": "Se eliminará el registro de este día. Esta acción no se puede deshacer."
+  },
+  "overtimeList": {
+    "empty": "Sin registros de horas extra todavía.",
+    "loading": "Cargando..."
+  },
+  "overtimeForm": {
+    "newTitle": "Nueva hora extra",
+    "editTitle": "Editar entrada",
+    "date": "Fecha",
+    "startTime": "Hora inicio",
+    "endTime": "Hora final",
+    "requestedBy": "Solicitada por",
+    "requesterPlaceholder": "Nombre del solicitante",
+    "activityDone": "Actividad realizada",
+    "activityPlaceholder": "Describe la actividad realizada...",
+    "compPay": "Compensatorio / Pago",
+    "comp": "Compensatorio",
+    "pay": "Pago",
+    "other": "Otro",
+    "breakdown": "Desglose automático",
+    "totalHours": "Total horas:",
+    "extraDay": "Extras diurnas:",
+    "extraNight": "Extras nocturnas:",
+    "holidayDay": "Diurnas festivas:",
+    "holidayNight": "Nocturnas festivas:",
+    "createSubmit": "Crear",
+    "editSubmit": "Guardar cambios",
+    "delete": "Eliminar",
+    "loadingEntry": "Cargando...",
+    "notFound": "Registro no encontrado.",
+    "confirmDeleteTitle": "Eliminar registro de horas extra",
+    "confirmDeleteMessage": "Esta acción no se puede deshacer."
+  },
+  "entityCount": {
+    "loading": "Cargando...",
+    "count": "{{count}} registros locales"
+  },
+  "db": {
+    "initializing": "Inicializando DB...",
+    "error": "DB error: {{message}}"
+  }
+}

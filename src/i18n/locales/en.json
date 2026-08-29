@@ -1,0 +1,137 @@
+{
+  "common": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "save": "Save"
+  },
+  "tabs": {
+    "tasks": "Tasks",
+    "notes": "Notes",
+    "dailys": "Dailys",
+    "overtime": "Overtime",
+    "settings": "Settings"
+  },
+  "settings": {
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "language": "Language",
+    "languageEs": "Español",
+    "languageEn": "English",
+    "behavior": "Behavior",
+    "confirmDeleteTitle": "Confirm deletions",
+    "confirmDeleteDesc": "Show a dialog before deleting notes, tasks, dailys, and overtime entries.",
+    "confirmDeleteEnabled": "Enabled",
+    "confirmDeleteDisabled": "Disabled"
+  },
+  "search": {
+    "placeholder": "Search tasks, notes, dailys, overtime...",
+    "typeHint": "Type to search",
+    "noResultsFor": "No results for",
+    "tasksTitle": "Tasks",
+    "notesTitle": "Notes",
+    "dailysTitle": "Dailys",
+    "overtimeTitle": "Overtime"
+  },
+  "taskList": {
+    "empty": "No tasks yet. Create the first one!",
+    "loading": "Loading..."
+  },
+  "taskForm": {
+    "title": "Title",
+    "titlePlaceholder": "Task title",
+    "status": "Status",
+    "due": "Due date (YYYY-MM-DD, optional)",
+    "content": "Content",
+    "contentPlaceholder": "Markdown notes...",
+    "createSubmit": "Create task",
+    "editSubmit": "Save changes",
+    "delete": "Delete",
+    "newTitle": "New task",
+    "editTitle": "Edit task",
+    "loadingTask": "Loading...",
+    "notFound": "Task not found.",
+    "confirmDeleteTitle": "Delete task",
+    "confirmDeleteMessage": "Delete this task? This action cannot be undone."
+  },
+  "noteList": {
+    "empty": "No notes yet. Create the first one!",
+    "loading": "Loading..."
+  },
+  "noteForm": {
+    "title": "Title",
+    "titlePlaceholder": "Note title",
+    "content": "Content",
+    "contentPlaceholder": "Write in markdown...",
+    "createSubmit": "Create note",
+    "editSubmit": "Save changes",
+    "delete": "Delete",
+    "newTitle": "New note",
+    "editTitle": "Edit note",
+    "loadingNote": "Loading...",
+    "notFound": "Note not found.",
+    "confirmDeleteTitle": "Delete note",
+    "confirmDeleteMessage": "This action cannot be undone."
+  },
+  "dailyList": {
+    "empty": "No dailys yet.",
+    "loading": "Loading..."
+  },
+  "dailyForm": {
+    "today": "Today",
+    "previousPanel": "Previous",
+    "selectedPanel": "Selected",
+    "previewEmpty": "(write your activities above)",
+    "placeholder": "Write today's activities...",
+    "noPrevious": "No previous daily recorded.",
+    "copyFormat": "Copy format",
+    "copiedLong": "Copied!",
+    "save": "Save",
+    "delete": "Delete",
+    "loadingDaily": "Loading...",
+    "confirmDeleteTitle": "Delete daily",
+    "confirmDeleteMessage": "This day's entry will be deleted. This action cannot be undone."
+  },
+  "overtimeList": {
+    "empty": "No overtime entries yet.",
+    "loading": "Loading..."
+  },
+  "overtimeForm": {
+    "newTitle": "New overtime entry",
+    "editTitle": "Edit entry",
+    "date": "Date",
+    "startTime": "Start time",
+    "endTime": "End time",
+    "requestedBy": "Requested by",
+    "requesterPlaceholder": "Requester name",
+    "activityDone": "Activity performed",
+    "activityPlaceholder": "Describe the performed activity...",
+    "compPay": "Compensation / Payment",
+    "comp": "Compensatory",
+    "pay": "Payment",
+    "other": "Other",
+    "breakdown": "Automatic breakdown",
+    "totalHours": "Total hours:",
+    "extraDay": "Daytime overtime:",
+    "extraNight": "Nighttime overtime:",
+    "holidayDay": "Holiday daytime:",
+    "holidayNight": "Holiday nighttime:",
+    "createSubmit": "Create",
+    "editSubmit": "Save changes",
+    "delete": "Delete",
+    "loadingEntry": "Loading...",
+    "notFound": "Entry not found.",
+    "confirmDeleteTitle": "Delete overtime entry",
+    "confirmDeleteMessage": "This action cannot be undone."
+  },
+  "entityCount": {
+    "loading": "Loading...",
+    "count": "{{count}} local records"
+  },
+  "db": {
+    "initializing": "Initializing DB...",
+    "error": "DB error: {{message}}"
+  }
+}

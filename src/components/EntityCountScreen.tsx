@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { countRows } from '../db';
+import { useTheme } from '../theme/ThemeContext';
 
 interface EntityCountScreenProps {
   label: string;
@@ -9,6 +11,8 @@ interface EntityCountScreenProps {
 }
 
 export function EntityCountScreen({ label, table }: EntityCountScreenProps) {
+  const { t } = useTranslation();
+  const theme = useTheme();
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
@@ -16,9 +20,11 @@ export function EntityCountScreen({ label, table }: EntityCountScreenProps) {
   }, [table]);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{label}</Text>
-      <Text>{count === null ? 'Cargando...' : `${count} registros locales`}</Text>
+    <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
+      <Text style={[styles.title, { color: theme.textPrimary }]}>{label}</Text>
+      <Text style={{ color: theme.textSecondary }}>
+        {count === null ? t('entityCount.loading') : t('entityCount.count', { count })}
+      </Text>
     </View>
   );
 }

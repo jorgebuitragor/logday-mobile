@@ -33,3 +33,14 @@ hasta tres archivos:
 | Arquitectura inicial | en progreso | [`arquitectura-inicial/`](./arquitectura-inicial/requirements.md) |
 | Esquema de datos local | implementado (baseline) | [`esquema-datos/`](./esquema-datos/requirements.md) |
 | Navegación | implementado | [`navegacion/`](./navegacion/requirements.md) |
+| Pantalla de Tasks | implementado (pendiente confirmación en vivo) | [`pantalla-tasks/`](./pantalla-tasks/requirements.md) |
+| Temas | implementado (pendiente confirmación en vivo) | [`temas/`](./temas/requirements.md) |
+| i18n | implementado (pendiente confirmación en vivo) | [`i18n/`](./i18n/requirements.md) |
+| Pantalla de Ajustes | implementado (pendiente confirmación en vivo) | [`pantalla-ajustes/`](./pantalla-ajustes/requirements.md) |
+| Branding | implementado (pendiente confirmación en vivo) | [`branding/`](./branding/requirements.md) |
+| Pantalla de Notes | implementado y verificado en vivo | [`pantalla-notes/`](./pantalla-notes/requirements.md) |
+| Pantalla de Dailys | implementado (pendiente confirmación en vivo) | [`pantalla-dailys/`](./pantalla-dailys/requirements.md) |
+| Pantalla de Overtime | implementado (pendiente confirmación en vivo) | [`pantalla-overtime/`](./pantalla-overtime/requirements.md) |
+| Confirmación antes de eliminar | implementado (pendiente confirmación en vivo) | [`confirmacion-eliminar/`](./confirmacion-eliminar/requirements.md) |
+| Acciones desde la lista | implementado (pendiente confirmación en vivo) | [`acciones-lista/`](./acciones-lista/requirements.md) |
+| Búsqueda global | implementado (pendiente confirmación en vivo) | [`busqueda/`](./busqueda/requirements.md) |

@@ -75,6 +75,21 @@ actualizaban solos). Arreglado forzando un remount completo del
 depender de que React Navigation propague `options.title` de forma
 reactiva desde afuera del árbol de cada pantalla.
 
+## Barra de estado de Android en blanco (corregido 2026-08-29)
+
+Nunca se declaró un `<StatusBar>` (de `expo-status-bar`) en la app —
+el estilo de íconos de la barra de notificaciones quedaba en lo que
+sea que Android decidiera por defecto, que en modo claro terminaba
+siendo íconos claros sobre el header claro (`theme.bgPanel` blanco en
+tema `light`): invisibles, se leía como "la barra se ve totalmente
+blanca". Agregado en `app/_layout.tsx`
+(`<StatusBar style={scheme === 'light' ? 'dark' : 'light'} />`, usando
+el nuevo `useThemeScheme()` de `ThemeContext.tsx`) — con edge-to-edge
+(comportamiento por defecto en Android/Expo actual) la barra ya no
+tiene `backgroundColor` propio configurable vía `expo-status-bar` (es
+un overlay transparente sobre el contenido), así que lo único que
+hacía falta era fijar el color de íconos/texto según el tema activo.
+
 ## Explícitamente pendiente
 
 - Revisión visual del ícono monocromático (generado automático, sin

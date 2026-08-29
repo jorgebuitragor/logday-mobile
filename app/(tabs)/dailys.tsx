@@ -55,9 +55,7 @@ export default function DailysScreen() {
         ListEmptyComponent={<EmptyState icon={CalendarDays} message={t('dailyList.empty')} />}
         renderItem={({ item }) => (
           <SwipeableRow
-            editLabel={t('common.edit')}
             deleteLabel={t('common.delete')}
-            onEdit={() => router.push(`/daily/${item.date}`)}
             onDelete={() => confirmDelete.request(item, performDelete)}
           >
             <Pressable

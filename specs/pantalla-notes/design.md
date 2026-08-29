@@ -60,12 +60,31 @@ retrofit acá.
   chico y `tags` como chips con `theme.accentSoft`/`theme.accentInk` —
   mismos tokens que ya usa `TaskForm` para sus chips de tags, para no
   inventar una paleta nueva.
-- No hay picker de carpetas existentes ni filtro por tag desde el
-  listado — ver "Fuera de este spec" en `requirements.md`.
+- No hay picker de carpetas existentes — ver "Explícitamente
+  pendiente".
+
+## Filtro por folder/tag (agregado 2026-08-29)
+
+`app/(tabs)/notes.tsx` calcula `folders`/`tags` como los valores
+distintos presentes en `notes` (`useMemo`, `Array.from(new Set(...))`,
+ordenados alfabéticamente) y los muestra como chips horizontales
+(`ScrollView horizontal`) sobre la lista, solo si hay al menos uno de
+los dos. Cada grupo (folder, tag) es de selección única y togglea al
+tocar de nuevo el chip activo (`filterFolder === folder ? null : folder`)
+— mismo comportamiento que `filterTag`/`setFilterTag` en el dropdown
+de ordenar de `NoteList.tsx` de desktop, adaptado a chips visibles en
+vez de un menú desplegable (mobile no tiene el árbol de carpetas del
+sidebar de desktop, así que folder se filtra igual que tag: por chip,
+no por navegación jerárquica). Ambos filtros combinan con AND. Estado
+vacío distinto cuando el filtro no tiene resultados
+(`noteList.emptyFiltered`) vs. cuando no hay notas en absoluto
+(`noteList.empty`), para no mostrar el CTA de "crea la primera" cuando
+en realidad sí hay notas, solo que ninguna calza con el filtro activo.
 
 ## Explícitamente pendiente
 
-- Picker/autocompletado de `folder` a partir de carpetas existentes.
-- Filtro por `tag`/`folder` desde el listado.
+- Picker/autocompletado de `folder` a partir de carpetas existentes
+  (en el formulario de creación/edición, no en el filtro — ese ya
+  existe, ver arriba).
 - Menú de más acciones (renombrar, duplicar, copiar, exportar, abrir
   en el sistema) — sin equivalente táctil construido.

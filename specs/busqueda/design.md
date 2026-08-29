@@ -28,6 +28,18 @@ navegación normal (no la búsqueda apilada debajo).
 esto (ahí es un atajo de teclado, `Cmd+F`/`Ctrl+F`), así que el ícono
 es una decisión de diseño propia de mobile, no un port.
 
+## Bug de contraste en el input (corregido 2026-08-29)
+
+El texto escrito no se distinguía del fondo. Causa: el color/fondo se
+aplicaban al `View` contenedor (`inputWrap`), no al `TextInput` en sí
+— en Android, un `TextInput` sin `backgroundColor` propio puede
+heredar/mostrar el fondo por defecto del widget nativo en vez del de
+su contenedor, tapando el texto según el tema activo. Corregido
+aplicando `borderColor`/`backgroundColor`/`color` directo al
+`TextInput` (mismo patrón que ya usan `TaskForm`/`NoteForm`/
+`OvertimeForm`, que nunca tuvieron este problema por eso mismo), más
+`selectionColor={theme.accent}`.
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.

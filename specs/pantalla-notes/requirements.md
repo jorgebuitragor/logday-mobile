@@ -26,6 +26,11 @@ por CRUD real.
   adaptado a chips táctiles en vez de texto pequeño inline.
 - El sistema DEBERÁ ofrecer una acción visible para crear una nota
   nueva desde el listado.
+- El sistema DEBERÁ permitir filtrar el listado por `folder` y/o por
+  `tag`, con chips derivados de los valores distintos presentes en las
+  notas cargadas — mismo concepto que "Filtrar por tag" del menú de
+  ordenar de `NoteList.tsx` en desktop, extendido a `folder` (agregado
+  2026-08-29, ver `design.md`).
 
 ### Creación y edición
 
@@ -63,10 +68,6 @@ por CRUD real.
   (agrupar/anotar notas por texto), y evita inventar una UI de
   navegación por carpetas fuera del patrón de listado plano que usan
   las 4 entidades.
-- Filtrado/búsqueda de notas por `tag` o `folder` desde el listado —
-  desktop lo tiene en el menú de ordenar de `NoteList.tsx`
-  (`filterByTag`); mobile no tiene ese menú. Queda para
-  `busqueda/` si se decide extenderlo ahí.
 - Renombrar, duplicar, copiar, exportar o "abrir en el sistema" una
   nota — acciones del menú contextual de desktop sin equivalente
   táctil construido todavía; no hay superficie de "más acciones" en

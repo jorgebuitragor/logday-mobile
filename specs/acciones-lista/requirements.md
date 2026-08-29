@@ -15,14 +15,17 @@ sheet ni una réplica pixel-a-pixel del menú de desktop.
 ## Requisitos (EARS)
 
 - Cada fila de las 4 listas (Tasks, Notes, Dailys, Overtime) DEBERÁ
-  revelar, al deslizar hacia la izquierda, dos acciones: Editar y
-  Eliminar.
-- "Editar" DEBERÁ navegar a la misma pantalla que tocar la fila
-  directamente (no hay una acción de edición distinta de abrir el
-  formulario).
+  revelar Eliminar al deslizar hacia la izquierda, y disparar la
+  eliminación cuando el swipe se completa (pasa el umbral y se suelta)
+  — no requiere un tap adicional sobre un botón (agregado
+  2026-08-29, corrige la versión anterior que sí lo requería).
+- El sistema NO DEBERÁ ofrecer una acción de "Editar" en el swipe
+  (retirado 2026-08-29) — tocar la fila ya navega a la edición, un
+  botón de swipe duplicaba esa misma acción sin aportar nada.
 - "Eliminar" DEBERÁ pasar por el flujo de confirmación de
   `confirmacion-eliminar/requirements.md` — no eliminar directo
-  ignorando la preferencia del usuario.
+  ignorando la preferencia del usuario, ni siquiera al eliminar por
+  swipe completo.
 
 ## Fuera de este spec
 

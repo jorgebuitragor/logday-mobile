@@ -1,80 +1,60 @@
-import { Pencil, Trash2 } from 'lucide-react-native';
+import { Trash2 } from 'lucide-react-native';
 import { useRef, type ReactNode } from 'react';
 import { Swipeable } from 'react-native-gesture-handler';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-
-import { useTheme } from '../theme/ThemeContext';
+import { StyleSheet, Text, View } from 'react-native';
 
 interface SwipeableRowProps {
   children: ReactNode;
-  onEdit: () => void;
   onDelete: () => void;
-  editLabel: string;
   deleteLabel: string;
 }
 
 /**
- * Swipe-para-revelar Editar/Eliminar — equivalente móvil del menú
- * contextual (click derecho) que usa desktop en las listas de
- * Tasks/Notes/etc. Un solo componente reusado en las 4 listas.
+ * Swipe-para-eliminar — equivalente móvil del menú contextual (click
+ * derecho) que usa desktop en las listas de Tasks/Notes/etc. Ya no
+ * incluye una acción de "Editar": tocar la fila abre la edición (cada
+ * pantalla ya define ese `onPress`), así que un botón de swipe
+ * duplicado sobraba. Deslizar **completamente** (pasar el umbral y
+ * soltar) dispara eliminar directo, vía `onSwipeableOpen` — no hace
+ * falta soltar y además tocar un botón aparte.
  */
-export function SwipeableRow({ children, onEdit, onDelete, editLabel, deleteLabel }: SwipeableRowProps) {
-  const theme = useTheme();
+export function SwipeableRow({ children, onDelete, deleteLabel }: SwipeableRowProps) {
   const ref = useRef<Swipeable>(null);
 
   function renderRightActions() {
     return (
-      <View style={styles.actions}>
-        <Pressable
-          style={[styles.action, styles.editAction, { backgroundColor: theme.accentStrong }]}
-          onPress={() => {
-            ref.current?.close();
-            onEdit();
-          }}
-        >
-          <Pencil color="#fff" size={18} strokeWidth={2} />
-          <Text style={styles.actionText}>{editLabel}</Text>
-        </Pressable>
-        <Pressable
-          style={[styles.action, styles.deleteAction, { backgroundColor: '#dc2626' }]}
-          onPress={() => {
-            ref.current?.close();
-            onDelete();
-          }}
-        >
-          <Trash2 color="#fff" size={18} strokeWidth={2} />
-          <Text style={styles.actionText}>{deleteLabel}</Text>
-        </Pressable>
+      <View style={[styles.action, { backgroundColor: '#dc2626' }]}>
+        <Trash2 color="#fff" size={20} strokeWidth={2} />
+        <Text style={styles.actionText}>{deleteLabel}</Text>
       </View>
     );
   }
 
   return (
-    <Swipeable ref={ref} renderRightActions={renderRightActions} overshootRight={false} rightThreshold={40}>
+    <Swipeable
+      ref={ref}
+      renderRightActions={renderRightActions}
+      overshootRight={false}
+      rightThreshold={100}
+      onSwipeableOpen={() => {
+        ref.current?.close();
+        onDelete();
+      }}
+    >
       {children}
     </Swipeable>
   );
 }
 
 const styles = StyleSheet.create({
-  actions: {
-    flexDirection: 'row',
-    marginVertical: 2,
-    marginLeft: 8,
-  },
   action: {
-    width: 72,
+    width: 88,
     justifyContent: 'center',
     alignItems: 'center',
     gap: 4,
-  },
-  editAction: {
-    borderTopLeftRadius: 8,
-    borderBottomLeftRadius: 8,
-  },
-  deleteAction: {
-    borderTopRightRadius: 8,
-    borderBottomRightRadius: 8,
+    borderRadius: 8,
+    marginVertical: 2,
+    marginLeft: 8,
   },
   actionText: {
     color: '#fff',

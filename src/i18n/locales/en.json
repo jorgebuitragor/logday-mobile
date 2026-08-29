@@ -71,6 +71,7 @@
   },
   "noteList": {
     "empty": "No notes yet. Create the first one!",
+    "emptyFiltered": "No notes match this filter.",
     "loading": "Loading...",
     "pinnedLabel": "Pinned note"
   },

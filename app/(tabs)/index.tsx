@@ -78,9 +78,7 @@ export default function TasksScreen() {
           const isOverdue = !!item.due && item.due < today && item.status !== 'done';
           return (
             <SwipeableRow
-              editLabel={t('common.edit')}
               deleteLabel={t('common.delete')}
-              onEdit={() => router.push(`/task/${item.id}`)}
               onDelete={() => confirmDelete.request(item, performDelete)}
             >
               <Pressable

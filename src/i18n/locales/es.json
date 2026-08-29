@@ -71,6 +71,7 @@
   },
   "noteList": {
     "empty": "Sin notas. ¡Crea la primera!",
+    "emptyFiltered": "Sin notas para este filtro.",
     "loading": "Cargando...",
     "pinnedLabel": "Nota destacada"
   },

@@ -51,16 +51,15 @@ export default function SearchScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
-      <View style={[styles.inputWrap, { borderColor: theme.border, backgroundColor: theme.bgInput }]}>
-        <TextInput
-          autoFocus
-          style={{ color: theme.textPrimary, flex: 1 }}
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t('search.placeholder')}
-          placeholderTextColor={theme.textFaint}
-        />
-      </View>
+      <TextInput
+        autoFocus
+        style={[styles.input, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
+        value={query}
+        onChangeText={setQuery}
+        placeholder={t('search.placeholder')}
+        placeholderTextColor={theme.textFaint}
+        selectionColor={theme.accent}
+      />
 
       {!query.trim() ? (
         <Text style={[styles.hint, { color: theme.textFaint }]}>{t('search.typeHint')}</Text>
@@ -111,11 +110,12 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
-  inputWrap: {
+  input: {
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    fontSize: 15,
   },
   hint: {
     textAlign: 'center',

@@ -87,9 +87,7 @@ export default function OvertimeScreen() {
         )}
         renderItem={({ item }) => (
           <SwipeableRow
-            editLabel={t('common.edit')}
             deleteLabel={t('common.delete')}
-            onEdit={() => router.push(`/overtime/${item.id}`)}
             onDelete={() => confirmDelete.request(item, performDelete)}
           >
             <Pressable

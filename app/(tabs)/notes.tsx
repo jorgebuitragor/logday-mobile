@@ -1,8 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Notebook, Pin } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -29,6 +29,8 @@ export default function NotesScreen() {
   const router = useRouter();
   const { confirmDestructiveActions } = usePreferences();
   const [notes, setNotes] = useState<Note[]>([]);
+  const [filterFolder, setFilterFolder] = useState<string | null>(null);
+  const [filterTag, setFilterTag] = useState<string | null>(null);
   const confirmDelete = useConfirmDelete<Note>(confirmDestructiveActions);
 
   const reload = useCallback(() => {
@@ -42,18 +44,65 @@ export default function NotesScreen() {
     reload();
   }
 
+  // Mismo concepto que "Filtrar por tag" en NoteList.tsx de desktop
+  // (dropdown de ordenar/filtrar), adaptado a chips horizontales —
+  // acá además se agrega folder, que desktop filtra desde un árbol de
+  // carpetas en el sidebar (sin equivalente directo en mobile).
+  const folders = useMemo(
+    () => Array.from(new Set(notes.map((n) => n.folder).filter(Boolean))).sort(),
+    [notes]
+  );
+  const tags = useMemo(
+    () => Array.from(new Set(notes.flatMap((n) => n.tags))).sort(),
+    [notes]
+  );
+  const filteredNotes = useMemo(
+    () =>
+      notes.filter(
+        (n) => (!filterFolder || n.folder === filterFolder) && (!filterTag || n.tags.includes(filterTag))
+      ),
+    [notes, filterFolder, filterTag]
+  );
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
+      {(folders.length > 0 || tags.length > 0) && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          {folders.map((folder) => (
+            <FilterChip
+              key={`folder-${folder}`}
+              label={folder}
+              active={filterFolder === folder}
+              onPress={() => setFilterFolder(filterFolder === folder ? null : folder)}
+            />
+          ))}
+          {tags.map((tag) => (
+            <FilterChip
+              key={`tag-${tag}`}
+              label={`#${tag}`}
+              active={filterTag === tag}
+              onPress={() => setFilterTag(filterTag === tag ? null : tag)}
+            />
+          ))}
+        </ScrollView>
+      )}
       <FlatList
-        data={notes}
+        data={filteredNotes}
         keyExtractor={(note) => note.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={<EmptyState icon={Notebook} message={t('noteList.empty')} />}
+        ListEmptyComponent={
+          <EmptyState
+            icon={Notebook}
+            message={notes.length > 0 ? t('noteList.emptyFiltered') : t('noteList.empty')}
+          />
+        }
         renderItem={({ item }) => (
           <SwipeableRow
-            editLabel={t('common.edit')}
             deleteLabel={t('common.delete')}
-            onEdit={() => router.push(`/note/${item.id}`)}
             onDelete={() => confirmDelete.request(item, performDelete)}
           >
             <Pressable
@@ -114,9 +163,40 @@ export default function NotesScreen() {
   );
 }
 
+function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      style={[
+        styles.chip,
+        {
+          backgroundColor: active ? theme.accentStrong : theme.bgPanel,
+          borderColor: active ? theme.accentStrong : theme.border,
+        },
+      ]}
+    >
+      <Text style={{ color: active ? '#fff' : theme.textSecondary, fontSize: 12 }} numberOfLines={1}>
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  filterRow: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    gap: 6,
+  },
+  chip: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
   },
   list: {
     padding: 16,

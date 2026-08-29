@@ -1,9 +1,10 @@
 # Pantalla de Notes — Requirements
 
 Estado: implementado, incluyendo paridad funcional con desktop para
-`pinned`/`folder`/`tags` (agregado 2026-08-29) y editor de texto
-enriquecido (agregado 2026-08-29, ver "Editor" abajo — corrige la
-decisión anterior de dejarlo fuera de alcance).
+`pinned`/`folder`/`tags` (agregado 2026-08-29) y formato de texto vía
+toolbar de markdown (agregado 2026-08-29, ver "Editor" abajo — un
+editor WYSIWYG real se probó el mismo día y se revirtió por bugs en
+vivo, ver design.md "Reversión a toolbar de markdown").
 
 ## Contexto
 
@@ -70,26 +71,25 @@ Se porta ese mismo modelo, no el formulario anterior:
 - El sistema DEBERÁ permitir marcar una nota como eliminada
   (soft-delete), no borrarla físicamente.
 
-### Editor de texto enriquecido (agregado 2026-08-29)
+### Formato de texto — toolbar de markdown (agregado 2026-08-29, reescrito el mismo día tras revertir el WYSIWYG)
 
-- El contenido de una nota DEBERÁ editarse con un editor de texto
-  enriquecido real (WYSIWYG) — no un `TextInput` de texto plano con
-  markdown escrito a mano — para que negrita, código, cabeceras, listas,
-  etc. se apliquen con botones de una barra de formato, igual que en
-  desktop (`NoteEditor.tsx`, basado en TipTap/ProseMirror).
-- El dato seguirá almacenándose como markdown (`notes.content`, mismo
-  esquema, mismo formato que desktop) — la conversión markdown ⇄ HTML
-  ocurre en el borde de guardado/carga (`src/lib/noteMarkdown.ts`), no
-  dentro del editor.
-- Se usa `@10play/tentap-editor` (TipTap sobre un WebView, vía
-  `react-native-webview`) en vez de una librería de formato basada en
-  insertar símbolos markdown en un `TextInput` plano — decisión
-  explícita del usuario, informado de que la alternativa liviana tenía
-  cero riesgo de los bugs de Android sin resolver reportados contra
-  esa librería (teclado que no aparece, editor que nunca inicializa en
-  ciertos dispositivos) y aun así prefirió WYSIWYG real. Ver
-  design.md para el detalle de esa decisión y el estado de
-  verificación en vivo.
+- El contenido de una nota DEBERÁ editarse en un `TextInput` de texto
+  plano (markdown), con una barra de formato (negrita, cursiva,
+  código, cabeceras H1/H2, lista con viñetas, lista numerada, cita,
+  enlace) que envuelve/antepone tokens de markdown sobre la selección
+  actual — no un editor WYSIWYG.
+- El dato sigue almacenándose como markdown (`notes.content`, mismo
+  esquema, mismo formato que desktop) sin ninguna conversión — el
+  `TextInput` edita el string tal cual se guarda.
+- **Historial de esta decisión**: se implementó primero un editor
+  WYSIWYG real (`@10play/tentap-editor`, TipTap sobre un WebView) por
+  pedido explícito del usuario, quien fue informado de antemano del
+  riesgo (issues abiertos y sin resolver en GitHub sobre Android:
+  teclado que no aparece, editor que nunca inicializa) y aun así
+  prefirió esa opción. Al probarlo en vivo el usuario reportó "muchos
+  bugs" — coincidiendo con el riesgo advertido — y pidió revertir a la
+  alternativa liviana que se le había recomendado originalmente. Ver
+  design.md, "Reversión a toolbar de markdown".
 
 ## Fuera de este spec
 
@@ -105,8 +105,12 @@ Se porta ese mismo modelo, no el formulario anterior:
   contextual de desktop — cubierto por `menu-contextual-notas/` (spec
   separado, en progreso a partir de 2026-08-29).
 - Cualquier lógica de sync.
-- Extensiones de formato más allá de las que trae
-  `TenTapStartKit`/`DEFAULT_TOOLBAR_ITEMS` de tentap-editor (tablas,
-  imágenes, colores, resaltado, checklist) — se usa el set por defecto
-  de la librería, sin bridges custom (ver design.md, por qué evitar el
-  "advanced setup").
+- Editor WYSIWYG real — probado y revertido (ver arriba); si se
+  retoma en el futuro, debe ser una decisión nueva del usuario, no
+  asumida por defecto.
+- Formato multilínea desde la toolbar (aplicar cabecera/lista/cita a
+  cada línea de una selección de varias líneas a la vez) — cada botón
+  solo afecta la línea donde empieza la selección, ver design.md.
+- Vista previa renderizada del markdown (preview) — el `TextInput`
+  muestra el texto crudo con los símbolos de markdown visibles,
+  igual que cualquier editor de texto plano.

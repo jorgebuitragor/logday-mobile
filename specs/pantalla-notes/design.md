@@ -1,7 +1,7 @@
 # Pantalla de Notes — Design
 
 Estado: implementado — ver `src/db/notes.ts`, `app/(tabs)/notes.tsx`,
-`app/note/new.tsx`, `app/note/[id].tsx`, `src/lib/noteMarkdown.ts`.
+`app/note/new.tsx`, `app/note/[id].tsx`, `src/components/MarkdownToolbar.tsx`.
 
 Mismo patrón que `pantalla-tasks/design.md` — no se repite lo ya
 establecido ahí (rutas fuera de `(tabs)`, `presentation: 'modal'`,
@@ -126,59 +126,59 @@ vacío distinto cuando el filtro no tiene resultados
 (`noteList.empty`), para no mostrar el CTA de "crea la primera" cuando
 en realidad sí hay notas, solo que ninguna calza con el filtro activo.
 
-## Editor de texto enriquecido (agregado 2026-08-29)
+## Formato de texto — historial y reversión (agregado 2026-08-29)
 
 Desktop no edita markdown a mano — `NoteEditor.tsx` usa TipTap 3 (sobre
-ProseMirror), un editor WYSIWYG real con una barra de formato que llama
-comandos del editor directamente (`editor.chain().focus().toggleBold().run()`,
-etc.), y solo serializa a markdown (`tiptap-markdown`) para guardar.
-TipTap es una librería de DOM/`contentEditable` — no corre nativo en
-React Native.
+ProseMirror), un editor WYSIWYG real. TipTap es una librería de
+DOM/`contentEditable` — no corre nativo en React Native.
 
-**Decisión** (presentada al usuario con los dos caminos reales, ver
-`pantalla-notes/requirements.md`): usar `@10play/tentap-editor` — TipTap
-corriendo dentro de un `WebView` (`react-native-webview`), con un
-puente JS↔RN. Se investigó la alternativa liviana (barra de botones
-que envuelve la selección con `**negrita**`/`` `código` ``/`# cabecera`
-sobre un `TextInput` plano — cero dependencia pesada, cero riesgo) y
-se le explicó al usuario el riesgo real de la opción WYSIWYG (dos
-issues abiertos y sin resolver en GitHub sobre Android: el teclado que
-a veces no aparece, y el editor que a veces nunca termina de
-inicializar en ciertos teléfonos) — el usuario prefirió igual el
-WYSIWYG real y aceptó verificarlo en vivo en su dispositivo como
-primer paso, antes de invertir en el resto de la feature (menú
-contextual, exportación).
+**Intento 1 (revertido el mismo día): `@10play/tentap-editor`** — TipTap
+corriendo dentro de un `WebView`. Se le presentaron al usuario los dos
+caminos reales (WYSIWYG vía WebView vs. toolbar liviana de markdown
+sobre un `TextInput`), se le advirtió explícitamente del riesgo (dos
+issues abiertos y sin resolver en GitHub sobre Android: teclado que a
+veces no aparece, editor que a veces nunca termina de inicializar), y
+aun así prefirió WYSIWYG real. Se implementó (conversión markdown ⇄
+HTML en `src/lib/noteMarkdown.ts` vía `markdown-it`/`turndown`, para no
+necesitar la "advanced setup" de la librería que hubiera forzado salir
+de Expo Go) y se pidió verificación en vivo antes de seguir con el
+resto de la feature (menú contextual, exportación) — **precisamente
+por ser la pieza de mayor riesgo**, siguiendo el criterio de checkpoints
+por fase.
 
-**markdown ⇄ HTML sin bridge extension custom** — `tentap-editor` no
-habla markdown de forma nativa (solo `getHTML()`/`getJSON()`/
-`getText()`); el mantenedor sugiere escribir una bridge extension
-propia envolviendo `tiptap-markdown` para eso, pero eso cae en su
-"advanced setup", que probablemente exige salir de Expo Go a un dev
-client — justo lo que se quería evitar. En cambio, la conversión se
-hace en JS plano, fuera del editor, en el borde de guardado/carga:
-`src/lib/noteMarkdown.ts` — `markdownToHtml()` (usa `markdown-it`) al
-cargar la nota (`editor.setContent(...)`, una vez que
-`useBridgeState(editor).isReady` es `true`) y `htmlToMarkdown()` (usa
-`turndown`) al guardar (tras `await editor.getHTML()`). Esto mantiene
-`tentap-editor` en su modo "basic usage" (confirmado compatible con
-Expo Go), a costa de perder fidelidad en ida y vuelta para markdown
-"exótico" que `turndown`/`markdown-it` no reproduzcan igual — riesgo
-aceptado, no verificado a fondo todavía con notas reales que vinieron
-de desktop.
+Al probarlo, el usuario reportó "muchos bugs" y pidió explícitamente
+revertir a la alternativa liviana — el riesgo advertido se materializó.
+Se revirtió por completo: `npm uninstall @10play/tentap-editor
+react-native-webview markdown-it turndown` (+ sus `@types`), se borró
+`src/lib/noteMarkdown.ts` (ya no hace falta ninguna conversión — el
+contenido vuelve a ser el mismo string markdown de siempre, editado
+directo).
 
-**Toolbar y tema**: se usa `<Toolbar editor={editor} />` con el set de
-ítems por defecto de la librería (`DEFAULT_TOOLBAR_ITEMS` — negrita,
-cursiva, tachado, subrayado, código en línea, cabeceras H1-H6 (vía
-submenú), listas con viñetas/numeradas, checklist, cita, enlace),
-sin curar todavía a un subconjunto más pequeño — pendiente de ver en
-vivo si se siente "abrumador" también. El tema del editor y de la
-toolbar (colores de fondo/ícono/estado activo) se mapean desde
-`ThemeTokens` en `buildEditorTheme()` (`app/note/[id].tsx`) usando la
-opción `theme` de `useEditorBridge` (tipo `RecursivePartial<EditorTheme>`
-de la propia librería) — no hay CSS inyectado a mano todavía para el
-contenido HTML dentro del WebView (tipografía/colores del *cuerpo* del
-documento), solo el fondo del WebView y la toolbar quedan temados;
-pendiente de revisar en vivo si el texto se ve legible en modo oscuro.
+**Implementación actual: `src/components/MarkdownToolbar.tsx`** —
+nueve botones (negrita, cursiva, código, H1, H2, lista con viñetas,
+lista numerada, cita, enlace) que operan sobre `content`/`selection`
+de `app/note/[id].tsx`:
+
+- Negrita/cursiva/código envuelven la selección actual con el token de
+  markdown correspondiente (`**`/`_`/`` ` ``) y reposicionan la
+  selección para que quede sobre el texto envuelto, no sobre los
+  tokens — así un segundo toque sobre el mismo botón puede "desenvolver"
+  visualmente si el usuario borra los símbolos a mano (no hay toggle
+  automático de detección de "ya está en negrita", a diferencia de un
+  editor real que sabe el estado del nodo).
+- H1/H2/lista/cita anteponen (o quitan, si ya está) un prefijo a la
+  **línea donde empieza la selección** — no a cada línea de una
+  selección multilínea, simplificación deliberada para no reescribir
+  un motor de bloques completo sobre texto plano.
+- Enlace envuelve la selección (o inserta el placeholder "texto" si no
+  hay selección) como `[texto](url)` y deja "url" preseleccionado para
+  reemplazar directo.
+- El `TextInput` de contenido es controlado en `selection` (`onSelectionChange`
+  + prop `selection`) para que los botones sepan dónde envolver y para
+  poder mover el cursor programáticamente después de cada acción — RN
+  soporta esto pero es más frágil que un editor real; si en el uso
+  real el cursor "salta" de forma rara tras usar un botón, es el punto
+  a revisar primero.
 
 ## Explícitamente pendiente
 
@@ -190,16 +190,10 @@ pendiente de revisar en vivo si el texto se ve legible en modo oscuro.
   separado, en progreso).
 - Exportación (Markdown/TXT/PDF, como desktop) — cubierto por
   `exportacion/` (spec separado, en progreso).
-- **Verificación en vivo pendiente** (crítico, no cosmético): esta es
-  la primera vez que se prueba `tentap-editor` en el dispositivo real
-  del usuario — hay dos issues abiertos en GitHub específicos de
-  Android (teclado que no aparece, editor que nunca inicializa) sin
-  workaround confirmado. Si aparecen en este dispositivo, la decisión
-  tomada arriba (WYSIWYG real vs. toolbar de markdown liviana) se
-  revisita con el usuario, no se fuerza un parche silencioso.
-- Curar `DEFAULT_TOOLBAR_ITEMS` a un subconjunto más pequeño si el
-  usuario lo siente "abrumador" también (mismo motivo que llevó a
-  simplificar el resto de esta pantalla).
-- CSS de tema para el *contenido* dentro del WebView (tipografía,
-  color de texto del cuerpo del documento en modo oscuro) — hoy solo
-  el fondo del WebView y la toolbar están temados.
+- Formato multilínea desde la toolbar, vista previa renderizada del
+  markdown, y reintroducir un editor WYSIWYG — ver "Fuera de este
+  spec" en requirements.md.
+- **Verificación en vivo pendiente** de esta nueva implementación
+  (toolbar de markdown): confirmar que envolver texto con cada botón
+  se siente natural, que el cursor no salta de forma inesperada tras
+  usar un botón, y que el resultado se ve bien al reabrir la nota.

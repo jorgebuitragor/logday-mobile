@@ -1,21 +1,13 @@
-import {
-  RichText,
-  Toolbar,
-  useBridgeState,
-  useEditorBridge,
-  type EditorTheme,
-  type RecursivePartial,
-} from '@10play/tentap-editor';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Folder, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
+import { MarkdownToolbar, type TextSelection } from '../../src/components/MarkdownToolbar';
 import { getNote, setNotePinned, softDeleteNote, updateNote, type NoteInput } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
-import { htmlToMarkdown, markdownToHtml } from '../../src/lib/noteMarkdown';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Note } from '../../src/types/note';
@@ -25,33 +17,11 @@ import type { Note } from '../../src/types/note';
 const PIN_COLOR = '#f59e0b';
 
 // Mismo debounce que `schedulesSave` en NoteEditor.tsx de desktop
-// (línea 963) — 600ms tras la última tecla/cambio de formato.
+// (línea 963) — 600ms tras la última tecla.
 const SAVE_DEBOUNCE_MS = 600;
 
 function normalizeTag(raw: string): string {
   return raw.trim().toLowerCase().replace(/\s+/g, '-');
-}
-
-function buildEditorTheme(theme: ReturnType<typeof useTheme>): RecursivePartial<EditorTheme> {
-  return {
-    webview: { backgroundColor: theme.bgBase },
-    toolbar: {
-      toolbarBody: { backgroundColor: theme.bgPanel, borderTopColor: theme.border, borderBottomColor: theme.border },
-      toolbarButton: { backgroundColor: theme.bgPanel },
-      iconWrapper: { backgroundColor: theme.bgPanel },
-      iconWrapperActive: { backgroundColor: theme.accentSoft },
-      icon: { tintColor: theme.textSecondary },
-      iconActive: { tintColor: theme.accentInk },
-      iconDisabled: { tintColor: theme.textFaint },
-      linkBarTheme: {
-        addLinkContainer: { backgroundColor: theme.bgPanel, borderTopColor: theme.border, borderBottomColor: theme.border },
-        linkInput: { backgroundColor: theme.bgInput, color: theme.textPrimary },
-        placeholderTextColor: theme.textFaint,
-        doneButton: { backgroundColor: theme.accentStrong },
-        doneButtonText: { color: '#fff' },
-      },
-    },
-  };
 }
 
 /**
@@ -61,8 +31,15 @@ function buildEditorTheme(theme: ReturnType<typeof useTheme>): RecursivePartial<
  * cuya superficie principal es **solo título + contenido**; carpeta,
  * tags y destacado son acciones secundarias en una barra superior, no
  * campos de un formulario — ver specs/pantalla-notes/design.md,
- * "Editor simplificado" (agregado 2026-08-29, reemplaza el NoteForm
- * anterior que mostraba los 4 campos a la vez).
+ * "Editor simplificado".
+ *
+ * El contenido usa un `TextInput` de texto plano + `MarkdownToolbar`
+ * (envuelve la selección con tokens de markdown) — no un editor
+ * WYSIWYG. Se probó `@10play/tentap-editor` (TipTap sobre WebView) y
+ * se revirtió: el usuario reportó varios bugs en vivo, coincidiendo
+ * con issues de Android sin resolver que ya se le habían advertido
+ * antes de elegir esa opción. Ver design.md, "Reversión a toolbar de
+ * markdown".
  */
 export default function NoteEditorScreen() {
   const { t } = useTranslation();
@@ -72,53 +49,36 @@ export default function NoteEditorScreen() {
   const { confirmDestructiveActions } = usePreferences();
   const [note, setNote] = useState<Note | null | undefined>(undefined);
   const [title, setTitle] = useState('');
-  const [contentLoaded, setContentLoaded] = useState(false);
+  const [content, setContent] = useState('');
+  const [selection, setSelection] = useState<TextSelection>({ start: 0, end: 0 });
   const [folderModalOpen, setFolderModalOpen] = useState(false);
   const [folderDraft, setFolderDraft] = useState('');
   const [tagsModalOpen, setTagsModalOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
   const confirmDelete = useConfirmDelete<true>(confirmDestructiveActions);
 
-  // Refs para que el flush del autosave (ver abajo) siempre lea el
-  // valor más reciente sin depender de closures potencialmente
-  // obsoletas del `setTimeout` — mismo problema que resuelve
-  // `activeNote` vía closure en desktop, pero acá con refs porque el
-  // contenido del editor solo se puede leer de forma async
-  // (`editor.getHTML()`), no puede venir de un simple `useState`.
+  // Refs para que el flush del autosave siempre lea el valor más
+  // reciente sin depender de closures obsoletas del `setTimeout` —
+  // mismo problema que resuelve `activeNote` vía closure en desktop.
   const titleRef = useRef('');
+  const contentRef = useRef('');
   const folderRef = useRef('');
   const tagsRef = useRef<string[]>([]);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const editorTheme = buildEditorTheme(theme);
-  const editor = useEditorBridge({
-    avoidIosKeyboard: true,
-    initialContent: '',
-    theme: editorTheme,
-    onChange: () => scheduleSave(),
-  });
-  const bridgeState = useBridgeState(editor);
 
   useEffect(() => {
     getNote(id).then((loaded) => {
       setNote(loaded);
       if (loaded) {
         setTitle(loaded.title);
+        setContent(loaded.content);
         titleRef.current = loaded.title;
+        contentRef.current = loaded.content;
         folderRef.current = loaded.folder;
         tagsRef.current = loaded.tags;
       }
     });
   }, [id]);
-
-  // El WebView del editor tarda un momento en inicializar — hasta que
-  // `bridgeState.isReady` no sea true, `setContent` no tiene efecto.
-  useEffect(() => {
-    if (note && bridgeState.isReady && !contentLoaded) {
-      editor.setContent(markdownToHtml(note.content));
-      setContentLoaded(true);
-    }
-  }, [note, bridgeState.isReady, contentLoaded]);
 
   function scheduleSave() {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
@@ -127,29 +87,25 @@ export default function NoteEditorScreen() {
 
   async function flushSave() {
     saveTimeoutRef.current = null;
-    const html = await editor.getHTML();
-    const content = htmlToMarkdown(html);
     await updateNote(id, {
       title: titleRef.current.trim(),
-      content,
+      content: contentRef.current,
       folder: folderRef.current,
       tags: tagsRef.current,
     });
   }
 
   // Guarda de inmediato (sin debounce) para cambios que no vienen de
-  // tecleo continuo — carpeta, tags, destacado — igual criterio que
-  // el resto de la app (autosave por operación discreta).
+  // tecleo continuo — carpeta, tags, destacado — igual criterio que el
+  // resto de la app (autosave por operación discreta).
   async function persistNow(overrides: Partial<NoteInput>) {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
-    const html = await editor.getHTML();
-    const content = htmlToMarkdown(html);
     const input: NoteInput = {
       title: titleRef.current.trim(),
-      content,
+      content: contentRef.current,
       folder: folderRef.current,
       tags: tagsRef.current,
       ...overrides,
@@ -161,6 +117,20 @@ export default function NoteEditorScreen() {
     setTitle(value);
     titleRef.current = value;
     scheduleSave();
+  }
+
+  function handleContentChange(value: string) {
+    setContent(value);
+    contentRef.current = value;
+    scheduleSave();
+  }
+
+  // Los botones de la toolbar de markdown mutan `content` directo
+  // (envuelven la selección actual) y piden reposicionar el cursor —
+  // mismo camino de guardado que tipear a mano.
+  function handleToolbarChange(nextValue: string, nextSelection: TextSelection) {
+    handleContentChange(nextValue);
+    setSelection(nextSelection);
   }
 
   async function togglePin() {
@@ -265,14 +235,19 @@ export default function NoteEditorScreen() {
         multiline
       />
 
-      <RichText editor={editor} style={{ flex: 1, backgroundColor: theme.bgBase }} />
+      <TextInput
+        style={[styles.contentInput, { color: theme.textBody }]}
+        value={content}
+        onChangeText={handleContentChange}
+        onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+        selection={selection}
+        placeholder={t('noteForm.contentPlaceholder')}
+        placeholderTextColor={theme.textFaint}
+        multiline
+        textAlignVertical="top"
+      />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.keyboardAvoider}
-      >
-        <Toolbar editor={editor} />
-      </KeyboardAvoidingView>
+      <MarkdownToolbar value={content} selection={selection} onChange={handleToolbarChange} />
 
       <Modal visible={folderModalOpen} transparent animationType="fade" onRequestClose={() => setFolderModalOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setFolderModalOpen(false)}>
@@ -385,8 +360,13 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 8,
   },
-  keyboardAvoider: {
-    width: '100%',
+  contentInput: {
+    flex: 1,
+    fontSize: 15,
+    lineHeight: 22,
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    minHeight: 200,
   },
   backdrop: {
     flex: 1,

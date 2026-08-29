@@ -77,7 +77,7 @@ function RootLayoutInner() {
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="task/new" options={{ title: t('taskForm.newTitle'), presentation: 'modal' }} />
         <Stack.Screen name="task/[id]" options={{ title: t('taskForm.editTitle'), presentation: 'modal' }} />
-        <Stack.Screen name="note/new" options={{ title: t('noteForm.newTitle'), presentation: 'modal' }} />
+        <Stack.Screen name="note/new" options={{ title: t('noteForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="note/[id]" options={{ title: t('noteForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="daily/[date]" options={{ title: t('tabs.dailys'), presentation: 'modal' }} />
         <Stack.Screen name="overtime/new" options={{ title: t('overtimeForm.newTitle'), presentation: 'modal' }} />

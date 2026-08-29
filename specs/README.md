@@ -38,7 +38,7 @@ hasta tres archivos:
 | i18n | implementado (pendiente confirmación en vivo) | [`i18n/`](./i18n/requirements.md) |
 | Pantalla de Ajustes | implementado (pendiente confirmación en vivo) | [`pantalla-ajustes/`](./pantalla-ajustes/requirements.md) |
 | Branding | implementado (pendiente confirmación en vivo) | [`branding/`](./branding/requirements.md) |
-| Pantalla de Notes | implementado y verificado en vivo | [`pantalla-notes/`](./pantalla-notes/requirements.md) |
+| Pantalla de Notes | implementado (CRUD base verificado en vivo; pin/folder/tags pendiente) | [`pantalla-notes/`](./pantalla-notes/requirements.md) |
 | Pantalla de Dailys | implementado (pendiente confirmación en vivo) | [`pantalla-dailys/`](./pantalla-dailys/requirements.md) |
 | Pantalla de Overtime | implementado (pendiente confirmación en vivo) | [`pantalla-overtime/`](./pantalla-overtime/requirements.md) |
 | Confirmación antes de eliminar | implementado (pendiente confirmación en vivo) | [`confirmacion-eliminar/`](./confirmacion-eliminar/requirements.md) |

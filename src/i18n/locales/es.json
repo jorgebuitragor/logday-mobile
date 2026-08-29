@@ -96,7 +96,9 @@
   },
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
+    "monthTotal": "Total: {{hours}}h"
   },
   "overtimeForm": {
     "newTitle": "Nueva hora extra",
@@ -124,7 +126,13 @@
     "loadingEntry": "Cargando...",
     "notFound": "Registro no encontrado.",
     "confirmDeleteTitle": "Eliminar registro de horas extra",
-    "confirmDeleteMessage": "Esta acción no se puede deshacer."
+    "confirmDeleteMessage": "Esta acción no se puede deshacer.",
+    "conflictTitle": "Horario superpuesto",
+    "conflictMessage_one": "El horario {{range}} se cruza con 1 registro existente el mismo día:",
+    "conflictMessage_other": "El horario {{range}} se cruza con {{count}} registros existentes el mismo día:",
+    "conflictNoActivity": "Sin actividad",
+    "reviewHours": "Revisar horario",
+    "saveAnyway": "Guardar de todas formas"
   },
   "entityCount": {
     "loading": "Cargando...",

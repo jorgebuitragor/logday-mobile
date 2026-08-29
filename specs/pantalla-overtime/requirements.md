@@ -44,13 +44,35 @@ extra (diurnas/nocturnas/festivas, festivos colombianos) se porta
   horas visibles en la fila.
 - El sistema DEBERÁ permitir eliminar (soft-delete) con confirmación
   según `confirmacion-eliminar/requirements.md`.
+- El listado DEBERÁ mostrar un estado vacío con ícono (`EmptyState` +
+  `Timer`, el mismo ícono que usa desktop en `OvertimeList.tsx` para su
+  empty state y que ya usa mobile en el tab bar) en vez de solo texto
+  plano (agregado 2026-08-29).
+- El listado DEBERÁ agrupar las entradas por mes (encabezado con
+  nombre de mes + año y el total de horas de ese mes), igual que el
+  "Total del mes" de `OvertimeList.tsx` en desktop, pero como un único
+  historial continuo con scroll en vez de la navegación mes-a-mes
+  (flechas prev/next) de desktop — adaptación táctil, ver `design.md`
+  (agregado 2026-08-29).
+
+### Conflictos de horario
+
+- El sistema DEBERÁ detectar, al guardar, si el rango horario nuevo se
+  cruza con otro registro existente el mismo día — puerto exacto del
+  algoritmo de `findConflicts` en `OvertimeEditor.tsx` (intervalos
+  `[start, end)`, excluyendo la propia entrada en edición).
+- Si hay conflictos, el sistema DEBERÁ mostrar un diálogo listando los
+  registros en conflicto (rango horario + actividad/solicitante) con
+  dos acciones: revisar el horario (cerrar el diálogo sin guardar) o
+  guardar de todas formas. Versión mobile-apropiada del modal de
+  conflicto de desktop, no pixel-idéntica (agregado 2026-08-29).
 
 ## Fuera de este spec
 
-- Detección de conflictos de horario superpuesto el mismo día
-  (`findConflicts` en `OvertimeEditor.tsx`) — desktop lo tiene, mobile
-  no todavía. Reducción de alcance explícita, no un descuido.
 - Exportar a Excel (`overtimeExcel.ts`).
-- Vista de preview/resumen mensual (`OvertimePreviewModal.tsx`).
+- Vista de preview/resumen mensual con tabla exportable
+  (`OvertimePreviewModal.tsx`) — el total por mes ya se muestra en el
+  listado (ver arriba), pero no hay vista de tabla detallada ni botón
+  de exportar.
 - `overtime_month_meta` (colaborador/cédula por mes) — sin pantalla
-  todavía.
+  todavía; no hay dónde configurar esos datos en mobile.

@@ -1,15 +1,48 @@
 import { useFocusEffect, useRouter } from 'expo-router';
+import { Timer } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
+import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { listOvertimeEntries, softDeleteOvertimeEntry } from '../../src/db/overtime';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { OvertimeEntry } from '../../src/types/overtime';
+
+interface MonthSection {
+  title: string; // "YYYY-MM"
+  totalHoras: number;
+  data: OvertimeEntry[];
+}
+
+function fmt(n: number): number {
+  return Math.round(n * 100) / 100;
+}
+
+// Agrupa por mes (fecha.slice(0, 7)) manteniendo el orden ya
+// descendente de `listOvertimeEntries` — reemplaza la navegación
+// mes-a-mes de desktop (`OvertimeList.tsx`: prevMonth/nextMonth) por
+// un único historial continuo con encabezados de mes, más apropiado
+// para scroll táctil. El total por mes sí se conserva (ver
+// specs/pantalla-overtime/design.md).
+function groupByMonth(entries: OvertimeEntry[]): MonthSection[] {
+  const sections: MonthSection[] = [];
+  for (const entry of entries) {
+    const key = entry.fecha.slice(0, 7);
+    const last = sections[sections.length - 1];
+    if (last && last.title === key) {
+      last.data.push(entry);
+      last.totalHoras += entry.totalHoras;
+    } else {
+      sections.push({ title: key, totalHoras: entry.totalHoras, data: [entry] });
+    }
+  }
+  return sections;
+}
 
 export default function OvertimeScreen() {
   const { t } = useTranslation();
@@ -18,6 +51,7 @@ export default function OvertimeScreen() {
   const { confirmDestructiveActions } = usePreferences();
   const [entries, setEntries] = useState<OvertimeEntry[]>([]);
   const confirmDelete = useConfirmDelete<OvertimeEntry>(confirmDestructiveActions);
+  const monthNames = t('overtimeList.months', { returnObjects: true }) as string[];
 
   const reload = useCallback(() => {
     listOvertimeEntries().then(setEntries);
@@ -30,15 +64,27 @@ export default function OvertimeScreen() {
     reload();
   }
 
+  function monthLabel(yearMonth: string): string {
+    const [year, month] = yearMonth.split('-').map(Number);
+    return `${monthNames[month - 1] ?? yearMonth} ${year}`;
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
-      <FlatList
-        data={entries}
+      <SectionList
+        sections={groupByMonth(entries)}
         keyExtractor={(entry) => entry.id}
         contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={[styles.empty, { color: theme.textMuted }]}>{t('overtimeList.empty')}</Text>
-        }
+        stickySectionHeadersEnabled={false}
+        ListEmptyComponent={<EmptyState icon={Timer} message={t('overtimeList.empty')} />}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{monthLabel(section.title)}</Text>
+            <Text style={[styles.sectionTotal, { color: theme.accent }]}>
+              {t('overtimeList.monthTotal', { hours: fmt(section.totalHoras) })}
+            </Text>
+          </View>
+        )}
         renderItem={({ item }) => (
           <SwipeableRow
             editLabel={t('common.edit')}
@@ -56,7 +102,7 @@ export default function OvertimeScreen() {
                   {item.horaInicio}–{item.horaFinal} · {item.actividad || item.solicitadaPor}
                 </Text>
               </View>
-              <Text style={{ color: theme.accent, fontWeight: '700' }}>{item.totalHoras}h</Text>
+              <Text style={{ color: theme.accent, fontWeight: '700' }}>{fmt(item.totalHoras)}h</Text>
             </Pressable>
           </SwipeableRow>
         )}
@@ -89,9 +135,22 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 8,
   },
-  empty: {
-    textAlign: 'center',
-    marginTop: 32,
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  sectionTotal: {
+    fontSize: 12,
+    fontWeight: '600',
   },
   row: {
     flexDirection: 'row',

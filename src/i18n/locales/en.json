@@ -96,7 +96,9 @@
   },
   "overtimeList": {
     "empty": "No overtime entries yet.",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+    "monthTotal": "Total: {{hours}}h"
   },
   "overtimeForm": {
     "newTitle": "New overtime entry",
@@ -124,7 +126,13 @@
     "loadingEntry": "Loading...",
     "notFound": "Entry not found.",
     "confirmDeleteTitle": "Delete overtime entry",
-    "confirmDeleteMessage": "This action cannot be undone."
+    "confirmDeleteMessage": "This action cannot be undone.",
+    "conflictTitle": "Overlapping schedule",
+    "conflictMessage_one": "The {{range}} time range overlaps with 1 existing entry the same day:",
+    "conflictMessage_other": "The {{range}} time range overlaps with {{count}} existing entries the same day:",
+    "conflictNoActivity": "No activity",
+    "reviewHours": "Review hours",
+    "saveAnyway": "Save anyway"
   },
   "entityCount": {
     "loading": "Loading...",

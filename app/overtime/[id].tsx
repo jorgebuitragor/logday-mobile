@@ -63,6 +63,7 @@ export default function EditOvertimeScreen() {
         }}
         onSubmit={handleSubmit}
         submitLabel={t('overtimeForm.editSubmit')}
+        entryId={id}
       />
       <Pressable
         style={[styles.deleteButton, { borderColor: '#dc2626' }]}

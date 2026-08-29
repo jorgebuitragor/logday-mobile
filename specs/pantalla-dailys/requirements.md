@@ -33,6 +33,11 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
 - El sistema DEBERÁ ofrecer un acceso directo a "Hoy" (crea o abre el
   registro del día actual) desde el listado — mismo atajo que
   `addToday`/`todayBtn` en desktop.
+- El sistema DEBERÁ ofrecer una forma de crear/abrir el registro de
+  **cualquier fecha**, no solo hoy — mismo propósito que
+  `addOtherDate`/`pickDateTitle` en desktop (agregado 2026-08-29,
+  corrige un hueco real: sin esto no había manera de registrar un
+  daily de un día anterior olvidado, solo el de hoy).
 
 ### Edición
 

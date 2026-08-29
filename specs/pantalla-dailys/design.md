@@ -144,6 +144,25 @@ para el borrado del daily completo.
   actividades (`parseActivityItems`) y las une con `" · "` en vez de
   mostrar el string crudo con los guiones `"- "` de cada línea.
 
+## Registrar un daily de una fecha distinta a hoy (agregado 2026-08-29)
+
+Bug real reportado por el usuario: el único punto de entrada era el
+FAB "Hoy" — no había forma de abrir/crear el registro de un día
+anterior olvidado (el listado solo muestra entradas que **ya**
+tienen contenido, así que un día pasado sin registrar era invisible e
+inalcanzable). Agregado un segundo botón (ícono `CalendarPlus`, junto
+al FAB "Hoy") que abre un modal simple con un campo de fecha en texto
+libre (`YYYY-MM-DD`, mismo criterio de fecha-como-texto que `due` en
+Task/`fecha` en Overtime — sin date-picker nativo) y un botón "Ir" que
+navega a `/daily/<fecha escrita>`. Mismo propósito que
+`addOtherDate`/`pickDateTitle` en `DailyList.tsx` de desktop.
+
+No hizo falta ningún cambio en `app/daily/[date].tsx` ni en
+`src/db/dailyEntries.ts` — esa pantalla ya funcionaba correctamente
+para cualquier fecha (clave natural, sin `id`, `upsertDailyEntry` crea
+la fila en el primer guardado); el hueco era puramente de navegación
+(no había cómo *llegar* a la pantalla con una fecha pasada).
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.

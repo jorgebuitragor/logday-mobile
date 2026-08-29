@@ -119,7 +119,9 @@
     "moveDown": "Move down",
     "deleteActivity": "Delete activity",
     "todayBadge": "TODAY",
-    "previewTitle": "Preview"
+    "previewTitle": "Preview",
+    "pickDateTitle": "Choose date for daily",
+    "goToDate": "Go"
   },
   "overtimeList": {
     "empty": "No overtime entries yet.",

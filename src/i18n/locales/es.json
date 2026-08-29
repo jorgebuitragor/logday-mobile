@@ -119,7 +119,9 @@
     "moveDown": "Bajar",
     "deleteActivity": "Eliminar actividad",
     "todayBadge": "HOY",
-    "previewTitle": "Vista previa"
+    "previewTitle": "Vista previa",
+    "pickDateTitle": "Elegir fecha para daily",
+    "goToDate": "Ir"
   },
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",

@@ -59,9 +59,13 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
 - El sistema DEBERÁ permitir reordenar actividades dentro de cada
   panel mediante botones subir/bajar por actividad.
 - El sistema DEBERÁ permitir **mover una actividad entre el panel
-  "Previo" y el "Seleccionado"** deslizándola (swipe) — agregado
-  2026-08-29, mismo mecanismo (`Swipeable`) que ya usan las listas
-  para eliminar, ver design.md.
+  "Previo" y el "Seleccionado"** de dos formas equivalentes, ambas
+  activas a la vez (agregado 2026-08-29): deslizándola (swipe, mismo
+  mecanismo `Swipeable` que ya usan las listas para eliminar) o
+  manteniendo presionado el ícono de grip de la fila y arrastrándola
+  hasta soltarla sobre el otro panel — pedido explícito del usuario
+  tras probar el swipe ("también es posible moverlo manteniendo
+  presionado y arrastrando"). Ver design.md.
 - El sistema DEBERÁ permitir copiar al portapapeles un mensaje
   formateado combinando el día anterior y el de hoy — mismo propósito
   que `copyFormattedTitle`/`buildDailyCopyText` de desktop — y
@@ -72,11 +76,14 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
 
 ## Fuera de este spec
 
-- Drag-and-drop con puntero/mouse para **reordenar dentro de un mismo
-  panel** — se usan botones subir/bajar (ver "Contexto" y design.md).
-  Sí se implementó un gesto de deslizar para **mover entre paneles**
-  (ver arriba) — son dos cosas distintas, no la misma reducción de
-  alcance.
+- Drag-and-drop para **reordenar dentro de un mismo panel** — se usan
+  botones subir/bajar (ver "Contexto" y design.md). Sí se implementó
+  swipe y mantener-presionado-y-arrastrar para **mover entre paneles**
+  (ver arriba) — son cosas distintas, no la misma reducción de
+  alcance: mover entre paneles es "sacar un ítem de una lista y
+  meterlo en otra" (sin reflow continuo), reordenar dentro de un panel
+  es "una lista que se reacomoda en vivo mientras arrastras", que sigue
+  sin estar implementado con gesto libre.
 - Promover una actividad a Task.
 - Autocompletar/sugerir tasks existentes al escribir una actividad
   (incluida la sintaxis `#codigo-tarea`).

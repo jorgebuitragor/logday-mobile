@@ -35,10 +35,29 @@ Estado: implementado, pendiente de confirmación en vivo.
       (`onMoveItemToOther`/`moveToOtherLabel` en
       `DailyActivityList.tsx`, mismo `Swipeable` que `SwipeableRow`).
 - [x] i18n: nuevas claves `dailyForm.moveToSelected`/`moveToPrevious`.
+- [x] Mantener presionado y arrastrar como segunda forma de mover
+      entre paneles (agregado 2026-08-29, a pedido del usuario tras
+      probar el swipe): ícono `GripVertical` por fila en
+      `DailyActivityList.tsx` con `Gesture.Pan().activateAfterLongPress(350)`
+      + `GestureDetector`, reporta el gesto hacia arriba
+      (`onItemDragStart`/`onItemDragMove`/`onItemDragEnd`, coordenadas
+      absolutas de pantalla) sin tocar su propio estado; orquestación
+      completa (refs de ambos paneles, `measureInWindow` para
+      hit-testing, fantasma flotante fuera del `ScrollView`,
+      `scrollEnabled={false}` durante el arrastre, `splice`+`push` con
+      `parseActivityItems`/`serializeActivityItems`) en
+      `app/daily/[date].tsx`.
 - [x] `npx tsc --noEmit` sin errores.
 - [ ] Verificar en vivo: abrir un día sin daily previo registrado y
       confirmar que el panel "Previo" ya deja añadir actividades
       directo (no muestra el mensaje de "sin daily anterior"); deslizar
       una actividad de "Seleccionado" hacia "Previo" y viceversa y
       confirmar que se guarda en la fecha correcta en ambos lados;
-      reordenar con subir/bajar sigue funcionando dentro de cada panel.
+      reordenar con subir/bajar sigue funcionando dentro de cada panel;
+      mantener presionado el grip de una actividad y arrastrarla hasta
+      el otro panel — confirmar que se mueve solo si se suelta dentro
+      de los límites del panel contrario (si se suelta afuera, no pasa
+      nada y la actividad vuelve a su posición), que el swipe sigue
+      funcionando normal para un deslizar rápido sin mantener
+      presionado, y que el scroll de la pantalla se bloquea mientras se
+      arrastra.

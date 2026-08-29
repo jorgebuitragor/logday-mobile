@@ -1,6 +1,6 @@
-import { ArrowLeftRight, ChevronDown, ChevronUp, Plus, Trash2 } from 'lucide-react-native';
+import { ArrowLeftRight, ChevronDown, ChevronUp, GripVertical, Plus, Trash2 } from 'lucide-react-native';
 import { useRef, useState } from 'react';
-import { Swipeable } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, Swipeable } from 'react-native-gesture-handler';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
@@ -48,6 +48,21 @@ interface DailyActivityListProps {
   /** Si se pasan, cada actividad se puede deslizar para moverla al otro panel (Previo ⇄ Seleccionado). */
   moveToOtherLabel?: string;
   onMoveItemToOther?: (item: string) => void;
+  /**
+   * Mantener presionado el grip (`GripVertical`) y arrastrar — segunda
+   * forma de mover una actividad al otro panel, alternativa al swipe.
+   * Este componente solo reporta el gesto (índice + coordenadas
+   * absolutas de pantalla); no toca su propio estado. `value`/
+   * `onChange` son controlados por el padre (`app/daily/[date].tsx`),
+   * que ya conoce el contenido de AMBOS paneles y los límites de sus
+   * layouts, así que es quien decide en `onItemDragEnd` si el soltar
+   * cayó sobre el otro panel y, de ser así, hace el `splice`+`push`
+   * directamente sobre `content`/`previousContent` — sin que este
+   * componente necesite saber nada del panel destino.
+   */
+  onItemDragStart?: (index: number, item: string, pageX: number, pageY: number) => void;
+  onItemDragMove?: (pageX: number, pageY: number) => void;
+  onItemDragEnd?: (pageX: number, pageY: number) => void;
 }
 
 /**
@@ -56,26 +71,16 @@ interface DailyActivityListProps {
  * versión de esta pantalla.
  *
  * Puerto del modelo de interacción de `ActivityList` en
- * `DailyEditor.tsx` de desktop, adaptado a táctil: el drag-and-drop con
- * mouse (grip + arrastrar) no tiene un equivalente táctil directo y
- * fiable sin una librería adicional, así que **reordenar dentro del
- * mismo panel** se hace con botones subir/bajar; **mover entre
- * paneles** (Previo ⇄ Seleccionado, ver `onMoveItemToOther`) sí se
- * implementa como gesto de deslizar (swipe), reusando el mismo
- * mecanismo (`react-native-gesture-handler` `Swipeable`) que
- * `SwipeableRow` ya usa para eliminar en las listas — un "arrastre"
- * direccional consistente con el resto de la app, sin necesitar
- * drag-and-drop de posición libre entre dos `ScrollView` separados.
- * Ver design.md para el resto de reducciones de alcance (promover a
- * tarea, autocompletar tareas existentes, menú contextual de
- * actividad).
- *
- * Tanto el input de "nueva actividad" como el de edición in-line son de
- * una sola línea — desktop soporta Shift+Enter en el textarea de edición
- * para insertar un salto de línea dentro de una actividad; ese caso de
- * borde no se replica en mobile (un salto de línea preexistente,
- * creado en desktop, se conserva al guardar si no se toca esa actividad,
- * pero no es cómodo de editar como texto multilínea aquí).
+ * `DailyEditor.tsx` de desktop, adaptado a táctil. **Reordenar dentro
+ * del mismo panel** se hace con botones subir/bajar (el drag-and-drop
+ * de desktop con mouse no traduce 1:1 a gestos táctiles). **Mover
+ * entre paneles** (Previo ⇄ Seleccionado) tiene dos formas, ambas
+ * activas a la vez: deslizar la fila (swipe, `onMoveItemToOther`) o
+ * mantener presionado el grip y arrastrar (`onItemDragStart`/
+ * `onItemDragMove`/`onItemDragEnd`) — ver design.md para por qué el
+ * grip usa un ícono dedicado en vez de disparar el arrastre desde
+ * cualquier punto de la fila (evita pelear por el gesto con el tap de
+ * editar y con el swipe de la fila completa).
  */
 export function DailyActivityList({
   value,
@@ -87,12 +92,16 @@ export function DailyActivityList({
   deleteLabel,
   moveToOtherLabel,
   onMoveItemToOther,
+  onItemDragStart,
+  onItemDragMove,
+  onItemDragEnd,
 }: DailyActivityListProps) {
   const theme = useTheme();
   const items = parseActivityItems(value);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
   const [newText, setNewText] = useState('');
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   function commit(nextItems: string[]) {
     onChange(serializeActivityItems(nextItems));
@@ -146,8 +155,40 @@ export function DailyActivityList({
   return (
     <View style={styles.container}>
       {items.map((item, index) => {
+        const dragGesture =
+          onItemDragStart && onItemDragEnd
+            ? Gesture.Pan()
+                .activateAfterLongPress(350)
+                .onStart((e) => {
+                  setDraggingIndex(index);
+                  onItemDragStart(index, item, e.absoluteX, e.absoluteY);
+                })
+                .onUpdate((e) => {
+                  onItemDragMove?.(e.absoluteX, e.absoluteY);
+                })
+                .onEnd((e) => {
+                  onItemDragEnd(e.absoluteX, e.absoluteY);
+                })
+                .onFinalize(() => {
+                  setDraggingIndex(null);
+                })
+            : null;
+
         const row = (
-          <View style={[styles.row, { borderColor: theme.border, backgroundColor: theme.bgBase }]}>
+          <View
+            style={[
+              styles.row,
+              { borderColor: theme.border, backgroundColor: theme.bgBase },
+              draggingIndex === index && styles.rowDragging,
+            ]}
+          >
+            {dragGesture ? (
+              <GestureDetector gesture={dragGesture}>
+                <View style={styles.gripButton} hitSlop={6}>
+                  <GripVertical size={16} color={theme.textFaint} />
+                </View>
+              </GestureDetector>
+            ) : null}
             {editingIndex === index ? (
               <TextInput
                 style={[styles.editInput, { color: theme.textPrimary }]}
@@ -260,6 +301,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     gap: 8,
+  },
+  rowDragging: {
+    opacity: 0.35,
+  },
+  gripButton: {
+    padding: 4,
+    marginLeft: -4,
   },
   textWrap: {
     flex: 1,

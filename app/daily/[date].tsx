@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -24,6 +24,26 @@ export default function DailyEditorScreen() {
   const [previousContent, setPreviousContent] = useState('');
   const [copied, setCopied] = useState(false);
   const confirmDelete = useConfirmDelete<true>(confirmDestructiveActions);
+
+  // Arrastre entre paneles (mantener presionado el grip + mover) —
+  // segunda forma de mover una actividad, además del swipe existente
+  // (`movePreviousToSelected`/`moveSelectedToPrevious`). A diferencia
+  // del swipe, acá `DailyActivityList` no toca su propio estado: solo
+  // reporta índice + coordenadas absolutas de pantalla, y es esta
+  // pantalla (que ya tiene `content`/`previousContent` de ambos
+  // paneles) quien decide en `handleDragEnd` si el soltar cayó sobre
+  // el OTRO panel — usando `measureInWindow` sobre estas refs — y
+  // hace el `splice`+`push` con las mismas utilidades de serialización
+  // que ya usa el swipe.
+  const previousPanelRef = useRef<View>(null);
+  const selectedPanelRef = useRef<View>(null);
+  const [dragState, setDragState] = useState<{
+    panel: 'previous' | 'selected';
+    index: number;
+    item: string;
+    x: number;
+    y: number;
+  } | null>(null);
 
   // "Previo" es siempre `date - 1 día` (no "la entrada anterior no
   // vacía más reciente", como en la primera versión) — el usuario debe
@@ -68,6 +88,44 @@ export default function DailyEditorScreen() {
     handlePreviousChange(next);
   }
 
+  function handleDragStart(panel: 'previous' | 'selected', index: number, item: string, x: number, y: number) {
+    setDragState({ panel, index, item, x, y });
+  }
+
+  function handleDragMove(x: number, y: number) {
+    setDragState((prev) => (prev ? { ...prev, x, y } : prev));
+  }
+
+  // El soltar solo "cuenta" si cayó dentro de los límites del panel
+  // CONTRARIO al de origen — medidos en vivo con `measureInWindow`
+  // (no basta con guardar el layout una vez: el scroll pudo mover los
+  // paneles desde que empezó el arrastre... salvo que acá el scroll ya
+  // está bloqueado, ver `scrollEnabled={!dragState}` más abajo, pero
+  // medir en vivo igual es más robusto que asumir un layout fijo).
+  function handleDragEnd(x: number, y: number) {
+    const active = dragState;
+    setDragState(null);
+    if (!active) return;
+    const targetRef = active.panel === 'previous' ? selectedPanelRef : previousPanelRef;
+    targetRef.current?.measureInWindow((tx, ty, tw, th) => {
+      const hit = x >= tx && x <= tx + tw && y >= ty && y <= ty + th;
+      if (!hit) return;
+      if (active.panel === 'previous') {
+        const sourceItems = parseActivityItems(previousContent);
+        const item = sourceItems[active.index];
+        if (item === undefined) return;
+        handlePreviousChange(serializeActivityItems(sourceItems.filter((_, i) => i !== active.index)));
+        handleContentChange(serializeActivityItems([...parseActivityItems(content), item]));
+      } else {
+        const sourceItems = parseActivityItems(content);
+        const item = sourceItems[active.index];
+        if (item === undefined) return;
+        handleContentChange(serializeActivityItems(sourceItems.filter((_, i) => i !== active.index)));
+        handlePreviousChange(serializeActivityItems([...parseActivityItems(previousContent), item]));
+      }
+    });
+  }
+
   async function performDelete() {
     await softDeleteDailyEntry(date);
     router.back();
@@ -92,7 +150,12 @@ export default function DailyEditorScreen() {
   const previewText = buildDailyCopyText(previousDate, previousContent, date, content);
 
   return (
-    <ScrollView style={{ backgroundColor: theme.bgBase }} contentContainerStyle={styles.content}>
+    <View style={{ flex: 1, backgroundColor: theme.bgBase }}>
+    <ScrollView
+      style={{ backgroundColor: theme.bgBase }}
+      contentContainerStyle={styles.content}
+      scrollEnabled={!dragState}
+    >
       <View style={styles.dateRow}>
         <Text style={[styles.dateLabel, { color: theme.textPrimary }]}>{date}</Text>
         {isToday ? (
@@ -102,7 +165,7 @@ export default function DailyEditorScreen() {
         ) : null}
       </View>
 
-      <View style={[styles.panel, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}>
+      <View ref={previousPanelRef} style={[styles.panel, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}>
         <View style={styles.panelHeader}>
           <Text style={[styles.panelTitle, { color: theme.textHint }]}>{t('dailyForm.previousPanel')}</Text>
           <Text style={[styles.panelDate, { color: theme.textSecondary }]}>{previousDate}</Text>
@@ -116,10 +179,16 @@ export default function DailyEditorScreen() {
           deleteLabel={t('dailyForm.deleteActivity')}
           moveToOtherLabel={t('dailyForm.moveToSelected')}
           onMoveItemToOther={movePreviousToSelected}
+          onItemDragStart={(index, item, x, y) => handleDragStart('previous', index, item, x, y)}
+          onItemDragMove={handleDragMove}
+          onItemDragEnd={handleDragEnd}
         />
       </View>
 
-      <View style={[styles.panel, styles.accentPanel, { backgroundColor: theme.bgPanel, borderColor: theme.accent }]}>
+      <View
+        ref={selectedPanelRef}
+        style={[styles.panel, styles.accentPanel, { backgroundColor: theme.bgPanel, borderColor: theme.accent }]}
+      >
         <View style={styles.panelHeader}>
           <Text style={[styles.panelTitle, { color: theme.accentInk }]}>{t('dailyForm.selectedPanel')}</Text>
           <Text style={[styles.panelDate, { color: theme.textSecondary }]}>{date}</Text>
@@ -134,6 +203,9 @@ export default function DailyEditorScreen() {
           deleteLabel={t('dailyForm.deleteActivity')}
           moveToOtherLabel={t('dailyForm.moveToPrevious')}
           onMoveItemToOther={moveSelectedToPrevious}
+          onItemDragStart={(index, item, x, y) => handleDragStart('selected', index, item, x, y)}
+          onItemDragMove={handleDragMove}
+          onItemDragEnd={handleDragEnd}
         />
       </View>
 
@@ -171,6 +243,24 @@ export default function DailyEditorScreen() {
         }}
       />
     </ScrollView>
+    {dragState ? (
+      // Renderizado como hermano del ScrollView (no dentro) para que su
+      // posición dependa solo de coordenadas absolutas de pantalla
+      // (`absoluteX`/`absoluteY` del gesto), sin verse afectada por el
+      // offset de scroll del contenido.
+      <View
+        pointerEvents="none"
+        style={[
+          styles.dragGhost,
+          { left: dragState.x - 90, top: dragState.y - 20, backgroundColor: theme.accentStrong },
+        ]}
+      >
+        <Text style={styles.dragGhostText} numberOfLines={1}>
+          {dragState.item}
+        </Text>
+      </View>
+    ) : null}
+    </View>
   );
 }
 
@@ -245,5 +335,22 @@ const styles = StyleSheet.create({
   deleteText: {
     color: '#dc2626',
     fontWeight: '600',
+  },
+  dragGhost: {
+    position: 'absolute',
+    width: 180,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    elevation: 6,
+    shadowColor: '#000',
+    shadowOpacity: 0.25,
+    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 },
+  },
+  dragGhostText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 12,
   },
 });

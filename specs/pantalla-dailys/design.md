@@ -76,12 +76,64 @@ desktop, y viceversa):
   eliminar en las 4 listas) — deslizar revela una acción con ícono
   `ArrowLeftRight` y el label del panel destino; deslizar del todo
   (`onSwipeableOpen`, mismo patrón que `SwipeableRow`) dispara el
-  movimiento sin necesitar un segundo tap. No es drag-and-drop de
-  posición libre (que requeriría medir coordenadas de dos
-  `ScrollView` separados con `measureInWindow` y seguir el dedo con un
-  "fantasma" del ítem — mucho más frágil) sino un gesto direccional,
-  igual de "arrastrar el ítem hacia el otro lado" en la práctica, pero
-  implementado con el mismo primitivo ya usado en el resto de la app.
+  movimiento sin necesitar un segundo tap.
+- **Mantener presionado y arrastrar, como segunda forma de mover entre
+  paneles** (agregado 2026-08-29, a pedido explícito del usuario tras
+  probar el swipe: "también es posible moverlo manteniendo presionado
+  y arrastrando" — no reemplaza el swipe, ambos gestos conviven).
+  Implementado con la API moderna de `react-native-gesture-handler`
+  (`Gesture.Pan().activateAfterLongPress(350)` + `GestureDetector`),
+  no con una librería de listas arrastrables — se descartó
+  `react-native-draggable-flatlist` (mencionada como alternativa en la
+  versión anterior de esta nota) porque acá no hace falta reordenar
+  una lista continua con reflow en vivo, solo **mover un ítem entre dos
+  contenedores independientes**, algo que esa librería no resuelve
+  directamente.
+
+  **División de responsabilidades** (por qué el "fantasma" y el
+  hit-test viven en `app/daily/[date].tsx`, no en
+  `DailyActivityList.tsx`): el componente de lista es controlado
+  (`value`/`onChange`) y solo conoce SU propio panel — no puede saber
+  si un soltar cayó "sobre el otro panel" sin conocer los límites de
+  ambos. Por eso `DailyActivityList` solo reporta el gesto
+  (`onItemDragStart(index, item, x, y)` / `onItemDragMove(x, y)` /
+  `onItemDragEnd(x, y)`, con `x`/`y` en coordenadas absolutas de
+  pantalla — `e.absoluteX`/`e.absoluteY` del gesto, no relativas al
+  `ScrollView`) sin tocar su propio estado, y es la pantalla — que ya
+  tiene `content` y `previousContent` de AMBOS paneles — quien decide
+  en `handleDragEnd` si el soltar cayó dentro de los límites del panel
+  contrario (medidos en vivo con `measureInWindow` sobre una ref por
+  panel) y, de ser así, hace el mismo `splice`+`push` con
+  `parseActivityItems`/`serializeActivityItems` que ya usa el swipe —
+  cero lógica de persistencia nueva, ambos gestos terminan en el mismo
+  camino (`handleContentChange`/`handlePreviousChange`).
+
+  **Por qué un ícono de grip dedicado (`GripVertical`), no toda la
+  fila**: la fila ya tiene tres gestos activos (tap para editar, swipe
+  horizontal para mover, botones subir/bajar) — activar el drag desde
+  cualquier punto habría competido con todos ellos. Con el grip como
+  único disparador, y `activateAfterLongPress(350)` como
+  desambiguador temporal (un swipe rápido no se sostiene 350ms quieto,
+  así que el `Swipeable` sigue activándose normal; solo una
+  presión-y-espera deliberada dispara el `Pan`), los tres gestos
+  conviven sin `disallowInterruption` ni configuración adicional de
+  prioridad entre reconocedores.
+
+  **Fantasma flotante y bloqueo de scroll**: mientras hay un arrastre
+  activo, el `ScrollView` de la pantalla pasa a `scrollEnabled={false}`
+  (evita que el scroll nativo compita por los mismos eventos táctiles
+  que el `Pan`) y se muestra una vista flotante con el texto de la
+  actividad, posicionada con `position: 'absolute'` como **hermana**
+  del `ScrollView` (no dentro) — así su posición depende solo de las
+  coordenadas absolutas que reporta el gesto, sin verse afectada por
+  el offset de scroll del contenido debajo.
+
+  **Qué NO es esto todavía**: no hay reordenamiento por arrastre
+  *dentro* del mismo panel (eso lo cubren los botones subir/bajar,
+  sección anterior) — el drag solo mueve un ítem completo al panel
+  contrario, igual que el swipe. Tampoco hay auto-scroll si se arrastra
+  cerca del borde de la pantalla con contenido largo (caso borde no
+  reportado; si aparece, se resuelve por separado).
 
 **No portado** (ver "Fuera de este spec" en requirements.md):
 promover a task, autocompletar tasks existentes (`#codigo-tarea`),

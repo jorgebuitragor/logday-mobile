@@ -217,6 +217,42 @@ También se agrandaron los botones (ícono `18→22`, y cada botón pasa a
 ancho en vez de verse como un grupo pequeño de íconos apretados a la
 izquierda) — atiende el "muy pequeña" del reporte.
 
+### Safe area y teclado (v2) — `KeyboardAvoidingView` no alcanzó (agregado 2026-08-29)
+
+El usuario probó el fix anterior y mandó una captura: el teclado
+seguía tapando la toolbar por completo (no se veía ni un pedazo de
+ella arriba del teclado). `KeyboardAvoidingView` (con `behavior:
+'height'` en Android) depende de que el módulo `Keyboard` clásico de
+RN reciba eventos de altura correctos — con edge-to-edge activo en
+Android, ese mecanismo no es confiable (es un problema conocido y
+documentado del ecosistema RN/Expo, no un bug de esta implementación
+puntual): a veces el evento no llega, a veces llega con una altura que
+no coincide con el inset real, porque el sistema ya no redimensiona la
+ventana de la forma tradicional que ese módulo espera.
+
+**Fix real**: `useAnimatedKeyboard()` de `react-native-reanimated`
+(ya instalado, ver `selector-fecha`/drag-and-drop de Dailys) — a
+diferencia del módulo `Keyboard`, lee el inset nativo del teclado
+directo (no eventos JS legacy), que sí es confiable bajo edge-to-edge.
+Se reemplazó `KeyboardAvoidingView` por un `Animated.View` cuyo
+`paddingBottom` es `useAnimatedStyle(() => ({ paddingBottom:
+keyboard.height.value }))` — mismo efecto perseguido (encoger el
+`TextInput` de contenido para empujar la toolbar arriba del teclado),
+logrado desde una fuente de altura distinta. Se pasan
+`isStatusBarTranslucentAndroid: true`/`isNavigationBarTranslucentAndroid:
+true` a `useAnimatedKeyboard()` porque esta app ya es edge-to-edge
+(barra de estado transparente, ver `app/_layout.tsx`) — sin esas
+opciones el inset reportado no coincide con la superficie real
+disponible.
+
+Nota: `useAnimatedKeyboard` está marcado `@deprecated` en el propio
+paquete de Reanimated, en favor de `react-native-keyboard-controller`
+— no se usó ese reemplazo porque requiere código nativo propio
+(probablemente fuerza salir de Expo Go, el mismo tipo de costo que ya
+llevó a revertir el editor WYSIWYG). Se acepta el deprecation warning
+por ahora; si en una versión futura de Reanimated se elimina la
+función, este es el punto a revisar.
+
 ## Explícitamente pendiente
 
 - Picker/autocompletado de `folder` a partir de carpetas existentes

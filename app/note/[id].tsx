@@ -2,7 +2,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Folder, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { MarkdownToolbar, type TextSelection } from '../../src/components/MarkdownToolbar';
@@ -56,6 +57,23 @@ export default function NoteEditorScreen() {
   const [tagsModalOpen, setTagsModalOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
   const confirmDelete = useConfirmDelete<true>(confirmDestructiveActions);
+
+  // `KeyboardAvoidingView` (behavior "height"/"padding") no funcionó
+  // en el dispositivo del usuario: con edge-to-edge en Android, el
+  // sistema no redimensiona la ventana de forma que RN pueda medir
+  // vía los eventos clásicos de `Keyboard`, así que el teclado tapaba
+  // la toolbar igual (ver specs/pantalla-notes/design.md, "Safe area
+  // y teclado (v2)"). `useAnimatedKeyboard` de Reanimated lee el
+  // inset nativo del teclado directo (no el módulo `Keyboard` legado),
+  // que sí funciona con edge-to-edge — por eso las dos opciones
+  // `isStatusBarTranslucentAndroid`/`isNavigationBarTranslucentAndroid`
+  // en `true`: coinciden con que esta app ya es edge-to-edge (barra de
+  // estado transparente, ver `app/_layout.tsx`).
+  const keyboard = useAnimatedKeyboard({
+    isStatusBarTranslucentAndroid: true,
+    isNavigationBarTranslucentAndroid: true,
+  });
+  const keyboardPadding = useAnimatedStyle(() => ({ paddingBottom: keyboard.height.value }));
 
   // Refs para que el flush del autosave siempre lea el valor más
   // reciente sin depender de closures obsoletas del `setTimeout` —
@@ -226,15 +244,13 @@ export default function NoteEditorScreen() {
         </Pressable>
       </View>
 
-      {/* `behavior="height"` en Android (no "padding"): reduce el alto
-          disponible cuando aparece el teclado, así el TextInput de
-          contenido (flex:1) se encoge y la toolbar de markdown queda
-          empujada arriba del teclado en vez de tapada — antes no
-          había ningún manejo de teclado acá y la toolbar quedaba
-          debajo. No depende de `windowSoftInputMode` del sistema
-          (que con edge-to-edge en Android no siempre redimensiona
-          solo), es RN escuchando los eventos de teclado directo. */}
-      <KeyboardAvoidingView style={styles.body} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      {/* `paddingBottom` animado = altura real del teclado (leída del
+          inset nativo vía `useAnimatedKeyboard`, no de
+          `KeyboardAvoidingView` — ver comentario junto a `keyboard`
+          más arriba, por qué se abandonó ese camino). Empuja
+          MarkdownToolbar arriba del teclado; el TextInput de
+          contenido (flex:1) se encoge para darle espacio. */}
+      <Animated.View style={[styles.body, keyboardPadding]}>
         <TextInput
           style={[styles.titleInput, { color: theme.textPrimary }]}
           value={title}
@@ -257,7 +273,7 @@ export default function NoteEditorScreen() {
         />
 
         <MarkdownToolbar value={content} selection={selection} onChange={handleToolbarChange} />
-      </KeyboardAvoidingView>
+      </Animated.View>
 
       <Modal visible={folderModalOpen} transparent animationType="fade" onRequestClose={() => setFolderModalOpen(false)}>
         <Pressable style={styles.backdrop} onPress={() => setFolderModalOpen(false)}>

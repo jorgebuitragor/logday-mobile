@@ -115,7 +115,28 @@ pantalla no manejaba el teclado en absoluto.
       dependencias (`react-native-safe-area-context` ya estaba en
       package.json como transitiva) ni reiniciar el dev server con
       caché limpia (sin paquete nuevo).
-- [ ] Verificar en vivo: la toolbar ya no invade la zona de gestos de
-      Android, se ve del tamaño esperado (span completo del ancho,
-      íconos más grandes), y queda visible arriba del teclado al
-      escribir en el contenido.
+- [x] Verificar en vivo: el tamaño/ancho de la toolbar y la zona de
+      gestos quedaron bien, pero el usuario mandó una captura
+      mostrando el teclado tapando la toolbar por completo —
+      `KeyboardAvoidingView` no resolvió el problema en este
+      dispositivo. Corregido el mismo día, ver abajo.
+
+## Safe area y teclado (v2) — corrige `KeyboardAvoidingView` (agregado 2026-08-29)
+
+Ver design.md, "Safe area y teclado (v2)": `KeyboardAvoidingView`
+depende del módulo `Keyboard` clásico de RN, que no es confiable bajo
+edge-to-edge en Android — problema conocido del ecosistema, no
+específico de esta pantalla.
+
+- [x] `app/note/[id].tsx`: reemplazado `KeyboardAvoidingView` por
+      `useAnimatedKeyboard()` (Reanimated, ya instalado) +
+      `Animated.View` con `paddingBottom` animado igual a
+      `keyboard.height.value` — lee el inset nativo del teclado
+      directo en vez de eventos JS legacy. Opciones
+      `isStatusBarTranslucentAndroid`/`isNavigationBarTranslucentAndroid`
+      en `true` (esta app ya es edge-to-edge).
+- [x] `npx tsc --noEmit` sin errores. Sin dependencias nuevas
+      (Reanimated ya estaba instalado) — no hizo falta reiniciar el
+      dev server con caché limpia.
+- [ ] Verificar en vivo: la toolbar de markdown queda visible arriba
+      del teclado al escribir en el contenido, sin quedar tapada.

@@ -30,6 +30,41 @@ function preview(content: string, max = 80): string {
   return flat.length > max ? `${flat.slice(0, max)}…` : flat;
 }
 
+// Estimación aproximada de cuántas líneas ocupa una tarjeta (título +
+// preview + meta), usada solo para repartir notas entre las 2
+// columnas de la Cuadrícula — no necesita ser exacta, solo lo
+// bastante buena para que una columna no termine mucho más alta que
+// la otra. Ver `splitIntoColumns`, más abajo, por qué hace falta esto.
+function estimatedCardLines(note: Note): number {
+  const titleText = note.title || '';
+  const titleLines = titleText ? Math.min(2, Math.ceil(titleText.length / 18)) : 1;
+  const previewText = note.content ? preview(note.content, 180) : '';
+  const previewLines = previewText ? Math.min(6, Math.ceil(previewText.length / 28)) : 0;
+  const metaLines = note.folder || note.tags.length > 0 ? 1 : 0;
+  return titleLines + previewLines + metaLines;
+}
+
+// Reparte notas en 2 columnas independientes tipo "cascada" (Google
+// Keep, Pinterest) en vez de filas fijas de 2 — con filas fijas
+// (`flexWrap` simple), la altura de cada fila queda determinada por
+// la tarjeta más alta de esa fila, así que una tarjeta corta al lado
+// de una larga deja un hueco vacío debajo antes de la fila
+// siguiente (reportado en vivo, con captura: "espacios entre las
+// notas"). Con columnas independientes, cada nota se agrega a la
+// columna que hasta ese momento acumula menos líneas estimadas — la
+// próxima tarjeta corta llena el hueco en vez de esperar a que
+// termine la fila.
+function splitIntoColumns(notes: Note[]): [Note[], Note[]] {
+  const columns: [Note[], Note[]] = [[], []];
+  const heights: [number, number] = [0, 0];
+  for (const note of notes) {
+    const target = heights[0] <= heights[1] ? 0 : 1;
+    columns[target].push(note);
+    heights[target] += estimatedCardLines(note) + 1;
+  }
+  return columns;
+}
+
 export default function NotesScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -185,18 +220,12 @@ export default function NotesScreen() {
               {pinnedNotes.length > 0 ? (
                 <>
                   <Text style={[styles.gridSectionLabel, { color: theme.textHint }]}>{t('noteList.pinnedSection')}</Text>
-                  <View style={styles.grid}>
-                    {pinnedNotes.map((note) => (
-                      <View key={note.id} style={styles.cardWrap}>
-                        <NoteCard
-                          note={note}
-                          onPress={() => router.push(`/note/${note.id}`)}
-                          onMore={() => setActionsNote(note)}
-                          onDelete={() => confirmDelete.request(note, performDelete)}
-                        />
-                      </View>
-                    ))}
-                  </View>
+                  <NoteGrid
+                    notes={pinnedNotes}
+                    onOpen={(note) => router.push(`/note/${note.id}`)}
+                    onMore={setActionsNote}
+                    onDelete={(note) => confirmDelete.request(note, performDelete)}
+                  />
                 </>
               ) : null}
               {otherNotes.length > 0 ? (
@@ -204,18 +233,12 @@ export default function NotesScreen() {
                   {pinnedNotes.length > 0 ? (
                     <Text style={[styles.gridSectionLabel, { color: theme.textHint }]}>{t('noteList.othersSection')}</Text>
                   ) : null}
-                  <View style={styles.grid}>
-                    {otherNotes.map((note) => (
-                      <View key={note.id} style={styles.cardWrap}>
-                        <NoteCard
-                          note={note}
-                          onPress={() => router.push(`/note/${note.id}`)}
-                          onMore={() => setActionsNote(note)}
-                          onDelete={() => confirmDelete.request(note, performDelete)}
-                        />
-                      </View>
-                    ))}
-                  </View>
+                  <NoteGrid
+                    notes={otherNotes}
+                    onOpen={(note) => router.push(`/note/${note.id}`)}
+                    onMore={setActionsNote}
+                    onDelete={(note) => confirmDelete.request(note, performDelete)}
+                  />
                 </>
               ) : null}
             </>
@@ -323,6 +346,41 @@ export default function NotesScreen() {
   );
 }
 
+// 2 columnas independientes (`splitIntoColumns`) en vez de una grilla
+// de filas — ver el comentario de esa función. `column` es un
+// `flex:1` normal (no necesita `width` explícito ni `cardWrap`: sus
+// hijos ya heredan el 100% del ancho de la columna por el
+// `alignItems: 'stretch'` por defecto de un contenedor `column`,
+// mismo motivo por el que las filas de la vista Lista tampoco
+// necesitan un ancho explícito).
+function NoteGrid({
+  notes,
+  onOpen,
+  onMore,
+  onDelete,
+}: {
+  notes: Note[];
+  onOpen: (note: Note) => void;
+  onMore: (note: Note) => void;
+  onDelete: (note: Note) => void;
+}) {
+  const [left, right] = useMemo(() => splitIntoColumns(notes), [notes]);
+  return (
+    <View style={styles.columns}>
+      <View style={styles.column}>
+        {left.map((note) => (
+          <NoteCard key={note.id} note={note} onPress={() => onOpen(note)} onMore={() => onMore(note)} onDelete={() => onDelete(note)} />
+        ))}
+      </View>
+      <View style={styles.column}>
+        {right.map((note) => (
+          <NoteCard key={note.id} note={note} onPress={() => onOpen(note)} onMore={() => onMore(note)} onDelete={() => onDelete(note)} />
+        ))}
+      </View>
+    </View>
+  );
+}
+
 // Tarjeta de la vista Cuadrícula — estilo Google Keep (título +
 // preview más larga que en Lista, sin fila de metadata separada para
 // no recargar una tarjeta angosta). Sigue envuelta en `SwipeableRow`
@@ -416,21 +474,20 @@ const styles = StyleSheet.create({
   // `ViewSwitch` de arriba). `space-between` calcula el espacio entre
   // las 2 columnas de forma exacta sin depender de esa resta —
   // patrón más confiable para una grilla de N columnas fijas en RN.
-  grid: {
+  // 2 columnas independientes en vez de una grilla de filas — ver
+  // `splitIntoColumns`/`NoteGrid`. `column` no necesita `width`
+  // explícito: es un hijo normal de un contenedor `row`, con
+  // `flex: 1` alcanza para repartir el ancho disponible a la mitad
+  // cada una (mismo mecanismo por el que las filas de la vista Lista
+  // tampoco necesitan un ancho explícito).
+  columns: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    rowGap: 10,
+    gap: 10,
     marginBottom: 8,
   },
-  // El ancho del 47% vive acá, no en `card` — `SwipeableRow` (la raíz
-  // real de cada ítem de la fila `grid`) no fuerza un ancho propio, así
-  // que un `width: '47%'` puesto en `card` (un nivel más adentro,
-  // dentro del `Swipeable`) resolvía contra un ancho padre indefinido
-  // en vez del ancho de la fila — tarjetas angostas e inconsistentes
-  // en la práctica (reportado en vivo: "no se ve bien la cuadrícula").
-  cardWrap: {
-    width: '48%',
+  column: {
+    flex: 1,
+    gap: 10,
   },
   card: {
     padding: 12,

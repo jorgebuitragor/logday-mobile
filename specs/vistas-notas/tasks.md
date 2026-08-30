@@ -41,3 +41,16 @@ Estado: implementado, pendiente de confirmación en vivo.
 - [ ] Verificar en vivo: las tarjetas llegan hasta el borde derecho;
       dejar la app en Cuadrícula, cerrarla y reabrirla mantiene la
       vista.
+
+## Columnas independientes en vez de filas (agregado 2026-08-30)
+
+- [x] `app/(tabs)/notes.tsx`: `estimatedCardLines`/`splitIntoColumns`
+      (reparto voraz por altura estimada); `NoteGrid` (nuevo,
+      reemplaza el JSX duplicado de Destacadas/Otras) con 2 columnas
+      `flex:1`; estilos `columns`/`column` reemplazan `grid`/`cardWrap`.
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, HTTP 200
+      (`NoteGrid`/`splitIntoColumns`/`estimatedCardLines` resueltos).
+- [ ] Verificar en vivo: notas de largo distinto no dejan huecos
+      grandes entre tarjetas; las 2 columnas quedan razonablemente
+      parejas en altura.

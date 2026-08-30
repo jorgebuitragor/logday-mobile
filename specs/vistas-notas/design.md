@@ -89,6 +89,43 @@ exacta a partir del ancho real de cada una, sin depender de que el
 motor reste el `gap` correctamente primero. Patrón más confiable para
 una grilla de columnas fijas en RN en general, no solo para este caso.
 
+## De grilla de filas a columnas independientes (agregado 2026-08-30)
+
+Tercer reporte en vivo, con captura, sobre la misma Cuadrícula:
+espacios grandes e inconsistentes entre notas, ya con el ancho
+corregido. Causa distinta a los 2 bugs anteriores — esta vez no era
+un bug, era una limitación real de `flexWrap` como grilla: con filas
+fijas de 2 columnas, la altura de cada fila la determina la tarjeta
+más alta de esa fila; una tarjeta corta al lado de una larga deja un
+hueco vacío visible debajo antes de que empiece la fila siguiente.
+Es el comportamiento esperado de flexbox, no un valor mal calculado
+como los 2 anteriores — por eso no se podía arreglar con otro ajuste
+de `gap`/`width`.
+
+Google Keep (la referencia que pidió el usuario desde el principio de
+esta vista) no tiene ese problema porque no usa filas fijas: es una
+cascada de 2 columnas independientes, donde cada nota nueva entra a
+la columna que en ese momento está más corta, sin esperar a que la
+otra columna "termine su fila".
+
+`splitIntoColumns(notes)` replica esa idea con un reparto voraz
+(greedy): por cada nota, se estima cuántas líneas va a ocupar su
+tarjeta (`estimatedCardLines` — título, preview, fila de
+carpeta/tags, todo aproximado por longitud de texto, no medido de
+verdad) y se agrega a la columna con menor altura acumulada hasta ese
+momento. No es una medición exacta (RN no tiene un `onLayout` previo
+al primer render que permita medir antes de decidir en qué columna
+va cada tarjeta sin parpadeo), pero alcanza para que una tarjeta
+corta no deje un hueco grande esperando a una larga en la misma fila.
+
+`NoteGrid` (nuevo, reemplaza el JSX duplicado que había para
+Destacadas/Otras) renderiza las 2 columnas como `View`s `flex: 1`
+lado a lado — ya no hace falta `cardWrap` con `width` explícito
+(el bug de los 2 fixes anteriores): cada tarjeta es hija directa de
+una columna `flex:1`, que ya estira sus hijos al 100% de su ancho por
+default (`alignItems: 'stretch'`), mismo mecanismo que ya usaban las
+filas de la vista Lista sin necesitar ancho explícito tampoco.
+
 ## Vista persistida entre reinicios (agregado 2026-08-30)
 
 `viewMode` pasó de `useState` local a `usePreferences()`
@@ -113,3 +150,9 @@ Ver "Fuera de este spec" en `requirements.md`.
   cuadrícula llegan hasta el mismo borde derecho que el `ViewSwitch`;
   dejar la app en Cuadrícula (o Tasks en Calendario), cerrarla del
   todo y reabrirla — debe seguir en la misma vista.
+- Verificación en vivo (columnas independientes, agregado 2026-08-30):
+  con notas de largo bien distinto, las 2 columnas quedan
+  razonablemente parejas en altura, sin un hueco grande debajo de una
+  tarjeta corta; el orden de lectura (arriba-abajo, izquierda antes
+  que derecha en cada nivel) sigue siendo intuitivo aunque ya no sea
+  estrictamente "fila por fila".

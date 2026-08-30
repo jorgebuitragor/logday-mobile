@@ -16,11 +16,9 @@ import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { normalizeTag } from '../../src/lib/noteTags';
-import { usePreferences } from '../../src/settings/PreferencesContext';
+import { usePreferences, type NotesViewMode } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Note } from '../../src/types/note';
-
-type NotesViewMode = 'list' | 'grid';
 
 // Mismo ámbar que desktop usa para el indicador de nota anclada
 // (`text-amber-400`, ver NoteList.tsx) — color semántico fijo, igual
@@ -36,14 +34,11 @@ export default function NotesScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
-  const { confirmDestructiveActions } = usePreferences();
+  const { confirmDestructiveActions, notesViewMode: viewMode, setNotesViewMode: setViewMode } = usePreferences();
   const [notes, setNotes] = useState<Note[]>([]);
   const [filterFolder, setFilterFolder] = useState<string | null>(null);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [actionsNote, setActionsNote] = useState<Note | null>(null);
-  // No persistida, mismo criterio que `viewMode` de Tasks — ver
-  // specs/vistas-notas/design.md.
-  const [viewMode, setViewMode] = useState<NotesViewMode>('list');
   const confirmDelete = useConfirmDelete<Note>(confirmDestructiveActions);
 
   const reload = useCallback(() => {
@@ -414,10 +409,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     marginTop: 4,
   },
+  // `justifyContent: 'space-between'` en vez de `gap` (que ya causó un
+  // bug reportado en vivo: con `gap` + `width: '47%'`, Yoga no siempre
+  // resta el gap del ancho disponible, así que la fila no llegaba
+  // hasta el borde derecho real de la pantalla, a diferencia del
+  // `ViewSwitch` de arriba). `space-between` calcula el espacio entre
+  // las 2 columnas de forma exacta sin depender de esa resta —
+  // patrón más confiable para una grilla de N columnas fijas en RN.
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    justifyContent: 'space-between',
+    rowGap: 10,
     marginBottom: 8,
   },
   // El ancho del 47% vive acá, no en `card` — `SwipeableRow` (la raíz
@@ -427,7 +430,7 @@ const styles = StyleSheet.create({
   // en vez del ancho de la fila — tarjetas angostas e inconsistentes
   // en la práctica (reportado en vivo: "no se ve bien la cuadrícula").
   cardWrap: {
-    width: '47%',
+    width: '48%',
   },
   card: {
     padding: 12,

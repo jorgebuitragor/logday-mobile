@@ -27,8 +27,10 @@ de este spec, ver "Fuera de este spec".
 
 - La pantalla de Tasks DEBERÁ ofrecer un selector de vista (Lista /
   Calendario) visible en todo momento, no escondido en un menú.
-- El selector NO DEBERÁ persistir entre reinicios de la app — vuelve a
-  "Lista" cada vez (ver design.md, alcance reducido deliberado).
+- El selector DEBERÁ recordar la última vista elegida entre reinicios
+  de la app (agregado 2026-08-30 — revierte la reducción de alcance
+  original de esta sección; pedido explícito del usuario: "me
+  gustaría también que las vistas se guarden así cierre la app").
 
 ## Requisitos (EARS) — Vista Calendario
 

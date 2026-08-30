@@ -11,11 +11,9 @@ import { TaskCalendarView } from '../../src/components/TaskCalendarView';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { listTasks, softDeleteTask, updateTaskStatus } from '../../src/db/tasks';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
-import { usePreferences } from '../../src/settings/PreferencesContext';
+import { usePreferences, type TasksViewMode } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Task, TaskStatus } from '../../src/types/task';
-
-type ViewMode = 'list' | 'calendar';
 
 // Mismo orden de ciclo que `cycleStatus` en TaskList.tsx de desktop.
 const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'done'];
@@ -34,13 +32,8 @@ export default function TasksScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
-  const { confirmDestructiveActions } = usePreferences();
+  const { confirmDestructiveActions, tasksViewMode: viewMode, setTasksViewMode: setViewMode } = usePreferences();
   const [tasks, setTasks] = useState<Task[]>([]);
-  // No persistida (a diferencia de `currentView` en desktop, guardado
-  // en el store global) — vuelve a "Lista" en cada reinicio de la app,
-  // alcance reducido deliberado para este checkpoint, ver
-  // specs/vistas-tasks/design.md.
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const confirmDelete = useConfirmDelete<Task>(confirmDestructiveActions);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -76,7 +69,7 @@ export default function TasksScreen() {
     return <Circle size={18} color={color} />;
   }
 
-  const viewOptions: { mode: ViewMode; icon: typeof List; label: string }[] = [
+  const viewOptions: { mode: TasksViewMode; icon: typeof List; label: string }[] = [
     { mode: 'list', icon: List, label: t('taskList.viewList') },
     { mode: 'calendar', icon: CalendarRange, label: t('taskList.viewCalendar') },
   ];

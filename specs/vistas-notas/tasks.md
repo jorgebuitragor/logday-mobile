@@ -23,3 +23,21 @@ Estado: implementado, pendiente de confirmación en vivo.
       carpeta/tag en Cuadrícula; destacar una nota la mueve a
       "Destacadas"; swipe-para-eliminar en una tarjeta; el botón "⋮"
       de una tarjeta abre el mismo menú que en Lista.
+
+## Alineación de la grilla + persistencia (agregado 2026-08-30)
+
+- [x] `app/(tabs)/notes.tsx`: `grid` cambia de `gap` a
+      `justifyContent: 'space-between'` + `rowGap`; `cardWrap.width`
+      de `47%` a `48%` — corrige que la fila no llegaba al mismo borde
+      derecho que el `ViewSwitch` (reportado con captura).
+- [x] `src/settings/PreferencesContext.tsx`: `notesViewMode`/
+      `setNotesViewMode` (persistido en `AsyncStorage`, mismo
+      mecanismo que `confirmDestructiveActions`); `NotesViewMode`
+      movido acá desde una definición local en `notes.tsx`.
+- [x] `app/(tabs)/notes.tsx`: usa `usePreferences()` para el
+      `viewMode` en vez de `useState` local.
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, HTTP 200.
+- [ ] Verificar en vivo: las tarjetas llegan hasta el borde derecho;
+      dejar la app en Cuadrícula, cerrarla y reabrirla mantiene la
+      vista.

@@ -18,8 +18,9 @@ vista mobile-original, no un port.
 - La pantalla de Notes DEBERÁ ofrecer un selector de vista
   (Lista/Cuadrícula) visible en todo momento, mismo componente
   (`ViewSwitch`) que ya usa la pantalla de Tasks para Lista/Calendario.
-- El selector NO DEBERÁ persistir entre reinicios de la app — mismo
-  criterio que el de Tasks.
+- El selector DEBERÁ recordar la última vista elegida entre reinicios
+  de la app (agregado 2026-08-30, mismo criterio que Tasks — ver
+  `vistas-tasks/requirements.md`).
 - La vista Cuadrícula DEBERÁ mostrar las notas en 2 columnas, cada
   tarjeta con título y una vista previa del contenido más larga que la
   de la vista Lista (hasta 6 líneas vs. una sola línea recortada).
@@ -45,5 +46,3 @@ vista mobile-original, no un port.
 - Reordenar notas arrastrando en la cuadrícula (Keep permite
   reordenar manualmente) — el orden sigue siendo `updated_at`
   descendente, igual que la vista Lista.
-- Persistir la vista elegida entre reinicios — mismo alcance reducido
-  que ya se documentó para Tasks.

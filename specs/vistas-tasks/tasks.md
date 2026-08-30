@@ -5,7 +5,7 @@ Estado: Calendario implementado, pendiente de confirmación en vivo.
 ## Selector de vista + Calendario (agregado 2026-08-30)
 
 - [x] `app/(tabs)/index.tsx`: selector Lista/Calendario (segmented
-      control, `viewMode` local sin persistir); `viewMode === 'calendar'`
+      control); `viewMode === 'calendar'`
       renderiza `TaskCalendarView` dentro de un `ScrollView` en vez del
       `FlatList` de siempre.
 - [x] `src/components/TaskCalendarView.tsx` (nuevo): grilla mensual
@@ -21,6 +21,19 @@ Estado: Calendario implementado, pendiente de confirmación en vivo.
       task del panel navega a la pantalla correcta; el selector
       Lista/Calendario cambia de vista sin perder los datos cargados.
 
+## Persistencia del selector (agregado 2026-08-30)
+
+- [x] `src/settings/PreferencesContext.tsx`: `tasksViewMode`/
+      `setTasksViewMode` (persistido en `AsyncStorage`); `TasksViewMode`
+      movido acá desde una definición local (`ViewMode`) en
+      `app/(tabs)/index.tsx`.
+- [x] `app/(tabs)/index.tsx`: usa `usePreferences()` para el
+      `viewMode` en vez de `useState` local.
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, HTTP 200.
+- [ ] Verificar en vivo: dejar la app en Calendario, cerrarla del
+      todo y reabrirla — debe seguir en Calendario.
+
 ## Kanban — pendiente (próximo checkpoint)
 
 - [ ] Diseñar el arrastre táctil entre columnas (Por hacer/En
@@ -34,4 +47,4 @@ Estado: Calendario implementado, pendiente de confirmación en vivo.
 - [ ] UI de columnas horizontales scrolleables (3 columnas no caben
       lado a lado en el ancho de un teléfono).
 - [ ] Reusar el mismo selector de vista de `index.tsx` (agregar
-      'kanban' a `ViewMode`).
+      'kanban' a `TasksViewMode`, en `PreferencesContext.tsx`).

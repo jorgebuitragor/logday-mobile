@@ -66,6 +66,39 @@ algo más envuelto en `SwipeableRow` dentro de un layout `flexWrap`
 (no en una columna simple, donde el 100% por defecto ya coincidía con
 el ancho deseado y ocultaba el problema).
 
+## Bug de alineación con el borde derecho (corregido 2026-08-30)
+
+Segundo bug reportado en vivo, con captura, tras el fix de arriba: la
+grilla ya no se veía "angosta e inconsistente", pero la fila no
+llegaba hasta el mismo borde derecho que el `ViewSwitch` de arriba
+(que sí usa el ancho completo con `margin: 16` simétrico) — quedaba
+un espacio vacío notorio a la derecha de la segunda columna. Causa:
+`grid` usaba `gap: 10` junto con `cardWrap.width: '47%'` — en algunas
+versiones de Yoga (el motor de layout de RN), `gap` no siempre se
+resta del espacio disponible antes de calcular anchos porcentuales,
+así que `47% + 47% + gap` podía superar el 100% disponible o quedar
+corto de forma inconsistente, dejando el remanente como espacio vacío
+al final de la fila (el `flexWrap` row por defecto empaqueta a la
+izquierda, `justifyContent: 'flex-start'`).
+
+Corregido reemplazando `gap`+`width:'47%'` por
+`justifyContent: 'space-between'` (sin `columnGap`, solo `rowGap`
+para el espacio vertical entre filas) + `cardWrap.width: '48%'` —
+`space-between` calcula el espacio entre las 2 tarjetas de forma
+exacta a partir del ancho real de cada una, sin depender de que el
+motor reste el `gap` correctamente primero. Patrón más confiable para
+una grilla de columnas fijas en RN en general, no solo para este caso.
+
+## Vista persistida entre reinicios (agregado 2026-08-30)
+
+`viewMode` pasó de `useState` local a `usePreferences()`
+(`notesViewMode`/`setNotesViewMode`, en `PreferencesContext.tsx`,
+persistido en `AsyncStorage`) — pedido explícito del usuario: "me
+gustaría también que las vistas se guarden así cierre la app". Mismo
+cambio en Tasks (`tasksViewMode`), ver `vistas-tasks/design.md`. El
+tipo `NotesViewMode` se movió de una definición local en
+`app/(tabs)/notes.tsx` a `PreferencesContext.tsx` (fuente única).
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.
@@ -76,3 +109,7 @@ Ver "Fuera de este spec" en `requirements.md`.
   en una tarjeta de ancho medio (el umbral de swipe es el mismo que en
   Lista, ~100px, proporcionalmente mayor en una tarjeta angosta — a
   confirmar que no se siente incómodo en la práctica).
+- Verificación en vivo (agregado 2026-08-30): las tarjetas de la
+  cuadrícula llegan hasta el mismo borde derecho que el `ViewSwitch`;
+  dejar la app en Cuadrícula (o Tasks en Calendario), cerrarla del
+  todo y reabrirla — debe seguir en la misma vista.

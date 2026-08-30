@@ -14,11 +14,29 @@ const TIME_FORMAT_STORAGE_KEY = 'timeFormat';
 // AppTimePicker.tsx.
 const TIME_FORMAT_DEFAULT: TimeFormat = '12h';
 
+// Agregado 2026-08-30 — antes `viewMode` de Tasks/Notes era estado
+// local sin persistir (`useState`, ver `vistas-tasks/`/`vistas-notas/`,
+// "sin persistir... alcance reducido deliberado"). Pedido explícito
+// del usuario: "me gustaría también que las vistas se guarden así
+// cierre la app". Mismo mecanismo (AsyncStorage) que el resto de esta
+// clase, ahora con 2 preferencias más.
+export type NotesViewMode = 'list' | 'grid';
+const NOTES_VIEW_STORAGE_KEY = 'notesViewMode';
+const NOTES_VIEW_DEFAULT: NotesViewMode = 'list';
+
+export type TasksViewMode = 'list' | 'calendar';
+const TASKS_VIEW_STORAGE_KEY = 'tasksViewMode';
+const TASKS_VIEW_DEFAULT: TasksViewMode = 'list';
+
 interface PreferencesContextValue {
   confirmDestructiveActions: boolean;
   setConfirmDestructiveActions: (value: boolean) => void;
   timeFormat: TimeFormat;
   setTimeFormat: (value: TimeFormat) => void;
+  notesViewMode: NotesViewMode;
+  setNotesViewMode: (value: NotesViewMode) => void;
+  tasksViewMode: TasksViewMode;
+  setTasksViewMode: (value: TasksViewMode) => void;
 }
 
 const PreferencesCtx = createContext<PreferencesContextValue>({
@@ -26,11 +44,17 @@ const PreferencesCtx = createContext<PreferencesContextValue>({
   setConfirmDestructiveActions: () => {},
   timeFormat: TIME_FORMAT_DEFAULT,
   setTimeFormat: () => {},
+  notesViewMode: NOTES_VIEW_DEFAULT,
+  setNotesViewMode: () => {},
+  tasksViewMode: TASKS_VIEW_DEFAULT,
+  setTasksViewMode: () => {},
 });
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [confirmDestructiveActions, setConfirmState] = useState(CONFIRM_DEFAULT);
   const [timeFormat, setTimeFormatState] = useState<TimeFormat>(TIME_FORMAT_DEFAULT);
+  const [notesViewMode, setNotesViewModeState] = useState<NotesViewMode>(NOTES_VIEW_DEFAULT);
+  const [tasksViewMode, setTasksViewModeState] = useState<TasksViewMode>(TASKS_VIEW_DEFAULT);
 
   useEffect(() => {
     AsyncStorage.getItem(CONFIRM_STORAGE_KEY).then((stored) => {
@@ -41,6 +65,16 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     AsyncStorage.getItem(TIME_FORMAT_STORAGE_KEY).then((stored) => {
       if (stored === '24h' || stored === '12h') {
         setTimeFormatState(stored);
+      }
+    });
+    AsyncStorage.getItem(NOTES_VIEW_STORAGE_KEY).then((stored) => {
+      if (stored === 'list' || stored === 'grid') {
+        setNotesViewModeState(stored);
+      }
+    });
+    AsyncStorage.getItem(TASKS_VIEW_STORAGE_KEY).then((stored) => {
+      if (stored === 'list' || stored === 'calendar') {
+        setTasksViewModeState(stored);
       }
     });
   }, []);
@@ -55,9 +89,28 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(TIME_FORMAT_STORAGE_KEY, value);
   }
 
+  function setNotesViewMode(value: NotesViewMode) {
+    setNotesViewModeState(value);
+    AsyncStorage.setItem(NOTES_VIEW_STORAGE_KEY, value);
+  }
+
+  function setTasksViewMode(value: TasksViewMode) {
+    setTasksViewModeState(value);
+    AsyncStorage.setItem(TASKS_VIEW_STORAGE_KEY, value);
+  }
+
   const value = useMemo(
-    () => ({ confirmDestructiveActions, setConfirmDestructiveActions, timeFormat, setTimeFormat }),
-    [confirmDestructiveActions, timeFormat]
+    () => ({
+      confirmDestructiveActions,
+      setConfirmDestructiveActions,
+      timeFormat,
+      setTimeFormat,
+      notesViewMode,
+      setNotesViewMode,
+      tasksViewMode,
+      setTasksViewMode,
+    }),
+    [confirmDestructiveActions, timeFormat, notesViewMode, tasksViewMode]
   );
 
   return <PreferencesCtx.Provider value={value}>{children}</PreferencesCtx.Provider>;

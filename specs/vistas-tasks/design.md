@@ -3,16 +3,16 @@
 Estado: Calendario implementado — ver `src/components/TaskCalendarView.tsx`,
 `app/(tabs)/index.tsx`.
 
-## Selector de vista, sin persistir
+## Selector de vista, persistido (agregado 2026-08-30)
 
-`viewMode: 'list' | 'calendar'` es estado local de
-`app/(tabs)/index.tsx`, no vive en `PreferencesContext` ni en SQLite —
-a diferencia de desktop, que persiste `currentView` en su store
-global. Alcance reducido deliberado: persistirlo tocaría el esquema de
-preferencias (una migración más) por un beneficio menor (recordar la
-última vista entre reinicios de la app, no algo pedido explícitamente).
-Si se pide después, es un cambio contenido: mover el `useState` a
-`usePreferences()`.
+`viewMode` (`TasksViewMode`) pasó de estado local
+(`useState` en `app/(tabs)/index.tsx`) a `PreferencesContext`
+(`tasksViewMode`/`setTasksViewMode`), persistido en `AsyncStorage`
+— mismo mecanismo que `confirmDestructiveActions`/`timeFormat`, ya
+establecido ahí. Cambio contenido, tal como se anticipó al dejarlo
+fuera de alcance la primera vez: mover el `useState` al contexto, sin
+tocar SQLite ni el esquema local. Mismo tratamiento para Notes
+(`notesViewMode`, ver `vistas-notas/design.md`) en el mismo cambio.
 
 ## `TaskCalendarView` — por qué no reusa `AppCalendarGrid`
 

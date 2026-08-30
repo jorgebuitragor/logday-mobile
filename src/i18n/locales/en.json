@@ -41,7 +41,11 @@
     "tasksTitle": "Tasks",
     "notesTitle": "Notes",
     "dailysTitle": "Dailys",
-    "overtimeTitle": "Overtime"
+    "overtimeTitle": "Overtime",
+    "filtersToggle": "Filters",
+    "filtersClear": "Clear filters",
+    "dateFrom": "From",
+    "dateTo": "To"
   },
   "taskList": {
     "empty": "No tasks yet. Create the first one!",

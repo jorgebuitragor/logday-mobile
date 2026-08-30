@@ -41,7 +41,11 @@
     "tasksTitle": "Tareas",
     "notesTitle": "Notas",
     "dailysTitle": "Dailys",
-    "overtimeTitle": "Extras"
+    "overtimeTitle": "Extras",
+    "filtersToggle": "Filtros",
+    "filtersClear": "Limpiar filtros",
+    "dateFrom": "Desde",
+    "dateTo": "Hasta"
   },
   "taskList": {
     "empty": "Sin tareas. ¡Crea la primera!",

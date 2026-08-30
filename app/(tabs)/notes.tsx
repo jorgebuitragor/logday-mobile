@@ -7,6 +7,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
+import { FilterChip } from '../../src/components/FilterChip';
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { createNote, listNotes, softDeleteNote } from '../../src/db/notes';
@@ -212,26 +213,6 @@ export default function NotesScreen() {
   );
 }
 
-function FilterChip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
-  const theme = useTheme();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={[
-        styles.chip,
-        {
-          backgroundColor: active ? theme.accentStrong : theme.bgPanel,
-          borderColor: active ? theme.accentStrong : theme.border,
-        },
-      ]}
-    >
-      <Text style={{ color: active ? '#fff' : theme.textSecondary, fontSize: 12 }} numberOfLines={1}>
-        {label}
-      </Text>
-    </Pressable>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -240,12 +221,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     gap: 6,
-  },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
   },
   list: {
     padding: 16,

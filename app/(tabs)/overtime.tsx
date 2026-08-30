@@ -150,10 +150,10 @@ export default function OvertimeScreen() {
                 <Pressable
                   onPress={() => setActionsMonth(section)}
                   hitSlop={8}
-                  style={styles.moreButton}
+                  style={[styles.moreButton, { borderColor: theme.border, backgroundColor: theme.bgHover }]}
                   accessibilityLabel={t('overtimeActions.menuLabel')}
                 >
-                  <MoreHorizontal size={16} color={theme.textFaint} />
+                  <MoreHorizontal size={16} color={theme.textSecondary} />
                 </Pressable>
               </View>
             </View>
@@ -277,7 +277,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
   moreButton: {
-    padding: 2,
+    padding: 5,
+    borderRadius: 7,
+    borderWidth: 1,
   },
   detailRow: {
     flexDirection: 'row',

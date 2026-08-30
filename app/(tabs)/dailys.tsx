@@ -180,10 +180,10 @@ export default function DailysScreen() {
             <Pressable
               onPress={() => setActionsMonth(section.title)}
               hitSlop={8}
-              style={styles.moreButton}
+              style={[styles.moreButton, { borderColor: theme.border, backgroundColor: theme.bgHover }]}
               accessibilityLabel={t('dailyActions.menuLabel')}
             >
-              <MoreHorizontal size={16} color={theme.textFaint} />
+              <MoreHorizontal size={16} color={theme.textSecondary} />
             </Pressable>
           </View>
         )}
@@ -402,7 +402,9 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
   moreButton: {
-    padding: 2,
+    padding: 5,
+    borderRadius: 7,
+    borderWidth: 1,
   },
   row: {
     padding: 12,

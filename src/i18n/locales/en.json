@@ -137,6 +137,8 @@
     "formatLink": "Link",
     "previewToggle": "Preview",
     "previewEmpty": "Nothing to preview yet.",
+    "saving": "Saving…",
+    "saved": "Saved",
     "folderModalTitle": "Move to folder",
     "folderSave": "Save folder",
     "tagsModalTitle": "Edit tags",

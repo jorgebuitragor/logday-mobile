@@ -97,6 +97,12 @@ export default function NoteEditorScreen() {
   const [newTag, setNewTag] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [actionsOpen, setActionsOpen] = useState(false);
+  // 'idle' hasta el primer cambio — no mostrar "Guardado" en una nota
+  // recién abierta que nadie tocó todavía. Pedido explícito del
+  // usuario: sin ningún botón de guardar/finalizar ni indicador, no
+  // había forma de saber que el contenido había quedado guardado sin
+  // volver al listado, ver specs/pantalla-notes/design.md.
+  const [saveState, setSaveState] = useState<'idle' | 'pending' | 'saved'>('idle');
   const confirmDelete = useConfirmDelete<true>(confirmDestructiveActions);
   const markdownStyle = buildMarkdownStyle(theme);
 
@@ -141,6 +147,7 @@ export default function NoteEditorScreen() {
   }, [id]);
 
   function scheduleSave() {
+    setSaveState('pending');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(flushSave, SAVE_DEBOUNCE_MS);
   }
@@ -153,6 +160,7 @@ export default function NoteEditorScreen() {
       folder: folderRef.current,
       tags: tagsRef.current,
     });
+    setSaveState('saved');
   }
 
   // Guarda de inmediato (sin debounce) para cambios que no vienen de
@@ -171,6 +179,7 @@ export default function NoteEditorScreen() {
       ...overrides,
     };
     await updateNote(id, input);
+    setSaveState('saved');
   }
 
   function handleTitleChange(value: string) {
@@ -330,7 +339,13 @@ export default function NoteEditorScreen() {
         >
           <MoreHorizontal size={14} color={theme.textSecondary} />
         </Pressable>
-        <View style={{ flex: 1 }} />
+        <View style={styles.saveStateWrap}>
+          {saveState === 'pending' ? (
+            <Text style={[styles.saveStateText, { color: theme.textFaint }]}>{t('noteForm.saving')}</Text>
+          ) : saveState === 'saved' ? (
+            <Text style={[styles.saveStateText, { color: theme.textHint }]}>{t('noteForm.saved')}</Text>
+          ) : null}
+        </View>
         <Pressable style={[styles.toolbarButton, { borderColor: '#dc2626' }]} onPress={() => confirmDelete.request(true, performDelete)}>
           <Text style={{ color: '#dc2626', fontWeight: '600', fontSize: 12 }}>{t('noteForm.delete')}</Text>
         </Pressable>
@@ -494,6 +509,13 @@ const styles = StyleSheet.create({
   },
   toolbarButtonText: {
     fontSize: 12,
+  },
+  saveStateWrap: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  saveStateText: {
+    fontSize: 11,
   },
   titleInput: {
     fontSize: 20,

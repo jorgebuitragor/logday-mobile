@@ -171,3 +171,17 @@ revertir el editor WYSIWYG. Ver design.md, "Vista previa".
       claro (títulos, negrita, cursiva, código, listas, citas,
       enlaces); una nota vacía en preview muestra el mensaje, no un
       área en blanco.
+
+## Indicador de guardado (agregado 2026-08-30)
+
+- [x] `app/note/[id].tsx`: `saveState` (`'idle'|'pending'|'saved'`),
+      actualizado en `scheduleSave`/`flushSave`/`persistNow`; texto
+      "Guardando…"/"Guardado" en el espacio antes vacío de la barra
+      superior.
+- [x] i18n: `noteForm.saving`/`saved` en es/en. Paridad verificada
+      (254 = 254).
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, HTTP 200.
+- [ ] Verificar en vivo (reportado con captura por el usuario):
+      escribir en una nota muestra "Guardando…" y después "Guardado"
+      sin tener que volver al listado para confirmarlo.

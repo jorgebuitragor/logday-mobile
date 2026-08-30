@@ -304,11 +304,60 @@ la lista completa). No se tematizaron `table`/`th`/`td` (mobile no
 tiene UI para crear tablas desde la toolbar, así que no hace falta
 pulir su renderizado más allá del default de la librería).
 
+## Indicador de guardado (agregado 2026-08-30)
+
+Reportado en vivo por el usuario, con captura: "Al intentar añadir
+una nota no hay botón de guardar/finalizar. Para saber que quedó y
+verla en la lista el usuario debe dar en volver" — el editor
+autoguarda (debounce de 600ms, ver arriba) pero no daba ninguna señal
+visual de que eso hubiera pasado, a diferencia de Task/Overtime (que
+sí tienen un botón "Crear"/"Guardar cambios" explícito, ver
+`pantalla-tasks/`/`pantalla-overtime/`) — Notes es la única pantalla
+de este proyecto con autoguardado silencioso sin ningún indicador.
+
+`saveState: 'idle' | 'pending' | 'saved'` (nuevo, local a
+`app/note/[id].tsx`) — arranca en `'idle'` (nada se muestra en una
+nota recién abierta sin tocar), pasa a `'pending'` en
+`scheduleSave()` (el momento en que se agenda el debounce, no cuando
+termina de escribir) y a `'saved'` cuando `flushSave()`/`persistNow()`
+efectivamente terminan de escribir en SQLite. Texto chico
+("Guardando…"/"Guardado") en el espacio que antes era un separador
+vacío en la barra superior (`View style={{flex:1}}` entre el botón
+"⋮" y "Eliminar") — no se agregó un botón nuevo: la arquitectura de
+autoguardado se mantiene igual en toda la pantalla, lo que faltaba
+era la confirmación visual, no una acción de guardado manual (que
+además rompería el patrón ya establecido de "todo se autoguarda" del
+resto del editor).
+
+No se tocó el flujo de navegación — "volver" (botón atrás del sistema
+o de la barra) sigue siendo cómo se sale del editor, igual que en
+cualquier app de notas (Apple Notes, Google Keep incluidas: no existe
+un concepto de "cerrar/finalizar" separado de "navegar afuera"). El
+indicador resuelve la pregunta real detrás del reporte ("¿esto ya
+quedó guardado?"), no agrega una segunda forma de salir de la
+pantalla.
+
+**Nota de riesgo menor, no reportada, no corregida en este pase:** si
+el usuario escribe y navega atrás en menos de 600ms, el `setTimeout`
+pendiente igual se ejecuta más tarde (no se cancela al desmontar la
+pantalla) y el guardado sí llega a SQLite — pero el listado
+(`app/(tabs)/notes.tsx`, que recarga por `useFocusEffect` casi en el
+mismo instante en que se navega afuera) puede alcanzar a mostrar el
+contenido anterior por un instante hasta el próximo `reload()`. No es
+pérdida de datos, es una ventana de estado visualmente desactualizado
+que se autocorrige solo. Quedaría resuelto con un flush síncrono al
+desmontar/navegar afuera (`useEffect` cleanup o listener
+`beforeRemove` de la navegación) si se vuelve a reportar.
+
 ## Explícitamente pendiente
 
 - Picker/autocompletado de `folder` a partir de carpetas existentes
   (en el modal de carpeta, no en el filtro — ese ya existe, ver
   arriba).
+- Verificación en vivo (agregado 2026-08-30): el indicador cambia de
+  "Guardando…" a "Guardado" tras escribir y dejar de tipear ~600ms;
+  no aparece nada en una nota recién abierta sin editar; cabe bien en
+  la barra superior sin romper el layout de los demás botones.
 - Menú de más acciones (renombrar, duplicar, copiar, exportar, abrir
   en el sistema) — cubierto por `menu-contextual-notas/` (spec
   separado, en progreso).

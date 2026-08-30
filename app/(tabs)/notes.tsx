@@ -11,10 +11,11 @@ import { FilterChip } from '../../src/components/FilterChip';
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
-import { createNote, listNotes, softDeleteNote } from '../../src/db/notes';
+import { createNote, listNotes, setNotePinned, softDeleteNote, updateNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
+import { normalizeTag } from '../../src/lib/noteTags';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Note } from '../../src/types/note';
@@ -81,6 +82,41 @@ export default function NotesScreen() {
 
   async function handleExportNote(note: Note, format: NoteExportFormat) {
     await exportNote(note.title, note.content, format);
+  }
+
+  // Resto de acciones agregadas al menú a pedido explícito del
+  // usuario ("que el usuario tenga de forma rápida todas las
+  // posibles opciones con sus notas [desde la lista]", aunque ya
+  // estén dentro del editor) — ver
+  // specs/menu-contextual-notas/requirements.md.
+  async function handleTogglePinNote(note: Note) {
+    await setNotePinned(note.id, !note.pinned);
+    reload();
+  }
+
+  async function handleSaveFolderNote(note: Note, folder: string) {
+    await updateNote(note.id, { title: note.title, content: note.content, folder, tags: note.tags });
+    reload();
+  }
+
+  // Actualiza `actionsNote` en el momento (no solo `reload()`, que
+  // recién refresca la lista de fondo) para que los chips de tags
+  // dentro de la hoja, todavía abierta, reflejen el cambio sin tener
+  // que cerrarla y reabrirla — mismo criterio que el editor completo.
+  async function handleAddTagNote(note: Note, rawTag: string) {
+    const value = normalizeTag(rawTag);
+    if (!value || note.tags.includes(value)) return;
+    const nextTags = [...note.tags, value];
+    await updateNote(note.id, { title: note.title, content: note.content, folder: note.folder, tags: nextTags });
+    reload();
+    setActionsNote((prev) => (prev && prev.id === note.id ? { ...prev, tags: nextTags } : prev));
+  }
+
+  async function handleRemoveTagNote(note: Note, tag: string) {
+    const nextTags = note.tags.filter((existing) => existing !== tag);
+    await updateNote(note.id, { title: note.title, content: note.content, folder: note.folder, tags: nextTags });
+    reload();
+    setActionsNote((prev) => (prev && prev.id === note.id ? { ...prev, tags: nextTags } : prev));
   }
 
   // Mismo concepto que "Filtrar por tag" en NoteList.tsx de desktop
@@ -277,6 +313,15 @@ export default function NotesScreen() {
         onShare={() => actionsNote && handleShareNote(actionsNote)}
         onDuplicate={() => actionsNote && handleDuplicateNote(actionsNote)}
         onExport={(format) => actionsNote && handleExportNote(actionsNote, format)}
+        pinned={actionsNote?.pinned}
+        folder={actionsNote?.folder}
+        tags={actionsNote?.tags}
+        onEdit={() => actionsNote && router.push(`/note/${actionsNote.id}`)}
+        onTogglePin={() => actionsNote && handleTogglePinNote(actionsNote)}
+        onSaveFolder={(folder) => actionsNote && handleSaveFolderNote(actionsNote, folder)}
+        onAddTag={(tag) => actionsNote && handleAddTagNote(actionsNote, tag)}
+        onRemoveTag={(tag) => actionsNote && handleRemoveTagNote(actionsNote, tag)}
+        onDelete={() => actionsNote && confirmDelete.request(actionsNote, performDelete)}
       />
     </View>
   );
@@ -284,11 +329,13 @@ export default function NotesScreen() {
 
 // Tarjeta de la vista Cuadrícula — estilo Google Keep (título +
 // preview más larga que en Lista, sin fila de metadata separada para
-// no recargar una tarjeta angosta). Envuelta en `SwipeableRow` igual
-// que la fila de Lista: es el único camino de borrado desde el
-// listado (el menú "⋮" de `NoteActionsSheet` no ofrece Eliminar a
-// propósito, ver specs/menu-contextual-notas/design.md), así que la
-// vista Cuadrícula necesita conservarlo.
+// no recargar una tarjeta angosta). Sigue envuelta en `SwipeableRow`
+// (swipe-para-eliminar) aunque el menú "⋮" ahora también ofrece
+// Eliminar (agregado 2026-08-30, ver
+// specs/menu-contextual-notas/design.md) — dos caminos al mismo
+// destino a propósito, no una redundancia accidental: el usuario pidió
+// explícitamente tener todas las opciones disponibles rápido desde el
+// menú, sin que eso reemplace el swipe ya existente.
 function NoteCard({
   note,
   onPress,

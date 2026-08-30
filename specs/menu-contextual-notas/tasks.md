@@ -53,3 +53,34 @@ Estado: implementado, pendiente de confirmación en vivo.
 - [x] `npx tsc --noEmit` sin errores.
 - [ ] Verificar en vivo: "Compartir" abre la hoja de compartir nativa
       de Android con el texto correcto (con y sin título).
+
+## Ampliación desde la lista: Editar/Destacar/Carpeta/Tags/Eliminar (agregado 2026-08-30)
+
+- [x] `NoteActionsSheet.tsx`: 9 props nuevas, todas opcionales
+      (`pinned`/`folder`/`tags`/`onEdit`/`onTogglePin`/`onSaveFolder`/
+      `onAddTag`/`onRemoveTag`/`onDelete`); 2 modos nuevos
+      (`'folder'`/`'tags'`); fila "Eliminar" con estilo destructivo
+      (rojo, `#dc2626`) tras una línea divisoria.
+- [x] `src/lib/noteTags.ts` (nuevo): `normalizeTag` extraído de
+      `app/note/[id].tsx` (que ahora lo importa en vez de definirlo
+      local).
+- [x] `app/(tabs)/notes.tsx`: `handleTogglePinNote`/
+      `handleSaveFolderNote`/`handleAddTagNote`/`handleRemoveTagNote`
+      (llaman `setNotePinned`/`updateNote` directo); `onEdit` navega
+      con `router.push`; `onDelete` reusa `confirmDelete.request`
+      (mismo flujo que el swipe). Único `<NoteActionsSheet>` del
+      archivo (compartido entre Lista y Cuadrícula) ahora pasa los 9
+      props nuevos.
+- [x] `app/note/[id].tsx`: sin cambios en su uso de
+      `<NoteActionsSheet>` (no pasa los props nuevos) — verificado que
+      esas filas no aparecen ahí, solo desde la lista.
+- [x] i18n: sin claves nuevas — reusa `common.edit`,
+      `noteForm.pin`/`unpin`/`folderButton`/`tagsButton`/`delete`/
+      `folderModalTitle`/`tagsModalTitle` ya existentes. Paridad sin
+      cambios (202 = 202).
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, sin errores de resolución.
+- [ ] Verificar en vivo: las 5 acciones nuevas desde la lista (Editar,
+      Destacar/Quitar, Carpeta, Tags, Eliminar); que no aparecen
+      dentro del editor (solo desde la lista); que el teclado no tapa
+      el input de carpeta/tag nuevo (riesgo conocido, ver design.md).

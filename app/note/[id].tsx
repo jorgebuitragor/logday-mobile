@@ -14,6 +14,7 @@ import { createNote, getNote, setNotePinned, softDeleteNote, updateNote, type No
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
+import { normalizeTag } from '../../src/lib/noteTags';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { ThemeTokens } from '../../src/theme/tokens';
@@ -26,10 +27,6 @@ const PIN_COLOR = '#f59e0b';
 // Mismo debounce que `schedulesSave` en NoteEditor.tsx de desktop
 // (línea 963) — 600ms tras la última tecla.
 const SAVE_DEBOUNCE_MS = 600;
-
-function normalizeTag(raw: string): string {
-  return raw.trim().toLowerCase().replace(/\s+/g, '-');
-}
 
 // `react-native-markdown-display` renderiza con `Text`/`View` nativos
 // (basado en `markdown-it`, el mismo parser que ya se evaluó al

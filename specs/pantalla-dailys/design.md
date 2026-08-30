@@ -267,6 +267,35 @@ para cualquier fecha (clave natural, sin `id`, `upsertDailyEntry` crea
 la fila en el primer guardado); el hueco era puramente de navegación
 (no había cómo *llegar* a la pantalla con una fecha pasada).
 
+## Flechas de navegación entre días (agregado 2026-08-29)
+
+`goToDay(nextDate)` en `app/daily/[date].tsx` hace
+`router.replace(\`/daily/${nextDate}\`)`, no `push` — cambiar de día
+con la flecha es "otro estado de la misma edición", no abrir una
+pantalla nueva encima; con `push` el botón atrás del sistema tendría
+que deshacer un paso por cada flecha tocada antes de volver al
+listado (mismo criterio que ya se usó para `router.replace` al
+duplicar una nota desde dentro del editor, ver
+`menu-contextual-notas/design.md`).
+
+La flecha "previo" reutiliza `previousDate` (`addDaysISO(date, -1)`),
+ya calculado para el panel "Previo" — es la misma fecha. La flecha
+"siguiente" es simétrica (`addDaysISO(date, 1)`), sin usarse en
+ningún otro lado de la pantalla todavía.
+
+Sin límites: ni tope en el futuro (el resto de la app ya permite
+elegir cualquier fecha futura, `AppCalendarGrid` se usa sin prop
+`max` en `dailys.tsx`) ni un piso — como con cualquier fecha en esta
+pantalla, el registro no existe hasta el primer `upsertDailyEntry`
+(ver `useEffect` que carga `date`/`previousDate`: si no hay entrada,
+`content`/`previousContent` arrancan vacíos, no hay error ni pantalla
+de "no encontrado").
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.
+- Verificación en vivo de las flechas de navegación entre días
+  (agregado 2026-08-29): tocar ambas flechas repetidas veces navega
+  sin acumular pantallas en el stack (el botón atrás del sistema
+  vuelve directo al listado, no día por día); llegar con la flecha a
+  un día sin registro no rompe nada y permite empezar a escribir.

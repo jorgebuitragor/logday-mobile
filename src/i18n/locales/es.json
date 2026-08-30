@@ -156,7 +156,9 @@
     "todayBadge": "HOY",
     "previewTitle": "Vista previa",
     "pickDateTitle": "Elegir fecha para daily",
-    "goToDate": "Ir"
+    "goToDate": "Ir",
+    "previousDay": "Día anterior",
+    "nextDay": "Día siguiente"
   },
   "dailyActions": {
     "menuLabel": "Más acciones del mes",

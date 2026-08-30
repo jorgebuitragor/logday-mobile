@@ -156,7 +156,9 @@
     "todayBadge": "TODAY",
     "previewTitle": "Preview",
     "pickDateTitle": "Choose date for daily",
-    "goToDate": "Go"
+    "goToDate": "Go",
+    "previousDay": "Previous day",
+    "nextDay": "Next day"
   },
   "dailyActions": {
     "menuLabel": "More month actions",

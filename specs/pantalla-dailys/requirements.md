@@ -73,6 +73,12 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
 - El sistema DEBERÁ permitir eliminar el registro completo del día
   (soft-delete), con confirmación según
   `confirmacion-eliminar/requirements.md`.
+- El sistema DEBERÁ ofrecer flechas ◀▶ junto a la fecha (agregado
+  2026-08-29, sin equivalente en desktop) para cambiar de día sin
+  volver al listado — sin límite en ninguna dirección (fechas futuras
+  ya son válidas en el resto de la app, ver `AppCalendarGrid` sin
+  `max`), sin crear el registro hasta que se guarde la primera
+  actividad, igual que ya pasa con "Previo" y con `daily/new`.
 
 ## Fuera de este spec
 

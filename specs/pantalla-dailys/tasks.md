@@ -71,3 +71,15 @@ Estado: implementado, pendiente de confirmación en vivo.
       vuelve a su posición), que el swipe sigue funcionando normal para
       un deslizar rápido sin mantener presionado, y que el scroll de la
       pantalla se bloquea mientras se arrastra.
+
+## Flechas de navegación entre días (agregado 2026-08-29)
+
+- [x] `app/daily/[date].tsx`: flechas ◀▶ junto a la fecha,
+      `goToDay(nextDate)` con `router.replace` (no `push`).
+- [x] i18n: `dailyForm.previousDay`/`dailyForm.nextDay` en es/en.
+      Paridad verificada (191 = 191).
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [ ] Verificar en vivo: navegar varios días seguidos con las flechas
+      y confirmar que el botón atrás del sistema vuelve directo al
+      listado (no día por día); llegar a un día sin registro con la
+      flecha permite escribir normalmente.

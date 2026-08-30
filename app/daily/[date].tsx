@@ -1,5 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -132,6 +133,17 @@ export default function DailyEditorScreen() {
     setTimeout(() => setCopied(false), 1500);
   }
 
+  // `replace`, no `push` — cambiar de día es "otro estado de la misma
+  // edición", no una pantalla nueva; con `push` el botón atrás del
+  // sistema tendría que deshacer un paso por cada flecha tocada antes
+  // de volver al listado. Sin límite en ninguna dirección: el resto de
+  // la app tampoco restringe fechas futuras (ver `AppCalendarGrid`,
+  // usado sin `max` en dailys.tsx) ni tiene un piso — el día se crea
+  // recién al guardar la primera actividad, igual que `previousDate`.
+  function goToDay(nextDate: string) {
+    router.replace(`/daily/${nextDate}`);
+  }
+
   if (!loaded) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bgBase }]}>
@@ -151,12 +163,29 @@ export default function DailyEditorScreen() {
       scrollEnabled={!dragItem}
     >
       <View style={styles.dateRow}>
+        <Pressable
+          onPress={() => goToDay(previousDate)}
+          hitSlop={8}
+          style={[styles.dateArrow, { borderColor: theme.border }]}
+          accessibilityLabel={t('dailyForm.previousDay')}
+        >
+          <ChevronLeft size={18} color={theme.textSecondary} />
+        </Pressable>
         <Text style={[styles.dateLabel, { color: theme.textPrimary }]}>{date}</Text>
         {isToday ? (
           <View style={[styles.todayBadge, { backgroundColor: theme.accentSoft }]}>
             <Text style={[styles.todayBadgeText, { color: theme.accentInk }]}>{t('dailyForm.todayBadge')}</Text>
           </View>
         ) : null}
+        <View style={{ flex: 1 }} />
+        <Pressable
+          onPress={() => goToDay(addDaysISO(date, 1))}
+          hitSlop={8}
+          style={[styles.dateArrow, { borderColor: theme.border }]}
+          accessibilityLabel={t('dailyForm.nextDay')}
+        >
+          <ChevronRight size={18} color={theme.textSecondary} />
+        </Pressable>
       </View>
 
       <View ref={previousPanelRef} style={[styles.panel, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}>
@@ -302,6 +331,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  dateArrow: {
+    borderWidth: 1,
+    borderRadius: 999,
+    padding: 6,
   },
   dateLabel: {
     fontSize: 18,

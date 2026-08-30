@@ -51,6 +51,13 @@ Se porta ese mismo modelo, no el formulario anterior:
   inmediato (id UUID, título y contenido vacíos, `created`/`updated`/
   `updated_at` al momento de creación) y navegar directo a su editor —
   sin ningún diálogo previo pidiendo campos.
+- Al salir del editor (volver atrás) DEBERÁ descartar en silencio,
+  sin confirmación, cualquier nota que quede sin título ni contenido —
+  tanto una recién creada que nunca se tocó como una existente a la
+  que se le borró todo el texto. Puerto de `isNewEmptyNote`/
+  `handleSelectNote` en `NoteList.tsx` de desktop (agregado
+  2026-08-30, tras confirmar con el usuario que esa lógica sí existe
+  en desktop — ver design.md).
 - La pantalla de editar nota DEBERÁ mostrar como superficie principal
   **solo** el título (texto libre) y el contenido (editor de texto
   enriquecido, ver "Editor" abajo) — ningún otro campo compite por

@@ -337,17 +337,53 @@ indicador resuelve la pregunta real detrás del reporte ("¿esto ya
 quedó guardado?"), no agrega una segunda forma de salir de la
 pantalla.
 
-**Nota de riesgo menor, no reportada, no corregida en este pase:** si
-el usuario escribe y navega atrás en menos de 600ms, el `setTimeout`
-pendiente igual se ejecuta más tarde (no se cancela al desmontar la
-pantalla) y el guardado sí llega a SQLite — pero el listado
-(`app/(tabs)/notes.tsx`, que recarga por `useFocusEffect` casi en el
-mismo instante en que se navega afuera) puede alcanzar a mostrar el
-contenido anterior por un instante hasta el próximo `reload()`. No es
-pérdida de datos, es una ventana de estado visualmente desactualizado
-que se autocorrige solo. Quedaría resuelto con un flush síncrono al
-desmontar/navegar afuera (`useEffect` cleanup o listener
-`beforeRemove` de la navegación) si se vuelve a reportar.
+~~**Nota de riesgo menor...**~~ — resuelto en "Descarte de notas
+vacías" (abajo, 2026-08-30): el cleanup nuevo ya cancela el
+`setTimeout` pendiente y hace el flush síncrono al salir, así que el
+guardado ya no queda corriendo después de que la pantalla se
+abandonó.
+
+## Descarte de notas vacías al salir (agregado 2026-08-30)
+
+Pregunta directa del usuario: "¿Qué comportamiento tiene la app para
+notas vacías?" — la respuesta inicial fue incorrecta (se afirmó que
+desktop no tenía ninguna lógica de limpieza); el usuario repreguntó
+"¿Estás seguro que en desktop no hay lógica para borrar notas
+vacías?", lo que llevó a revisar el código de desktop a fondo en vez
+de confiar en el comentario de `note/new.tsx` (que solo hablaba de
+"se crea vacía de inmediato", no de qué pasa después).
+
+Desktop sí tiene la lógica, en `NoteList.tsx` (líneas 89-116, no en
+`NoteEditor.tsx` ni en `appStore.ts`): `isNewEmptyNote` (`!!activeNote
+&& !activeNote.title.trim() && !activeNote.content.trim()`) se
+evalúa contra la nota activa, y `handleSelectNote` la descarta
+(`deleteNote(toDiscard, { showToast: false })`, con una animación de
+300ms) **solo cuando el usuario selecciona otra nota** desde el panel
+dividido — no al cambiar de sección, no al cerrar la app. El nombre
+de la variable ("nueva") es engañoso: el chequeo es genérico sobre el
+estado actual, no sobre si la nota fue recién creada — una nota
+existente a la que se le borra todo el título y contenido cae en el
+mismo camino.
+
+Mobile no tiene panel dividido (navega con `router.push`/`back`, la
+lista no queda visible durante la edición), así que no hay un
+"seleccionar otra nota" equivalente. El disparador que sí existe en
+mobile y cumple el mismo propósito ("abandonar esta nota") es salir
+de la pantalla — implementado en `app/note/[id].tsx` como el cleanup
+de un `useEffect([id])`: si al desmontar (o al cambiar `id` sin
+desmontar, ej. `handleDuplicate`) el título y el contenido siguen
+vacíos, se llama `softDeleteNote(id)` en silencio, sin toast ni
+confirmación — mismo criterio genérico que desktop (no distingue
+"recién creada" de "vaciada a mano"). Usa `softDeleteNote` (marca
+`deleted_at`, no borra la fila) en vez de un delete físico porque es
+la función de borrado ya establecida en toda esta pantalla — la fila
+soft-deleted simplemente no vuelve a aparecer en `listNotes()`.
+
+Efecto colateral positivo: el mismo cleanup cancela el `setTimeout`
+de autoguardado pendiente al salir y, si la nota no quedó vacía, hace
+el flush de forma síncrona en su lugar — resuelve el "riesgo menor"
+ya documentado arriba en "Indicador de guardado" (el guardado con
+debounce que seguía corriendo después de abandonar la pantalla).
 
 ## Explícitamente pendiente
 
@@ -370,3 +406,10 @@ desmontar/navegar afuera (`useEffect` cleanup o listener
   el cursor no salta de forma inesperada) y de la vista previa
   (confirmar que el tema se ve bien en modo oscuro, y que el toggle no
   pierde la posición de scroll ni la selección al alternar).
+- **Verificación en vivo pendiente** del descarte de notas vacías: crear
+  una nota nueva y volver atrás sin escribir nada — no debe quedar en
+  la lista; abrir una nota existente con contenido, borrar todo el
+  título y el contenido, volver atrás — también debe desaparecer;
+  escribir en una nota normal y volver atrás casi de inmediato (dentro
+  de los 600ms del debounce) — el contenido SÍ debe quedar guardado
+  (flush síncrono, no debe perderse).

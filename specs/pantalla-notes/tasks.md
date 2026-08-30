@@ -185,3 +185,24 @@ revertir el editor WYSIWYG. Ver design.md, "Vista previa".
 - [ ] Verificar en vivo (reportado con captura por el usuario):
       escribir en una nota muestra "Guardando…" y después "Guardado"
       sin tener que volver al listado para confirmarlo.
+
+## Descarte de notas vacías al salir (agregado 2026-08-30)
+
+- [x] `app/note/[id].tsx`: nuevo `useEffect([id])` cuyo cleanup, al
+      salir de la pantalla (unmount o cambio de `id` sin desmontar),
+      llama `softDeleteNote(id)` en silencio si título y contenido
+      siguen vacíos — puerto de `isNewEmptyNote`/`handleSelectNote`
+      de `NoteList.tsx` en desktop, adaptado al modelo de navegación
+      de mobile (sin panel dividido). Ver design.md.
+- [x] Mismo cleanup cancela el `setTimeout` de autoguardado pendiente
+      y, si la nota no quedó vacía, hace flush síncrono — resuelve de
+      paso el "riesgo menor" ya documentado en "Indicador de
+      guardado" (design.md).
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, sin errores de resolución
+      reales.
+- [ ] Verificar en vivo: crear nota nueva y volver atrás sin escribir
+      — no debe quedar en la lista; vaciar el título/contenido de una
+      nota existente y volver atrás — también debe desaparecer;
+      escribir y volver atrás casi de inmediato (<600ms) — el
+      contenido SÍ debe guardarse, no perderse.

@@ -146,6 +146,44 @@ export default function NoteEditorScreen() {
     });
   }, [id]);
 
+  // Puerto de `isNewEmptyNote`/`handleSelectNote` en NoteList.tsx de
+  // desktop: si la nota queda sin título ni contenido, se descarta
+  // sola en silencio. Desktop lo dispara al seleccionar OTRA nota
+  // desde el panel dividido (la lista siempre visible al lado); mobile
+  // no tiene ese panel, así que el disparador equivalente es salir de
+  // esta pantalla (volver atrás) — el cleanup de este efecto corre
+  // tanto en un unmount real como al cambiar `id` sin desmontar (ej.
+  // `handleDuplicate`), leyendo los refs (siempre al día) en el
+  // momento exacto en que se abandona la nota. Igual que desktop, no
+  // distingue "recién creada" de "existente que quedó vacía" — mismo
+  // criterio genérico, deliberado para mantener paridad.
+  //
+  // De paso resuelve el "riesgo menor" ya documentado en design.md
+  // ("Indicador de guardado"): si quedaba un guardado con debounce
+  // pendiente (<600ms desde la última tecla) al salir, antes se
+  // ejecutaba igual más tarde sin que la pantalla ya estuviera
+  // presente; ahora se cancela y, si la nota NO quedó vacía, se
+  // vuelca de inmediato (flush síncrono) en vez de perderse.
+  useEffect(() => {
+    return () => {
+      const hadPendingSave = saveTimeoutRef.current !== null;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = null;
+      }
+      if (!titleRef.current.trim() && !contentRef.current.trim()) {
+        softDeleteNote(id);
+      } else if (hadPendingSave) {
+        updateNote(id, {
+          title: titleRef.current.trim(),
+          content: contentRef.current,
+          folder: folderRef.current,
+          tags: tagsRef.current,
+        });
+      }
+    };
+  }, [id]);
+
   function scheduleSave() {
     setSaveState('pending');
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);

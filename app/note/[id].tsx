@@ -1,5 +1,6 @@
+import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Eye, EyeOff, Folder, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
+import { Eye, EyeOff, Folder, MoreHorizontal, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -8,8 +9,10 @@ import Markdown from 'react-native-markdown-display';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { MarkdownToolbar, type TextSelection } from '../../src/components/MarkdownToolbar';
-import { getNote, setNotePinned, softDeleteNote, updateNote, type NoteInput } from '../../src/db/notes';
+import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
+import { createNote, getNote, setNotePinned, softDeleteNote, updateNote, type NoteInput } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { ThemeTokens } from '../../src/theme/tokens';
@@ -95,6 +98,7 @@ export default function NoteEditorScreen() {
   const [tagsModalOpen, setTagsModalOpen] = useState(false);
   const [newTag, setNewTag] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
+  const [actionsOpen, setActionsOpen] = useState(false);
   const confirmDelete = useConfirmDelete<true>(confirmDestructiveActions);
   const markdownStyle = buildMarkdownStyle(theme);
 
@@ -236,6 +240,31 @@ export default function NoteEditorScreen() {
     router.back();
   }
 
+  // Mismo formato que `handleCopy` de desktop (NoteList.tsx:168-174):
+  // "# título\n\ncontenido" con título, o solo el contenido sin.
+  async function handleCopyToClipboard() {
+    await Clipboard.setStringAsync(buildMarkdownDoc(titleRef.current, contentRef.current));
+  }
+
+  // Mismo criterio que `duplicateNote` de desktop (appStore.ts:2775-2792):
+  // sufijo " (copia)" en el título, destacado reseteado a false,
+  // carpeta/tags/contenido copiados tal cual. Navega directo a la
+  // copia (mismo patrón que "crear nota nueva", ver note/new.tsx).
+  async function handleDuplicate() {
+    const duplicatedTitle = titleRef.current.trim() ? `${titleRef.current.trim()} (copia)` : '(copia)';
+    const newId = await createNote({
+      title: duplicatedTitle,
+      content: contentRef.current,
+      folder: folderRef.current,
+      tags: tagsRef.current,
+    });
+    router.replace(`/note/${newId}`);
+  }
+
+  async function handleExport(format: NoteExportFormat) {
+    await exportNote(titleRef.current, contentRef.current, format);
+  }
+
   if (note === undefined) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bgBase }]}>
@@ -291,6 +320,13 @@ export default function NoteEditorScreen() {
           ) : (
             <Eye size={14} color={theme.textSecondary} />
           )}
+        </Pressable>
+        <Pressable
+          style={[styles.toolbarButton, { borderColor: theme.border }]}
+          onPress={() => setActionsOpen(true)}
+          accessibilityLabel={t('noteActions.menuLabel')}
+        >
+          <MoreHorizontal size={14} color={theme.textSecondary} />
         </Pressable>
         <View style={{ flex: 1 }} />
         <Pressable style={[styles.toolbarButton, { borderColor: '#dc2626' }]} onPress={() => confirmDelete.request(true, performDelete)}>
@@ -410,6 +446,14 @@ export default function NoteEditorScreen() {
           performDelete();
           confirmDelete.cancel();
         }}
+      />
+
+      <NoteActionsSheet
+        visible={actionsOpen}
+        onClose={() => setActionsOpen(false)}
+        onCopy={handleCopyToClipboard}
+        onDuplicate={handleDuplicate}
+        onExport={handleExport}
       />
     </View>
   );

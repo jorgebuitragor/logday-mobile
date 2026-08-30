@@ -28,7 +28,8 @@
       "expo-sqlite",
       "expo-status-bar",
       "expo-router",
-      "expo-localization"
+      "expo-localization",
+      "expo-sharing"
     ]
   }
 }

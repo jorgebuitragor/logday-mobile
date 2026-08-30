@@ -118,6 +118,18 @@
     "folderButton": "Carpeta",
     "tagsButton": "Tags"
   },
+  "noteActions": {
+    "menuLabel": "Más acciones",
+    "copy": "Copiar",
+    "duplicate": "Duplicar",
+    "export": "Exportar",
+    "formatMd": "Markdown",
+    "formatMdHint": ".md — con formato original",
+    "formatTxt": "Texto plano",
+    "formatTxtHint": ".txt — sin formato",
+    "formatPdf": "PDF",
+    "formatPdfHint": ".pdf — documento portable"
+  },
   "dailyList": {
     "empty": "Sin dailys todavía.",
     "loading": "Cargando..."

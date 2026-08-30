@@ -118,6 +118,18 @@
     "folderButton": "Folder",
     "tagsButton": "Tags"
   },
+  "noteActions": {
+    "menuLabel": "More actions",
+    "copy": "Copy",
+    "duplicate": "Duplicate",
+    "export": "Export",
+    "formatMd": "Markdown",
+    "formatMdHint": ".md — with original formatting",
+    "formatTxt": "Plain text",
+    "formatTxtHint": ".txt — no formatting",
+    "formatPdf": "PDF",
+    "formatPdfHint": ".pdf — portable document"
+  },
   "dailyList": {
     "empty": "No dailys yet.",
     "loading": "Loading..."

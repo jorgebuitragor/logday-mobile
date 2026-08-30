@@ -38,7 +38,7 @@ hasta tres archivos:
 | i18n | implementado (pendiente confirmación en vivo) | [`i18n/`](./i18n/requirements.md) |
 | Pantalla de Ajustes | implementado (pendiente confirmación en vivo) | [`pantalla-ajustes/`](./pantalla-ajustes/requirements.md) |
 | Branding | implementado (pendiente confirmación en vivo) | [`branding/`](./branding/requirements.md) |
-| Pantalla de Notes | implementado (CRUD base verificado en vivo; pin/folder/tags pendiente) | [`pantalla-notes/`](./pantalla-notes/requirements.md) |
+| Pantalla de Notes | implementado (CRUD, pinned/folder/tags y editor simplificado verificados en vivo; toolbar de markdown y vista previa pendientes) | [`pantalla-notes/`](./pantalla-notes/requirements.md) |
 | Pantalla de Dailys | implementado (pendiente confirmación en vivo) | [`pantalla-dailys/`](./pantalla-dailys/requirements.md) |
 | Pantalla de Overtime | implementado (pendiente confirmación en vivo) | [`pantalla-overtime/`](./pantalla-overtime/requirements.md) |
 | Confirmación antes de eliminar | implementado (pendiente confirmación en vivo) | [`confirmacion-eliminar/`](./confirmacion-eliminar/requirements.md) |
@@ -46,3 +46,5 @@ hasta tres archivos:
 | Búsqueda global | implementado (pendiente confirmación en vivo) | [`busqueda/`](./busqueda/requirements.md) |
 | Selector de fecha | implementado (pendiente confirmación en vivo) | [`selector-fecha/`](./selector-fecha/requirements.md) |
 | Selector de hora | implementado (pendiente confirmación en vivo) | [`selector-hora/`](./selector-hora/requirements.md) |
+| Menú contextual de Notes | implementado (pendiente confirmación en vivo) | [`menu-contextual-notas/`](./menu-contextual-notas/requirements.md) |
+| Exportación | Notes implementado (pendiente confirmación en vivo); Dailys/Overtime pendientes | [`exportacion/`](./exportacion/requirements.md) |

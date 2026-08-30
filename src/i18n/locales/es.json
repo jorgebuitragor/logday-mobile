@@ -146,7 +146,9 @@
   },
   "dailyList": {
     "empty": "Sin dailys todavía.",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "taskCount_one": "{{count}} actividad",
+    "taskCount_other": "{{count}} actividades"
   },
   "dailyForm": {
     "today": "Hoy",
@@ -181,7 +183,10 @@
     "formatTxt": "Texto plano",
     "formatTxtHint": ".txt — sin formato",
     "formatPdf": "PDF",
-    "formatPdfHint": ".pdf — documento portable"
+    "formatPdfHint": ".pdf — documento portable",
+    "deleteMonth": "Eliminar mes",
+    "deleteMonthTitle": "Eliminar mes completo",
+    "deleteMonthMessage": "Se eliminarán todos los dailys de {{month}}. Esta acción no se puede deshacer."
   },
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",

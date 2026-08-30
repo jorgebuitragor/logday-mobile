@@ -83,3 +83,27 @@ Estado: implementado, pendiente de confirmación en vivo.
       y confirmar que el botón atrás del sistema vuelve directo al
       listado (no día por día); llegar a un día sin registro con la
       flecha permite escribir normalmente.
+
+## Rediseño de fila y "Eliminar mes" (agregado 2026-08-30)
+
+- [x] Investigación: `DailyList.tsx` de desktop leído completo,
+      catálogo de gaps armado (ver design.md) — incluye Ausencias,
+      encontrado pero deliberadamente no portado (requiere servidor
+      nuevo, ver requirements.md).
+- [x] `app/(tabs)/dailys.tsx`: fila rediseñada (día grande, nombre de
+      día, cantidad de actividades, preview, insignia "HOY", borde
+      resaltado si es hoy); `weekdayShort`/`dayNumber` nuevos.
+- [x] `src/db/dailyEntries.ts`: `softDeleteDailyMonth(yearMonth)`
+      (soft-delete masivo, mismo criterio que una entrada individual).
+- [x] `src/components/DailyMonthActionsSheet.tsx`: fila destructiva
+      "Eliminar mes" (prop `onDeleteMonth` nueva).
+- [x] `app/(tabs)/dailys.tsx`: segundo `useConfirmDelete` para el
+      flujo de eliminar mes, con su propio `ConfirmDeleteModal`.
+- [x] i18n: `dailyList.taskCount_one/_other`;
+      `dailyActions.deleteMonth`/`deleteMonthTitle`/`deleteMonthMessage`
+      en es/en. Paridad verificada (219 = 219).
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, sin errores de resolución.
+- [ ] Verificar en vivo: fila con 0/1/varias actividades se ve bien;
+      insignia "HOY" en el día correcto; "Eliminar mes" borra todo el
+      mes correctamente y no deja una sección vacía en el listado.

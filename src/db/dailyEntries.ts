@@ -49,3 +49,18 @@ export async function softDeleteDailyEntry(date: string): Promise<void> {
   const now = new Date().toISOString();
   await getDb().runAsync('UPDATE daily_entries SET deleted_at = ? WHERE date = ?', now, date);
 }
+
+// Puerto de `deleteDailyMonth` de desktop (`appStore.ts`, borra el
+// directorio del mes completo) — acá es un soft-delete masivo de
+// todas las filas de ese mes de una vez, mismo criterio de borrado
+// que cada entrada individual, agregado 2026-08-30 al menú "⋮" del
+// mes en `app/(tabs)/dailys.tsx` (gap encontrado al comparar contra
+// desktop, no existía en mobile todavía).
+export async function softDeleteDailyMonth(yearMonth: string): Promise<void> {
+  const now = new Date().toISOString();
+  await getDb().runAsync(
+    "UPDATE daily_entries SET deleted_at = ? WHERE date LIKE ? AND deleted_at IS NULL",
+    now,
+    `${yearMonth}-%`
+  );
+}

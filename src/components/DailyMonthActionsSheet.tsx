@@ -1,4 +1,4 @@
-import { ChevronLeft, Download, FileDown, FileText, FileType2, Share2 } from 'lucide-react-native';
+import { ChevronLeft, Download, FileDown, FileText, FileType2, Share2, Trash2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
@@ -11,13 +11,16 @@ interface DailyMonthActionsSheetProps {
   onClose: () => void;
   onShare: () => void;
   onExport: (format: DailyMonthExportFormat) => void;
+  onDeleteMonth: () => void;
 }
 
 // Mismo patrón que `NoteActionsSheet` (acá sin "Duplicar" — no aplica
-// a un mes completo de dailys) — el mes no tiene un menú contextual
-// equivalente en desktop (ahí se activa con clic derecho sobre el
-// encabezado del mes en el sidebar); ver specs/exportacion/design.md.
-export function DailyMonthActionsSheet({ visible, onClose, onShare, onExport }: DailyMonthActionsSheetProps) {
+// a un mes completo de dailys) — el mes sí tiene un menú contextual
+// equivalente en desktop (clic derecho sobre el encabezado del mes en
+// el sidebar, `DailyList.tsx`), que incluía "Eliminar mes" además de
+// exportar — gap encontrado y agregado 2026-08-30 (ver
+// specs/pantalla-dailys/design.md), no estaba portado todavía.
+export function DailyMonthActionsSheet({ visible, onClose, onShare, onExport, onDeleteMonth }: DailyMonthActionsSheetProps) {
   const theme = useTheme();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'actions' | 'export'>('actions');
@@ -47,6 +50,8 @@ export function DailyMonthActionsSheet({ visible, onClose, onShare, onExport }: 
             <>
               <Row icon={Share2} label={t('dailyActions.share')} onPress={() => { onShare(); close(); }} theme={theme} />
               <Row icon={Download} label={t('dailyActions.export')} onPress={() => setMode('export')} theme={theme} />
+              <View style={[styles.divider, { backgroundColor: theme.border }]} />
+              <Row icon={Trash2} label={t('dailyActions.deleteMonth')} onPress={() => { onDeleteMonth(); close(); }} theme={theme} destructive />
             </>
           ) : (
             <>
@@ -80,16 +85,19 @@ function Row({
   label,
   onPress,
   theme,
+  destructive,
 }: {
   icon: typeof Share2;
   label: string;
   onPress: () => void;
   theme: ReturnType<typeof useTheme>;
+  destructive?: boolean;
 }) {
+  const color = destructive ? '#dc2626' : theme.textSecondary;
   return (
     <Pressable style={styles.row} onPress={onPress}>
-      <Icon size={18} color={theme.textSecondary} />
-      <Text style={[styles.rowLabel, { color: theme.textPrimary }]}>{label}</Text>
+      <Icon size={18} color={color} />
+      <Text style={[styles.rowLabel, { color: destructive ? '#dc2626' : theme.textPrimary }]}>{label}</Text>
     </Pressable>
   );
 }
@@ -135,5 +143,10 @@ const styles = StyleSheet.create({
   rowSubtitle: {
     fontSize: 12,
     marginTop: 1,
+  },
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    marginVertical: 4,
+    marginHorizontal: 16,
   },
 });

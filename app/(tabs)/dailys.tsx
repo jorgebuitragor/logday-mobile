@@ -10,7 +10,7 @@ import { parseActivityItems } from '../../src/components/DailyActivityList';
 import { DailyMonthActionsSheet } from '../../src/components/DailyMonthActionsSheet';
 import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
-import { listDailyEntries, softDeleteDailyEntry } from '../../src/db/dailyEntries';
+import { listDailyEntries, softDeleteDailyEntry, softDeleteDailyMonth } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { todayISO } from '../../src/lib/dates';
 import { buildDailyMonthDoc, exportDailyMonth, type DailyMonthExportFormat } from '../../src/lib/dailyMonthExport';
@@ -25,6 +25,18 @@ import type { DailyEntry } from '../../src/types/dailyEntry';
 function preview(content: string): string {
   const flat = parseActivityItems(content).join(' · ');
   return flat.length > 80 ? `${flat.slice(0, 80)}…` : flat;
+}
+
+// Mismo criterio que `formatShortWeekday` de desktop (`DailyList.tsx`)
+// — nombre corto de día vía `Intl`, sin un array de nombres propio.
+function weekdayShort(iso: string, language: string): string {
+  const locale = language === 'es' ? 'es-CO' : 'en-US';
+  const d = new Date(`${iso}T12:00:00`);
+  return new Intl.DateTimeFormat(locale, { weekday: 'short' }).format(d).replace('.', '');
+}
+
+function dayNumber(iso: string): number {
+  return new Date(`${iso}T12:00:00`).getDate();
 }
 
 interface MonthSection {
@@ -51,7 +63,7 @@ function groupByMonth(entries: DailyEntry[]): MonthSection[] {
 }
 
 export default function DailysScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
   const { confirmDestructiveActions } = usePreferences();
@@ -60,7 +72,12 @@ export default function DailysScreen() {
   const [pickerDate, setPickerDate] = useState(todayISO());
   const [actionsMonth, setActionsMonth] = useState<string | null>(null);
   const confirmDelete = useConfirmDelete<DailyEntry>(confirmDestructiveActions);
+  // Hook aparte del de arriba — misma razón que `confirmDeleteDialog`
+  // vs. un segundo flujo en Overtime: son dos destinos distintos (un
+  // día vs. un mes completo), con textos de confirmación propios.
+  const confirmDeleteMonth = useConfirmDelete<string>(confirmDestructiveActions);
   const monthNames = t('common.months', { returnObjects: true }) as string[];
+  const today = todayISO();
 
   const reload = useCallback(() => {
     listDailyEntries().then(setEntries);
@@ -70,6 +87,15 @@ export default function DailysScreen() {
 
   async function performDelete(entry: DailyEntry) {
     await softDeleteDailyEntry(entry.date);
+    reload();
+  }
+
+  // Gap encontrado al comparar contra desktop (`DailyList.tsx`, menú
+  // contextual del mes: exportar + "Eliminar mes") — no existía en
+  // mobile, agregado 2026-08-30 junto al resto de la revisión de esta
+  // pantalla.
+  async function performDeleteMonth(yearMonth: string) {
+    await softDeleteDailyMonth(yearMonth);
     reload();
   }
 
@@ -120,20 +146,51 @@ export default function DailysScreen() {
             </Pressable>
           </View>
         )}
-        renderItem={({ item }) => (
-          <SwipeableRow
-            deleteLabel={t('common.delete')}
-            onDelete={() => confirmDelete.request(item, performDelete)}
-          >
-            <Pressable
-              style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
-              onPress={() => router.push(`/daily/${item.date}`)}
+        renderItem={({ item }) => {
+          const isToday = item.date === today;
+          const taskCount = parseActivityItems(item.content).length;
+          const previewText = preview(item.content);
+          return (
+            <SwipeableRow
+              deleteLabel={t('common.delete')}
+              onDelete={() => confirmDelete.request(item, performDelete)}
             >
-              <Text style={[styles.title, { color: theme.textPrimary }]}>{item.date}</Text>
-              <Text style={{ color: theme.textMuted }}>{preview(item.content)}</Text>
-            </Pressable>
-          </SwipeableRow>
-        )}
+              <Pressable
+                style={[
+                  styles.row,
+                  { backgroundColor: theme.bgPanel, borderColor: isToday ? theme.accent : theme.border },
+                ]}
+                onPress={() => router.push(`/daily/${item.date}`)}
+              >
+                <View style={styles.rowTop}>
+                  <View style={styles.dateBlock}>
+                    <Text style={[styles.dayNum, { color: isToday ? theme.accent : theme.textPrimary }]}>
+                      {dayNumber(item.date)}
+                    </Text>
+                    <View>
+                      <Text style={[styles.dayName, { color: isToday ? theme.accent : theme.textSecondary }]}>
+                        {weekdayShort(item.date, i18n.language)}
+                      </Text>
+                      {taskCount > 0 ? (
+                        <Text style={[styles.taskCount, { color: theme.textFaint }]}>
+                          {t('dailyList.taskCount', { count: taskCount })}
+                        </Text>
+                      ) : null}
+                    </View>
+                  </View>
+                  {isToday ? (
+                    <View style={[styles.todayBadge, { backgroundColor: theme.accentSoft }]}>
+                      <Text style={[styles.todayBadgeText, { color: theme.accentInk }]}>{t('dailyForm.todayBadge')}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                {previewText ? (
+                  <Text style={[styles.previewText, { color: theme.textMuted }]}>{previewText}</Text>
+                ) : null}
+              </Pressable>
+            </SwipeableRow>
+          );
+        }}
       />
       <View style={styles.fabRow}>
         <Pressable
@@ -192,6 +249,24 @@ export default function DailysScreen() {
         onClose={() => setActionsMonth(null)}
         onShare={handleShareMonth}
         onExport={handleExportMonth}
+        onDeleteMonth={() => actionsMonth && confirmDeleteMonth.request(actionsMonth, performDeleteMonth)}
+      />
+
+      <ConfirmDeleteModal
+        visible={confirmDeleteMonth.isOpen}
+        title={t('dailyActions.deleteMonthTitle')}
+        message={
+          confirmDeleteMonth.pending
+            ? t('dailyActions.deleteMonthMessage', { month: monthLabel(confirmDeleteMonth.pending) })
+            : ''
+        }
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('dailyActions.deleteMonth')}
+        onCancel={confirmDeleteMonth.cancel}
+        onConfirm={() => {
+          if (confirmDeleteMonth.pending) performDeleteMonth(confirmDeleteMonth.pending);
+          confirmDeleteMonth.cancel();
+        }}
       />
     </View>
   );
@@ -225,11 +300,42 @@ const styles = StyleSheet.create({
     padding: 12,
     borderWidth: 1,
     borderRadius: 8,
-    gap: 4,
+    gap: 6,
   },
-  title: {
-    fontSize: 16,
-    fontWeight: '600',
+  rowTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+  },
+  dateBlock: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  dayNum: {
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  dayName: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'capitalize',
+  },
+  taskCount: {
+    fontSize: 11,
+  },
+  todayBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  todayBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  previewText: {
+    fontSize: 12,
   },
   fabRow: {
     position: 'absolute',

@@ -80,6 +80,22 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
   `max`), sin crear el registro hasta que se guarde la primera
   actividad, igual que ya pasa con "Previo" y con `daily/new`.
 
+### Listado — rediseño y "Eliminar mes" (agregado 2026-08-30)
+
+Pedido directo del usuario: "vamos a mejorar la vista de la lista de
+Dailys... revisa que no nos falte algo funcional... que esté en
+desktop". Se investigó `DailyList.tsx` de desktop a fondo antes de
+tocar nada — ver design.md para el detalle de qué se portó y qué no.
+
+- Cada fila DEBERÁ mostrar: número de día grande, nombre corto del día
+  de la semana, cantidad de actividades (si hay al menos una), una
+  vista previa del contenido, e insignia "HOY" si corresponde al día
+  actual — mismo contenido que cada fila de `DailyList.tsx` en
+  desktop, antes reducido a solo fecha ISO cruda + preview.
+- El menú "⋮" de cada mes DEBERÁ ofrecer "Eliminar mes" (borra todas
+  las entradas de ese mes, con confirmación) — existía en el menú
+  contextual del mes de desktop y no se había portado.
+
 ## Fuera de este spec
 
 - Drag-and-drop para **reordenar dentro de un mismo panel** — se usan
@@ -98,7 +114,20 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
   desktop) — el input de actividad en mobile es de una sola línea.
 - Navegación por mes/calendario — el listado es una lista plana por
   fecha, no un calendario mensual.
-- Exportar mes a PDF/Markdown/texto.
+- Exportar mes a PDF/Markdown/texto — implementado, ver
+  `exportacion/requirements.md` (no en este spec).
 - Cálculo de "día hábil anterior" respetando festivos colombianos —
   "Previo" es el día calendario anterior sin más (ver arriba), no el
   día hábil/laboral anterior.
+- **Ausencias** (`AbsenceModal`/`AbsenceListModal`/`absenceDays` de
+  desktop: marcar un día como vacaciones/incapacidad/etc., ver la
+  insignia correspondiente en cada fila, listar todas las ausencias)
+  — gap real encontrado al revisar `DailyList.tsx` para este pedido,
+  deliberadamente NO portado en este checkpoint: es un concepto de
+  datos nuevo por completo (tabla propia en desktop, con funciones de
+  sync ya escritas en `appStore.ts` — `syncCreateAbsenceDay`, etc. —
+  pero **sin ningún endpoint correspondiente en `logday-server`**,
+  verificado con un grep sobre el repo del servidor). Portarlo bien
+  requeriría además construir esa parte del servidor, no es un ajuste
+  contenido de esta pantalla — queda pendiente de decisión explícita
+  del usuario, no implícito en "ajustar la vista de la lista".

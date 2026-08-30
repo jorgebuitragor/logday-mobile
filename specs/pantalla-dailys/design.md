@@ -291,6 +291,41 @@ pantalla, el registro no existe hasta el primer `upsertDailyEntry`
 `content`/`previousContent` arrancan vacíos, no hay error ni pantalla
 de "no encontrado").
 
+## Rediseño de fila y "Eliminar mes" (agregado 2026-08-30)
+
+Investigación previa a tocar código: se leyó `DailyList.tsx` de
+desktop completo. Catálogo de lo que tenía y mobile no:
+
+| Función de desktop | Estado en mobile antes | Decisión |
+|---|---|---|
+| Fila con día grande + nombre de día + cantidad de actividades + preview + insignia "HOY" | Solo fecha ISO cruda + preview unida | **Portado** (ver abajo) |
+| Menú de mes: Exportar MD/TXT/PDF | Ya existía (`DailyMonthActionsSheet`) | Sin cambios |
+| Menú de mes: Eliminar mes completo | No existía | **Portado** (`softDeleteDailyMonth`) |
+| Menú de fila: Copiar, Eliminar | Ya existía (`NoteActionsSheet`-equivalente no aplica acá; Copiar no está en Dailys pero Compartir sí, ver `exportacion/`) | Sin cambios en este pase |
+| Selector de fecha para registrar un día pasado | Ya existía (FAB secundario + `AppCalendarGrid`) | Sin cambios |
+| **Ausencias** (marcar/listar) | No existe | **No portado** — ver requirements.md, "Fuera de este spec" (requiere servidor nuevo) |
+
+`weekdayShort(iso, language)`/`dayNumber(iso)` (`app/(tabs)/dailys.tsx`)
+son puertos directos de `formatShortWeekday`/`d.getDate()` de
+`DailyList.tsx`, vía `Intl.DateTimeFormat` — mismo patrón ya usado en
+`AppCalendarGrid`/`TaskCalendarView`, sin un array de nombres de día
+propio.
+
+La fila ahora resalta el borde con `theme.accent` cuando `isToday`
+(antes sin distinción visual en el listado, la insignia "HOY" solo
+vivía dentro del editor) — mismo criterio visual que ya usa
+`TaskCalendarView` para el día actual en su grilla.
+
+`softDeleteDailyMonth(yearMonth)` (`src/db/dailyEntries.ts`) es un
+`UPDATE ... WHERE date LIKE 'YYYY-MM-%'` — soft-delete masivo, mismo
+criterio de borrado que una entrada individual, sin una tabla/columna
+nueva. `DailyMonthActionsSheet` gana la fila destructiva "Eliminar
+mes" (mismo patrón visual que "Eliminar" en `NoteActionsSheet`: rojo,
+tras una línea divisoria) — la confirmación vive en `dailys.tsx`
+(`confirmDeleteMonth`, un segundo `useConfirmDelete` aparte del que ya
+existía para una entrada individual, con su propio texto de
+confirmación que menciona el mes).
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.
@@ -299,3 +334,9 @@ Ver "Fuera de este spec" en `requirements.md`.
   sin acumular pantallas en el stack (el botón atrás del sistema
   vuelve directo al listado, no día por día); llegar con la flecha a
   un día sin registro no rompe nada y permite empezar a escribir.
+- Verificación en vivo (agregado 2026-08-30): el rediseño de fila se
+  ve bien con 0/1/varias actividades; la insignia "HOY" aparece en el
+  día correcto; "Eliminar mes" borra todo el mes y el listado se
+  actualiza sin quedar un mes vacío colgando (una sección sin
+  entradas no debería renderizarse — confirmar que `groupByMonth`
+  simplemente no genera esa sección tras el reload).

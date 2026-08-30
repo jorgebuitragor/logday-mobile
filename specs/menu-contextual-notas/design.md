@@ -1,7 +1,7 @@
 # Menú contextual de Notes — Design
 
 Estado: implementado — ver `src/components/NoteActionsSheet.tsx`,
-`app/note/[id].tsx`.
+`app/note/[id].tsx`, `app/(tabs)/notes.tsx`.
 
 ## `NoteActionsSheet`
 
@@ -52,3 +52,28 @@ copia — no hay una función `duplicateNote` dedicada en la capa de
 datos como en desktop, porque acá "duplicar" es solo "crear con
 campos precargados", ya cubierto por `createNote` sin necesitar una
 query nueva.
+
+## Desde la lista (agregado 2026-08-29)
+
+`app/(tabs)/notes.tsx` reusa `NoteActionsSheet` sin cambios — el
+componente ya era agnóstico de "en qué pantalla vive", solo recibe
+callbacks. La diferencia está en el lado que llama:
+
+- Un solo estado `actionsNote: Note | null` (en vez de operar sobre
+  refs del editor como hace `note/[id].tsx`) guarda qué fila abrió el
+  menú; los 3 handlers (`handleCopyNote`/`handleDuplicateNote`/
+  `handleExportNote`) reciben la `Note` completa como parámetro.
+- El botón "⋮" vive dentro de `titleRow`, como un `Pressable` anidado
+  dentro del `Pressable` de la fila completa (que navega a la nota al
+  tocar en cualquier otro punto) — RN resuelve la prioridad de toque
+  al elemento interactivo más interno automáticamente (no hace falta
+  `stopPropagation`, a diferencia de web), mismo patrón ya usado en
+  `SwipeableRow` conviviendo con el tap de la fila.
+- `title` pasa de `flexShrink: 1` a `flex: 1` para que el título
+  absorba el espacio disponible y empuje el ícono de pin + el botón
+  "⋮" al borde derecho de la fila, en vez de quedar pegados justo
+  después del texto del título.
+- Duplicar desde la lista navega con `router.push` (no `replace`,
+  a diferencia de duplicar desde dentro del editor) — al volver atrás
+  desde la copia, el usuario regresa al listado, no a la nota
+  original, que es el punto de partida real acá.

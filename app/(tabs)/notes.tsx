@@ -1,14 +1,17 @@
+import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Notebook, Pin } from 'lucide-react-native';
+import { MoreHorizontal, Notebook, Pin } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
+import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
-import { listNotes, softDeleteNote } from '../../src/db/notes';
+import { createNote, listNotes, softDeleteNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Note } from '../../src/types/note';
@@ -31,6 +34,7 @@ export default function NotesScreen() {
   const [notes, setNotes] = useState<Note[]>([]);
   const [filterFolder, setFilterFolder] = useState<string | null>(null);
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  const [actionsNote, setActionsNote] = useState<Note | null>(null);
   const confirmDelete = useConfirmDelete<Note>(confirmDestructiveActions);
 
   const reload = useCallback(() => {
@@ -42,6 +46,29 @@ export default function NotesScreen() {
   async function performDelete(note: Note) {
     await softDeleteNote(note.id);
     reload();
+  }
+
+  // Mismas 3 acciones que `NoteActionsSheet` ya ofrece dentro del
+  // editor (`app/note/[id].tsx`) — acá operan sobre la `Note` de la
+  // fila tocada en vez de sobre refs internas del editor, ver
+  // specs/menu-contextual-notas/design.md, "Desde la lista".
+  async function handleCopyNote(note: Note) {
+    await Clipboard.setStringAsync(buildMarkdownDoc(note.title, note.content));
+  }
+
+  async function handleDuplicateNote(note: Note) {
+    const duplicatedTitle = note.title.trim() ? `${note.title.trim()} (copia)` : '(copia)';
+    const newId = await createNote({
+      title: duplicatedTitle,
+      content: note.content,
+      folder: note.folder,
+      tags: note.tags,
+    });
+    router.push(`/note/${newId}`);
+  }
+
+  async function handleExportNote(note: Note, format: NoteExportFormat) {
+    await exportNote(note.title, note.content, format);
   }
 
   // Mismo concepto que "Filtrar por tag" en NoteList.tsx de desktop
@@ -121,6 +148,14 @@ export default function NotesScreen() {
                     accessibilityLabel={t('noteList.pinnedLabel')}
                   />
                 ) : null}
+                <Pressable
+                  onPress={() => setActionsNote(item)}
+                  hitSlop={8}
+                  style={styles.moreButton}
+                  accessibilityLabel={t('noteActions.menuLabel')}
+                >
+                  <MoreHorizontal size={16} color={theme.textFaint} />
+                </Pressable>
               </View>
               {item.folder || item.tags.length > 0 ? (
                 <View style={styles.metaRow}>
@@ -158,6 +193,14 @@ export default function NotesScreen() {
           if (confirmDelete.pending) performDelete(confirmDelete.pending);
           confirmDelete.cancel();
         }}
+      />
+
+      <NoteActionsSheet
+        visible={actionsNote !== null}
+        onClose={() => setActionsNote(null)}
+        onCopy={() => actionsNote && handleCopyNote(actionsNote)}
+        onDuplicate={() => actionsNote && handleDuplicateNote(actionsNote)}
+        onExport={(format) => actionsNote && handleExportNote(actionsNote, format)}
       />
     </View>
   );
@@ -215,7 +258,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 16,
-    flexShrink: 1,
+    flex: 1,
+  },
+  moreButton: {
+    padding: 2,
   },
   metaRow: {
     flexDirection: 'row',

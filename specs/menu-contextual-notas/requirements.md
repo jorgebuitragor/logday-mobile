@@ -11,12 +11,20 @@ Mover a…, Mostrar en Finder/Explorador, Exportar, Eliminar. Este spec
 cubre el subconjunto que tiene sentido portar a mobile.
 
 Mobile no tiene clic derecho — el equivalente es un botón "⋮" que abre
-una hoja de acciones (`NoteActionsSheet`) desde abajo.
+una hoja de acciones (`NoteActionsSheet`) desde abajo. Disponible en
+dos lugares (agregado 2026-08-29 el segundo): dentro del editor de una
+nota, y en cada fila del listado — para poder duplicar/exportar/copiar
+sin necesidad de abrir la nota primero, mismo alcance que el clic
+derecho de desktop (que funciona tanto sobre la lista como dentro del
+editor abierto).
 
 ## Requisitos (EARS)
 
 - El sistema DEBERÁ ofrecer un botón "⋮" en la barra superior de la
   pantalla de nota (`app/note/[id].tsx`) que abra una hoja de acciones.
+- El sistema DEBERÁ ofrecer el mismo botón "⋮" en cada fila del
+  listado de notas (`app/(tabs)/notes.tsx`), sin necesidad de abrir la
+  nota — mismas 3 acciones, operando sobre la nota de esa fila.
 - La hoja DEBERÁ ofrecer, como mínimo: Copiar, Duplicar, Exportar.
 - **Copiar** DEBERÁ copiar al portapapeles el contenido en el mismo
   formato que desktop: `"# {título}\n\n{contenido}"` si hay título, o
@@ -48,7 +56,3 @@ una hoja de acciones (`NoteActionsSheet`) desde abajo.
 - **Eliminar**: ya existe como botón visible propio en la barra
   superior del editor (con confirmación) — no se duplica en este menú
   para no ofrecer dos caminos al mismo destino destructivo.
-- Menú equivalente accesible desde la fila de la lista de notas
-  (`app/(tabs)/notes.tsx`) sin abrir la nota — hoy el menú solo vive
-  dentro del editor. Si en el futuro se necesita duplicar/exportar sin
-  abrir la nota, es una extensión de este spec, no una reescritura.

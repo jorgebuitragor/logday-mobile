@@ -15,9 +15,9 @@ código ya escrito durante el scaffold inicial.
       lista".
       Satisface: requisito de persistencia local desde el día uno en
       `arquitectura-inicial/requirements.md`.
-- [ ] Escribir la capa de acceso a datos (funciones CRUD por entidad,
-      ej. `src/db/tasks.ts`) — no existe todavía, el esquema por ahora
-      solo se crea, no se usa desde ninguna pantalla.
+- [x] Escribir la capa de acceso a datos (funciones CRUD por entidad) —
+      hecho, una por entidad: `src/db/tasks.ts`, `notes.ts`,
+      `dailyEntries.ts`, `overtime.ts`, `absences.ts`.
 - [ ] Cuando se implemente el cliente de sync real: evaluar librería
       CRDT para `notes`/`daily_entries.content` y migrar de `TEXT`
       plano al formato compactado (ver "CRDT: pospuesto a propósito"

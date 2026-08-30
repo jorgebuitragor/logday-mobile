@@ -1,8 +1,8 @@
 # Arquitectura inicial — Tareas
 
 Estado: en progreso. Decisiones de stack tomadas y scaffold verificado
-en vivo 2026-08-29; faltan los specs de seguimiento (esquema de datos,
-navegación).
+en vivo 2026-08-29; specs de seguimiento (esquema de datos, navegación)
+ya existen — ver abajo.
 
 - [x] Decidir Expo vs React Native bare. **Expo.**
       Satisface: "Stack: React Native" en `design.md`.
@@ -69,8 +69,7 @@ navegación).
       pantalla con "Logday Mobile" y "DB lista" — confirma que
       `initDb()` corre sin error y `expo-sqlite` inicializa
       correctamente en runtime, no solo en `tsc --noEmit`.
-- [ ] Definir esquema de datos local (tablas SQLite) — probablemente su
-      propio spec (`esquema-datos/`), espejo del que ya existe en
-      `logday-server`.
-- [ ] Definir esquema de pantallas/navegación — probablemente su propio
-      spec.
+- [x] Definir esquema de datos local (tablas SQLite) — spec propio,
+      ver [`esquema-datos/`](../esquema-datos/requirements.md).
+- [x] Definir esquema de pantallas/navegación — spec propio, ver
+      [`navegacion/`](../navegacion/requirements.md).

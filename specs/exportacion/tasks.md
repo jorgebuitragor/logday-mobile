@@ -99,6 +99,7 @@ confirmación en vivo.
       resultante en Excel/Sheets y confirmar que los totales
       (fórmulas `SUM`) calculan bien y el estilo visual coincide con
       el de desktop.
-- [ ] UI propia para editar colaborador/cédula en mobile — no
-      implementada en este checkpoint (el export usa lo que haya
-      llegado por sync desde desktop, o queda en blanco).
+- [x] UI propia para editar colaborador/cédula en mobile — implementada
+      después en [`pantalla-overtime/`](../pantalla-overtime/requirements.md)
+      (`OvertimeMonthActionsSheet` + `upsertOvertimeMonthMeta`), ya no
+      depende de que llegue por sync desde desktop.

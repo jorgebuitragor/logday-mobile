@@ -188,6 +188,28 @@
     "deleteMonthTitle": "Eliminar mes completo",
     "deleteMonthMessage": "Se eliminarán todos los dailys de {{month}}. Esta acción no se puede deshacer."
   },
+  "absence": {
+    "markButton": "Marcar ausencia",
+    "listButton": "Ver ausencias",
+    "listTitle": "Ausencias",
+    "listEmpty": "No hay ausencias registradas",
+    "modalTitleNew": "Marcar día como no laborado",
+    "modalTitleEdit": "Editar ausencia",
+    "dateLabel": "Fecha",
+    "modeSingle": "Un día",
+    "modeRange": "Rango",
+    "dateFromLabel": "Desde",
+    "dateToLabel": "Hasta",
+    "typeLabel": "Motivo",
+    "typeIncapacidad": "Incapacidad",
+    "typeVacaciones": "Vacaciones",
+    "typeOtro": "Otro",
+    "noteLabel": "Nota (opcional)",
+    "notePlaceholder": "Detalles adicionales…",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar"
+  },
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",
     "loading": "Cargando...",

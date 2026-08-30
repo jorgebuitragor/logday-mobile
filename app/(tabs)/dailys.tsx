@@ -1,22 +1,27 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { CalendarDays, CalendarPlus, MoreHorizontal } from 'lucide-react-native';
+import { CalendarDays, CalendarOff, CalendarPlus, ListChecks, MoreHorizontal } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
+import { AbsenceListModal } from '../../src/components/AbsenceListModal';
+import { AbsenceModal } from '../../src/components/AbsenceModal';
 import { AppCalendarGrid } from '../../src/components/AppDatePicker';
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { parseActivityItems } from '../../src/components/DailyActivityList';
 import { DailyMonthActionsSheet } from '../../src/components/DailyMonthActionsSheet';
 import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
+import { deleteAbsenceDay, listAbsenceDays } from '../../src/db/absences';
 import { listDailyEntries, softDeleteDailyEntry, softDeleteDailyMonth } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { absenceTypeLabel } from '../../src/lib/absenceLabels';
 import { todayISO } from '../../src/lib/dates';
 import { buildDailyMonthDoc, exportDailyMonth, type DailyMonthExportFormat } from '../../src/lib/dailyMonthExport';
 import { shareText } from '../../src/lib/exportFile';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
+import type { AbsenceDay } from '../../src/types/absence';
 import type { DailyEntry } from '../../src/types/dailyEntry';
 
 // El contenido almacenado es una lista de actividades ("- item1\n- item2");
@@ -71,11 +76,15 @@ export default function DailysScreen() {
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerDate, setPickerDate] = useState(todayISO());
   const [actionsMonth, setActionsMonth] = useState<string | null>(null);
+  const [absences, setAbsences] = useState<AbsenceDay[]>([]);
+  const [markAbsenceOpen, setMarkAbsenceOpen] = useState(false);
+  const [absenceListOpen, setAbsenceListOpen] = useState(false);
   const confirmDelete = useConfirmDelete<DailyEntry>(confirmDestructiveActions);
   // Hook aparte del de arriba — misma razón que `confirmDeleteDialog`
   // vs. un segundo flujo en Overtime: son dos destinos distintos (un
   // día vs. un mes completo), con textos de confirmación propios.
   const confirmDeleteMonth = useConfirmDelete<string>(confirmDestructiveActions);
+  const confirmDeleteAbsence = useConfirmDelete<AbsenceDay>(confirmDestructiveActions);
   const monthNames = t('common.months', { returnObjects: true }) as string[];
   const today = todayISO();
 
@@ -83,11 +92,25 @@ export default function DailysScreen() {
     listDailyEntries().then(setEntries);
   }, []);
 
+  const reloadAbsences = useCallback(() => {
+    listAbsenceDays().then(setAbsences);
+  }, []);
+
   useFocusEffect(reload);
+  useFocusEffect(reloadAbsences);
+
+  // Mismo `Map` que `absenceByDate` en `DailyList.tsx` de desktop —
+  // una ausencia por fecha (ver `saveAbsenceDay`, upsert por fecha).
+  const absenceByDate = useMemo(() => new Map(absences.map((a) => [a.date, a])), [absences]);
 
   async function performDelete(entry: DailyEntry) {
     await softDeleteDailyEntry(entry.date);
     reload();
+  }
+
+  async function performDeleteAbsence(absence: AbsenceDay) {
+    await deleteAbsenceDay(absence.id);
+    reloadAbsences();
   }
 
   // Gap encontrado al comparar contra desktop (`DailyList.tsx`, menú
@@ -127,6 +150,24 @@ export default function DailysScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
+      <View style={styles.headerRow}>
+        <Pressable
+          onPress={() => setMarkAbsenceOpen(true)}
+          style={[styles.headerButton, { borderColor: theme.border }]}
+          accessibilityLabel={t('absence.markButton')}
+        >
+          <CalendarOff size={14} color={theme.textSecondary} />
+          <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: '600' }}>{t('absence.markButton')}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => setAbsenceListOpen(true)}
+          style={[styles.headerButton, { borderColor: theme.border }]}
+          accessibilityLabel={t('absence.listButton')}
+        >
+          <ListChecks size={14} color={theme.textSecondary} />
+          <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: '600' }}>{t('absence.listButton')}</Text>
+        </Pressable>
+      </View>
       <SectionList
         sections={groupByMonth(entries)}
         keyExtractor={(entry) => entry.date}
@@ -150,6 +191,7 @@ export default function DailysScreen() {
           const isToday = item.date === today;
           const taskCount = parseActivityItems(item.content).length;
           const previewText = preview(item.content);
+          const absence = absenceByDate.get(item.date);
           return (
             <SwipeableRow
               deleteLabel={t('common.delete')}
@@ -178,11 +220,18 @@ export default function DailysScreen() {
                       ) : null}
                     </View>
                   </View>
-                  {isToday ? (
-                    <View style={[styles.todayBadge, { backgroundColor: theme.accentSoft }]}>
-                      <Text style={[styles.todayBadgeText, { color: theme.accentInk }]}>{t('dailyForm.todayBadge')}</Text>
-                    </View>
-                  ) : null}
+                  <View style={styles.badgeColumn}>
+                    {absence ? (
+                      <View style={[styles.absenceBadge, { borderColor: '#f59e0b' }]}>
+                        <Text style={styles.absenceBadgeText}>{absenceTypeLabel(t, absence.type)}</Text>
+                      </View>
+                    ) : null}
+                    {isToday ? (
+                      <View style={[styles.todayBadge, { backgroundColor: theme.accentSoft }]}>
+                        <Text style={[styles.todayBadgeText, { color: theme.accentInk }]}>{t('dailyForm.todayBadge')}</Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
                 {previewText ? (
                   <Text style={[styles.previewText, { color: theme.textMuted }]}>{previewText}</Text>
@@ -268,6 +317,35 @@ export default function DailysScreen() {
           confirmDeleteMonth.cancel();
         }}
       />
+
+      <AbsenceModal
+        visible={markAbsenceOpen}
+        onClose={() => setMarkAbsenceOpen(false)}
+        onSaved={reloadAbsences}
+        onDelete={(absence) => {
+          setMarkAbsenceOpen(false);
+          confirmDeleteAbsence.request(absence, performDeleteAbsence);
+        }}
+      />
+
+      <AbsenceListModal
+        visible={absenceListOpen}
+        absences={absences}
+        onClose={() => setAbsenceListOpen(false)}
+        onChanged={reloadAbsences}
+      />
+
+      <ConfirmDeleteModal
+        visible={confirmDeleteAbsence.isOpen}
+        title={t('absence.delete')}
+        cancelLabel={t('absence.cancel')}
+        confirmLabel={t('absence.delete')}
+        onCancel={confirmDeleteAbsence.cancel}
+        onConfirm={() => {
+          if (confirmDeleteAbsence.pending) performDeleteAbsence(confirmDeleteAbsence.pending);
+          confirmDeleteAbsence.cancel();
+        }}
+      />
     </View>
   );
 }
@@ -276,9 +354,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  headerRow: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+  },
+  headerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
   list: {
     padding: 16,
     gap: 8,
+  },
+  badgeColumn: {
+    alignItems: 'flex-end',
+    gap: 4,
+  },
+  absenceBadge: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  absenceBadgeText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#f59e0b',
   },
   sectionHeader: {
     flexDirection: 'row',

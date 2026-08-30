@@ -65,4 +65,20 @@ CREATE TABLE IF NOT EXISTS overtime_month_meta (
   updated_at TEXT NOT NULL,
   deleted_at TEXT
 );
+
+-- Agregado 2026-08-30 — mismos campos que 'absence_days' en
+-- logday-server (internal/db/migrations/00010_create_absence_days.sql),
+-- sin 'user_id'/'seq' por el mismo motivo que el resto de este
+-- esquema (bookkeeping de servidor, no aplica a un dispositivo local
+-- sin cliente de sync todavía). 'type' sin CHECK acá — la restricción
+-- vive solo en la UI, mismo criterio que 'observaciones' de overtime
+-- (ver pantalla-overtime/design.md).
+CREATE TABLE IF NOT EXISTS absence_days (
+  id TEXT PRIMARY KEY NOT NULL,
+  date TEXT NOT NULL,
+  type TEXT NOT NULL,
+  note TEXT,
+  updated_at TEXT NOT NULL,
+  deleted_at TEXT
+);
 `;

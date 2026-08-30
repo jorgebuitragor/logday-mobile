@@ -188,6 +188,28 @@
     "deleteMonthTitle": "Delete entire month",
     "deleteMonthMessage": "All dailys for {{month}} will be deleted. This action cannot be undone."
   },
+  "absence": {
+    "markButton": "Mark absence",
+    "listButton": "View absences",
+    "listTitle": "Absences",
+    "listEmpty": "No absences recorded",
+    "modalTitleNew": "Mark day as not worked",
+    "modalTitleEdit": "Edit absence",
+    "dateLabel": "Date",
+    "modeSingle": "Single day",
+    "modeRange": "Range",
+    "dateFromLabel": "From",
+    "dateToLabel": "To",
+    "typeLabel": "Reason",
+    "typeIncapacidad": "Sick leave",
+    "typeVacaciones": "Vacation",
+    "typeOtro": "Other",
+    "noteLabel": "Note (optional)",
+    "notePlaceholder": "Additional details…",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete"
+  },
   "overtimeList": {
     "empty": "No overtime entries yet.",
     "loading": "Loading...",

@@ -119,15 +119,9 @@ tocar nada — ver design.md para el detalle de qué se portó y qué no.
 - Cálculo de "día hábil anterior" respetando festivos colombianos —
   "Previo" es el día calendario anterior sin más (ver arriba), no el
   día hábil/laboral anterior.
-- **Ausencias** (`AbsenceModal`/`AbsenceListModal`/`absenceDays` de
-  desktop: marcar un día como vacaciones/incapacidad/etc., ver la
-  insignia correspondiente en cada fila, listar todas las ausencias)
-  — gap real encontrado al revisar `DailyList.tsx` para este pedido,
-  deliberadamente NO portado en este checkpoint: es un concepto de
-  datos nuevo por completo (tabla propia en desktop, con funciones de
-  sync ya escritas en `appStore.ts` — `syncCreateAbsenceDay`, etc. —
-  pero **sin ningún endpoint correspondiente en `logday-server`**,
-  verificado con un grep sobre el repo del servidor). Portarlo bien
-  requeriría además construir esa parte del servidor, no es un ajuste
-  contenido de esta pantalla — queda pendiente de decisión explícita
-  del usuario, no implícito en "ajustar la vista de la lista".
+- **Ausencias** — implementado como spec propio, ver
+  `ausencias/requirements.md` (no en este spec). Nota histórica: el
+  checkpoint anterior de este archivo afirmaba incorrectamente que
+  `logday-server` no tenía soporte para esto — era un falso negativo
+  de un `grep` que corrió contra el directorio equivocado (el `cwd`
+  de la sesión se resetea entre comandos), corregido al re-investigar.

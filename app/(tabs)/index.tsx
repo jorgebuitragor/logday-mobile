@@ -1,17 +1,20 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Calendar, CheckCircle2, CheckSquare, Circle, Clock } from 'lucide-react-native';
+import { Calendar, CalendarRange, CheckCircle2, CheckSquare, Circle, Clock, List } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
+import { TaskCalendarView } from '../../src/components/TaskCalendarView';
 import { listTasks, softDeleteTask, updateTaskStatus } from '../../src/db/tasks';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Task, TaskStatus } from '../../src/types/task';
+
+type ViewMode = 'list' | 'calendar';
 
 // Mismo orden de ciclo que `cycleStatus` en TaskList.tsx de desktop.
 const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'done'];
@@ -32,6 +35,11 @@ export default function TasksScreen() {
   const router = useRouter();
   const { confirmDestructiveActions } = usePreferences();
   const [tasks, setTasks] = useState<Task[]>([]);
+  // No persistida (a diferencia de `currentView` en desktop, guardado
+  // en el store global) — vuelve a "Lista" en cada reinicio de la app,
+  // alcance reducido deliberado para este checkpoint, ver
+  // specs/vistas-tasks/design.md.
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const confirmDelete = useConfirmDelete<Task>(confirmDestructiveActions);
   const today = new Date().toISOString().slice(0, 10);
 
@@ -67,8 +75,34 @@ export default function TasksScreen() {
     return <Circle size={18} color={color} />;
   }
 
+  const viewOptions: { mode: ViewMode; icon: typeof List; label: string }[] = [
+    { mode: 'list', icon: List, label: t('taskList.viewList') },
+    { mode: 'calendar', icon: CalendarRange, label: t('taskList.viewCalendar') },
+  ];
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
+      <View style={[styles.viewSwitch, { borderColor: theme.border }]}>
+        {viewOptions.map(({ mode, icon: Icon, label }) => (
+          <Pressable
+            key={mode}
+            onPress={() => setViewMode(mode)}
+            style={[styles.viewOption, viewMode === mode && { backgroundColor: theme.accentSoft }]}
+            accessibilityLabel={label}
+          >
+            <Icon size={14} color={viewMode === mode ? theme.accentInk : theme.textSecondary} />
+            <Text style={{ color: viewMode === mode ? theme.accentInk : theme.textSecondary, fontSize: 12, fontWeight: '600' }}>
+              {label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {viewMode === 'calendar' ? (
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+          <TaskCalendarView tasks={tasks} onSelectTask={(task) => router.push(`/task/${task.id}`)} />
+        </ScrollView>
+      ) : (
       <FlatList
         data={tasks}
         keyExtractor={(task) => task.id}
@@ -134,6 +168,7 @@ export default function TasksScreen() {
           );
         }}
       />
+      )}
       <Pressable style={[styles.fab, { backgroundColor: theme.accentStrong }]} onPress={() => router.push('/task/new')}>
         <Text style={styles.fabText}>+</Text>
       </Pressable>
@@ -157,6 +192,24 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  viewSwitch: {
+    flexDirection: 'row',
+    margin: 16,
+    marginBottom: 0,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 3,
+    gap: 3,
+  },
+  viewOption: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 5,
+    paddingVertical: 7,
+    borderRadius: 7,
   },
   list: {
     padding: 16,

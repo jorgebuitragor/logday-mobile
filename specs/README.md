@@ -48,3 +48,4 @@ hasta tres archivos:
 | Selector de hora | implementado (pendiente confirmación en vivo) | [`selector-hora/`](./selector-hora/requirements.md) |
 | Menú contextual de Notes | implementado (pendiente confirmación en vivo) | [`menu-contextual-notas/`](./menu-contextual-notas/requirements.md) |
 | Exportación | Notes, Dailys y Overtime implementados (pendiente confirmación en vivo); + "Compartir" en Notes/Dailys | [`exportacion/`](./exportacion/requirements.md) |
+| Vistas de Tasks | Calendario implementado (pendiente confirmación en vivo); Kanban pendiente | [`vistas-tasks/`](./vistas-tasks/requirements.md) |

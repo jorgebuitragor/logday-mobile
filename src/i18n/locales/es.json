@@ -49,7 +49,10 @@
   },
   "taskList": {
     "empty": "Sin tareas. ¡Crea la primera!",
-    "loading": "Cargando..."
+    "loading": "Cargando...",
+    "viewList": "Lista",
+    "viewCalendar": "Calendario",
+    "noTasksDate": "Sin tareas para este día."
   },
   "taskForm": {
     "title": "Título",

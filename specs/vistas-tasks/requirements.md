@@ -36,9 +36,12 @@ de este spec, ver "Fuera de este spec".
 
 ## Requisitos (EARS) — Vista Kanban (agregado 2026-08-30)
 
-- El sistema DEBERÁ mostrar 3 columnas por estado (Por hacer / En
-  progreso / Hecho), scrolleables horizontalmente, cada una con su
-  propio scroll vertical y contador de tarjetas.
+- El sistema DEBERÁ mostrar 3 secciones por estado (Por hacer / En
+  progreso / Hecho), apiladas verticalmente y siempre visibles
+  simultáneamente (sin scroll horizontal ni de página para alcanzar
+  ninguna de las 3), cada una con su propio scroll vertical interno y
+  contador de tarjetas — rediseño 2026-08-30 sobre columnas
+  horizontales, ver design.md.
 - Cada tarjeta DEBERÁ mostrar al menos el título, y cuando existan:
   código, proyecto, fecha de vencimiento (en rojo si está vencida) y
   hasta 2 tags — mismos datos que la fila de la vista Lista, en
@@ -46,13 +49,13 @@ de este spec, ver "Fuera de este spec".
 - Tocar una tarjeta con un toque corto DEBERÁ navegar a su pantalla de
   edición — mismo destino que las otras vistas.
 - Mantener presionada una tarjeta (long-press) DEBERÁ iniciar un
-  arrastre; soltarla sobre otra columna DEBERÁ cambiar su `status` al
-  de esa columna. Soltarla fuera de cualquier columna, o sobre la
-  misma columna de origen, DEBERÁ dejarla sin cambios.
-- El arrastre NO reordena dentro de una columna (alcance reducido
+  arrastre; soltarla sobre otra sección DEBERÁ cambiar su `status` al
+  de esa sección. Soltarla fuera de cualquier sección, o sobre la
+  misma sección de origen, DEBERÁ dejarla sin cambios.
+- El arrastre NO reordena dentro de una sección (alcance reducido
   deliberado — ver design.md: desktop tampoco persiste un orden
   manual, soltar solo cambia `status`).
-- Una columna sin tasks DEBERÁ mostrar un estado vacío explícito, no
+- Una sección sin tasks DEBERÁ mostrar un estado vacío explícito, no
   quedar en blanco.
 
 ## Requisitos (EARS) — Vista Calendario

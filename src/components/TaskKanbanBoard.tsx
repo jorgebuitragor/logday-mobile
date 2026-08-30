@@ -1,7 +1,7 @@
 import { Calendar } from 'lucide-react-native';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
 
@@ -18,24 +18,38 @@ interface TaskKanbanBoardProps {
   onStatusChange: (task: Task, status: TaskStatus) => void;
 }
 
-// Puerto conceptual de `KanbanBoard.tsx` de desktop (3 columnas por
-// estado, tarjeta arrastrable entre columnas) — el drag-and-drop de
+// Puerto conceptual de `KanbanBoard.tsx` de desktop (3 secciones por
+// estado, tarjeta arrastrable entre secciones). El drag-and-drop de
 // mouse de desktop no traduce 1:1, así que el gesto se reconstruye
 // con el mismo patrón ya probado en Dailys (`DailyActivityList.tsx`/
 // `daily/[date].tsx`): Reanimated shared values escritas en el hilo
-// de UI en cada frame (sin re-render de React) + un fantasma
-// flotante dentro de un `Modal` (mismo motivo: esta pantalla también
-// tiene un header propio — acá el header nativo de `Tabs` — que
-// desplazaría el origen de coordenadas si el fantasma no viviera en
-// su propia superficie a pantalla completa). Sin reordenar dentro de
-// una columna (desktop tampoco persiste un orden manual — soltar
-// solo cambia `status`, ver specs/vistas-tasks/design.md), solo
-// mover entre las 3 columnas.
+// de UI en cada frame (sin re-render de React) + un fantasma flotante
+// dentro de un `Modal` (mismo motivo: esta pantalla también tiene un
+// header propio — acá el header nativo de `Tabs` — que desplazaría el
+// origen de coordenadas si el fantasma no viviera en su propia
+// superficie a pantalla completa).
+//
+// Secciones apiladas verticalmente, no columnas lado a lado (cambio
+// de diseño 2026-08-30, pedido explícito del usuario tras probar la
+// primera versión: "no siento que sea tan práctico con tres columnas
+// en una app móvil, es muy difícil moverlo entre las tres columnas").
+// Con columnas horizontales solo ~1.2 eran visibles a la vez (80% del
+// ancho) y el scroll se bloquea durante el arrastre
+// (`scrollEnabled={!dragTask}`), así que alcanzar la tercera columna
+// era físicamente imposible sin soltar y reintentar. Apilando las 3
+// secciones con `flex: 1` cada una ocupa un tercio de la altura
+// disponible — las 3 zonas de destino quedan siempre visibles a la
+// vez, sin depender de ningún scroll (ni horizontal ni de página) para
+// alcanzarlas durante el arrastre. El scroll vertical que sí existe es
+// interno a cada sección (para sus propias tarjetas), independiente
+// del arrastre entre secciones.
+//
+// Sin reordenar dentro de una sección (desktop tampoco persiste un
+// orden manual — soltar solo cambia `status`, ver
+// specs/vistas-tasks/design.md), solo mover entre las 3 secciones.
 export function TaskKanbanBoard({ tasks, onSelectTask, onStatusChange }: TaskKanbanBoardProps) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const { width } = useWindowDimensions();
-  const columnWidth = width * 0.8;
   const today = new Date().toISOString().slice(0, 10);
 
   const [dragTask, setDragTask] = useState<Task | null>(null);
@@ -67,47 +81,41 @@ export function TaskKanbanBoard({ tasks, onSelectTask, onStatusChange }: TaskKan
 
   return (
     <View style={styles.container}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        scrollEnabled={!dragTask}
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        decelerationRate="fast"
-        snapToInterval={columnWidth + 12}
-      >
-        {COLUMNS.map((status) => {
-          const columnTasks = tasks.filter((task) => task.status === status);
-          return (
-            <View key={status} ref={columnRefs[status]} style={[styles.column, { width: columnWidth, borderColor: theme.border, backgroundColor: theme.bgPanel }]}>
-              <View style={[styles.columnHeader, { borderColor: theme.border }]}>
-                <TaskStatusIcon status={status} size={15} />
-                <Text style={[styles.columnTitle, { color: theme.textSecondary }]}>{statusLabel(t, status)}</Text>
-                <Text style={[styles.columnCount, { color: theme.textFaint }]}>{columnTasks.length}</Text>
-              </View>
-              <ScrollView style={styles.columnScroll} contentContainerStyle={styles.columnBody} scrollEnabled={!dragTask}>
-                {columnTasks.length === 0 ? (
-                  <Text style={[styles.emptyText, { color: theme.textFaint }]}>{t('taskList.kanbanEmptyColumn')}</Text>
-                ) : (
-                  columnTasks.map((task) => (
-                    <KanbanCard
-                      key={task.id}
-                      task={task}
-                      today={today}
-                      dragX={dragX}
-                      dragY={dragY}
-                      isDragging={dragTask?.id === task.id}
-                      onSelect={onSelectTask}
-                      onDragStart={handleDragStart}
-                      onDragEnd={handleDragEnd}
-                    />
-                  ))
-                )}
-              </ScrollView>
+      {COLUMNS.map((status) => {
+        const columnTasks = tasks.filter((task) => task.status === status);
+        return (
+          <View
+            key={status}
+            ref={columnRefs[status]}
+            style={[styles.column, { borderColor: theme.border, backgroundColor: theme.bgPanel }]}
+          >
+            <View style={[styles.columnHeader, { borderColor: theme.border }]}>
+              <TaskStatusIcon status={status} size={15} />
+              <Text style={[styles.columnTitle, { color: theme.textSecondary }]}>{statusLabel(t, status)}</Text>
+              <Text style={[styles.columnCount, { color: theme.textFaint }]}>{columnTasks.length}</Text>
             </View>
-          );
-        })}
-      </ScrollView>
+            <ScrollView style={styles.columnScroll} contentContainerStyle={styles.columnBody} scrollEnabled={!dragTask}>
+              {columnTasks.length === 0 ? (
+                <Text style={[styles.emptyText, { color: theme.textFaint }]}>{t('taskList.kanbanEmptyColumn')}</Text>
+              ) : (
+                columnTasks.map((task) => (
+                  <KanbanCard
+                    key={task.id}
+                    task={task}
+                    today={today}
+                    dragX={dragX}
+                    dragY={dragY}
+                    isDragging={dragTask?.id === task.id}
+                    onSelect={onSelectTask}
+                    onDragStart={handleDragStart}
+                    onDragEnd={handleDragEnd}
+                  />
+                ))
+              )}
+            </ScrollView>
+          </View>
+        );
+      })}
 
       {dragTask ? (
         <Modal transparent visible animationType="none" statusBarTranslucent>
@@ -189,7 +197,7 @@ function KanbanCard({
               textDecorationLine: task.status === 'done' ? 'line-through' : 'none',
             },
           ]}
-          numberOfLines={3}
+          numberOfLines={2}
         >
           {task.title}
         </Text>
@@ -207,7 +215,7 @@ function KanbanCard({
                 <Text style={[styles.cardMetaText, { color: isOverdue ? OVERDUE_COLOR : theme.textHint }]}>{task.due}</Text>
               </View>
             ) : null}
-            {task.tags.slice(0, 2).map((tag) => (
+            {task.tags.slice(0, 3).map((tag) => (
               <View key={tag} style={[styles.tagPill, { backgroundColor: theme.accentSoft }]}>
                 <Text style={[styles.tagText, { color: theme.accentInk }]}>{tag}</Text>
               </View>
@@ -252,16 +260,12 @@ function DragGhost({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  scroll: {
-    flex: 1,
-  },
-  scrollContent: {
+    flexDirection: 'column',
     padding: 16,
-    gap: 12,
-    alignItems: 'stretch',
+    gap: 10,
   },
   column: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: 12,
   },
@@ -270,7 +274,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 6,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
   },
   columnTitle: {
@@ -288,25 +292,25 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   columnBody: {
-    padding: 10,
-    gap: 8,
+    padding: 8,
+    gap: 6,
   },
   emptyText: {
     fontSize: 12,
     textAlign: 'center',
-    paddingVertical: 16,
+    paddingVertical: 12,
   },
   card: {
     borderWidth: 1,
     borderRadius: 10,
-    padding: 10,
-    gap: 6,
+    padding: 8,
+    gap: 4,
   },
   cardDragging: {
     opacity: 0.35,
   },
   cardTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   cardMetaRow: {

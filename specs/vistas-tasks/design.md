@@ -98,6 +98,44 @@ exterior, `alignItems:'stretch'` a su `contentContainerStyle`, quitando
 `maxHeight` de la columna, y agregando `style={styles.columnScroll}`
 (`flex:1`) al `ScrollView` vertical interno de cada columna.
 
+### Rediseño: secciones apiladas en vez de columnas lado a lado (2026-08-30)
+
+La primera versión (columnas horizontales scrolleables, `width: 80%`
+de la pantalla) funcionaba técnicamente pero resultó impráctica según
+feedback directo del usuario tras probarla en vivo: "no siento que sea
+tan práctico con tres columnas en una app móvil, es muy difícil
+moverlo entre las tres columnas. Aunque está funcionando
+perfectamente". La causa raíz: con columnas al 80% del ancho solo
+~1.2 son visibles a la vez, y el scroll horizontal se deshabilita
+durante el arrastre (`scrollEnabled={!dragTask}`, necesario para que
+el gesto de pan no compita con el del `ScrollView`) — así que alcanzar
+la tercera columna (p. ej. "Por hacer" → "Hecho") era físicamente
+imposible sin soltar y reintentar desde una posición de scroll
+distinta.
+
+El usuario propuso directamente el rediseño: "Podríamos usar los tres
+apartados en tres filas secciones verticales, en lugar de secciones
+horizontales". Implementado así: el `ScrollView` horizontal exterior
+se eliminó por completo; ahora el contenedor raíz es un `View` con
+`flexDirection: 'column'` y las 3 secciones tienen `flex: 1` cada una
+(sin ancho/alto fijo) — Yoga las reparte en tercios iguales de la
+altura disponible automáticamente. Esto resuelve el problema de raíz,
+no lo parchea: al no depender de ningún scroll (ni horizontal ni de
+página) para que las 3 zonas de destino sean alcanzables, no hace
+falta auto-scroll-al-borde ni ningún mecanismo adicional — las 3
+secciones están siempre visibles simultáneamente sin importar cuántas
+tareas tenga cada una (el scroll interno de cada sección, para sus
+propias tarjetas, es independiente y no bloquea el acceso a las otras
+2 secciones).
+
+Efecto secundario positivo: las tarjetas ahora usan el ancho completo
+de la pantalla (antes ~80% de un tercio del contenido dentro de una
+columna angosta), así que se les subió el límite de tags visibles de
+2 a 3 (`task.tags.slice(0, 3)`, antes `slice(0, 2)`) y se ajustó
+`numberOfLines` del título de 3 a 2 (menos alto vertical necesario por
+tarjeta, relevante porque ahora cada sección compite por espacio
+vertical con las otras 2).
+
 ## Panel del día seleccionado
 
 Debajo de la grilla, no en un panel lateral como desktop (`w-72`
@@ -116,9 +154,12 @@ Ver "Fuera de este spec" en `requirements.md`.
   navega a la pantalla correcta; tocar un día vacío y confirmar el
   estado vacío; deseleccionar un día tocándolo de nuevo.
 - Verificación en vivo del Kanban: arrastrar una tarjeta a otra
-  columna y confirmar que cambia de estado y persiste; soltar fuera de
-  cualquier columna y confirmar que no cambia nada; tocar una tarjeta
+  sección y confirmar que cambia de estado y persiste; soltar fuera de
+  cualquier sección y confirmar que no cambia nada; tocar una tarjeta
   con un toque corto y confirmar que navega (sin arrastrar); scroll
-  horizontal entre columnas y scroll vertical dentro de una columna con
-  muchas tasks; confirmar que el fantasma sigue el dedo sin parpadeos
-  ni desfases, incluso con el header de `Tabs` visible.
+  vertical dentro de una sección con muchas tasks sin afectar a las
+  otras 2; confirmar que el fantasma sigue el dedo sin parpadeos ni
+  desfases, incluso con el header de `Tabs` visible; con las 3
+  secciones repartiéndose el alto disponible, confirmar que las 3 son
+  utilizables (headers y al menos 1-2 tarjetas visibles) incluso en
+  pantallas pequeñas.

@@ -37,13 +37,21 @@ en vivo.
 
 ## Kanban (agregado 2026-08-30)
 
-- [x] `src/components/TaskKanbanBoard.tsx` (nuevo): 3 columnas
-      horizontales scrolleables (Por hacer/En progreso/Hecho), scroll
-      vertical propio por columna, contador de tarjetas, arrastre
-      táctil entre columnas vía Reanimated shared values +
-      `Gesture.Race(Tap, Pan.activateAfterLongPress(250))` + fantasma
-      flotante en `Modal` + `measureInWindow` sobre 3 refs al soltar.
-      Ver design.md para el detalle de cada decisión.
+- [x] `src/components/TaskKanbanBoard.tsx` (nuevo): 3 secciones por
+      estado (Por hacer/En progreso/Hecho) apiladas verticalmente con
+      `flex: 1` cada una, scroll vertical propio por sección, contador
+      de tarjetas, arrastre táctil entre secciones vía Reanimated
+      shared values + `Gesture.Race(Tap, Pan.activateAfterLongPress(250))`
+      + fantasma flotante en `Modal` + `measureInWindow` sobre 3 refs
+      al soltar. Ver design.md para el detalle de cada decisión.
+- [x] Rediseño de columnas horizontales a secciones verticales
+      (2026-08-30, mismo día): feedback directo tras probar la primera
+      versión — "es muy difícil moverlo entre las tres columnas" — el
+      usuario propuso el rediseño ("tres filas secciones verticales, en
+      lugar de secciones horizontales"), implementado reemplazando el
+      `ScrollView` horizontal + `width: 80%` por columna con un `View`
+      vertical de 3 secciones `flex: 1`, siempre visibles a la vez sin
+      depender de ningún scroll para alcanzarlas. Ver design.md.
 - [x] Decidido: sin reordenar dentro de una columna — desktop tampoco
       persiste un orden manual (soltar solo cambia `status`, confirmado
       en `KanbanBoard.tsx` de desktop). Soltar en otra columna llama
@@ -67,12 +75,15 @@ en vivo.
       en checkpoints anteriores); `TaskKanbanBoard`/`TaskStatusIcon`/
       `viewKanban`/`kanbanEmptyColumn` aparecen resueltos en el bundle.
 - [ ] Verificar en vivo: mantener presionada una tarjeta y arrastrarla
-      a otra columna — debe cambiar de estado y persistir tras recargar
-      la pantalla; soltar fuera de cualquier columna o sobre la misma
-      columna de origen no debe cambiar nada; tocar una tarjeta con un
-      toque corto (sin mantener presionado) debe navegar directo a la
-      task, sin iniciar un arrastre; scroll horizontal entre las 3
-      columnas y scroll vertical dentro de una columna con muchas
-      tasks, ambos deben sentirse fluidos; el fantasma debe seguir el
-      dedo sin parpadeos ni desfases de posición, incluso con el header
-      nativo de la pestaña Tareas visible arriba.
+      a otra sección (incluyendo la más lejana, "Por hacer" → "Hecho")
+      — debe cambiar de estado y persistir tras recargar la pantalla,
+      sin necesitar ningún scroll para alcanzarla; soltar fuera de
+      cualquier sección o sobre la misma sección de origen no debe
+      cambiar nada; tocar una tarjeta con un toque corto (sin mantener
+      presionado) debe navegar directo a la task, sin iniciar un
+      arrastre; scroll vertical dentro de una sección con muchas tasks
+      no debe afectar a las otras 2 secciones; el fantasma debe seguir
+      el dedo sin parpadeos ni desfases de posición, incluso con el
+      header nativo de la pestaña Tareas visible arriba; confirmar que
+      las 3 secciones se ven usables (header + al menos 1-2 tarjetas)
+      en una pantalla de tamaño típico.

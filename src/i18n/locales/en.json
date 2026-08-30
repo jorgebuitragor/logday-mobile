@@ -8,6 +8,7 @@
     "clearDate": "Clear date",
     "selectTime": "Select time",
     "today": "Today",
+    "close": "Close",
     "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   },
   "tabs": {
@@ -185,13 +186,24 @@
   "overtimeList": {
     "empty": "No overtime entries yet.",
     "loading": "Loading...",
-    "monthTotal": "Total: {{hours}}h"
+    "monthTotal": "Total: {{hours}}h",
+    "noDescription": "No description",
+    "breakdownDay": "Day",
+    "breakdownNight": "Night",
+    "breakdownDayFest": "Holiday day",
+    "breakdownNightFest": "Holiday night"
   },
   "overtimeActions": {
     "menuLabel": "More month actions",
     "export": "Export",
     "formatXlsx": "Excel",
-    "formatXlsxHint": ".xlsx — spreadsheet with formulas"
+    "formatXlsxHint": ".xlsx — spreadsheet with formulas",
+    "preview": "Preview",
+    "previewTotalsRow": "Month totals",
+    "collaboratorData": "Collaborator data",
+    "collaboratorNamePlaceholder": "Full name",
+    "collaboratorIdPlaceholder": "ID number",
+    "collaboratorHint": "Included in the header of the exported report."
   },
   "overtimeForm": {
     "newTitle": "New overtime entry",

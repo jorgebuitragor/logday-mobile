@@ -1,6 +1,7 @@
 # Pantalla de Overtime — Requirements
 
-Estado: implementado, pendiente de confirmación en vivo.
+Estado: implementado (incluye desglose/colaborador/preview/detalles
+de lista, agregado 2026-08-30), pendiente de confirmación en vivo.
 
 ## Contexto
 
@@ -72,12 +73,39 @@ extra (diurnas/nocturnas/festivas, festivos colombianos) se porta
   guardar de todas formas. Versión mobile-apropiada del modal de
   conflicto de desktop, no pixel-idéntica (agregado 2026-08-29).
 
+## Requisitos (EARS) — Desglose, colaborador y preview (agregado 2026-08-30)
+
+Pedido directo del usuario, en una ronda de "pulir pantalla por
+pantalla" empezando por Overtime: "falta el desglose automático
+general de las extras del mes, visible sin tener que abrir una
+extra... la opción de editar datos de usuario para incluir en el
+reporte, la previsualización del reporte en sí. Y la inclusión de más
+detalles en la lista." Revierte 3 de los puntos que este spec había
+dejado explícitamente fuera (ver versión anterior de "Fuera de este
+spec").
+
+- El encabezado de cada sección de mes DEBERÁ mostrar, además del
+  total ya existente, el desglose completo (diurnas, nocturnas,
+  diurnas festivas, nocturnas festivas) — visible siempre, sin
+  necesidad de abrir ningún registro ni el menú "⋮".
+- El menú "⋮" de cada mes DEBERÁ ofrecer "Datos del colaborador"
+  (nombre completo + cédula), editables por mes y persistidos en
+  `overtime_month_meta` — hasta ahora esa tabla solo se leía
+  (rellenada por sync desde desktop), sin forma de escribirla desde
+  mobile.
+- El menú "⋮" de cada mes DEBERÁ ofrecer "Vista previa", que muestra
+  todas las entradas del mes con el mismo detalle que llevará el
+  Excel exportado (fecha, horario, solicitante, actividad,
+  observaciones, y el desglose de horas de cada entrada) más los
+  totales del mes, con un botón para exportar directo desde ahí.
+- Cada fila del listado DEBERÁ mostrar, además de lo que ya mostraba
+  (fecha, horario, actividad, total): quién la solicitó
+  (`solicitadaPor`) y la observación (compensatorio/pago/otro/texto
+  libre) si existe, como un pequeño distintivo — mismo contenido que
+  ya se ve en la vista previa y en el Excel, ahora también visible sin
+  abrir el registro.
+
 ## Fuera de este spec
 
-- Exportar a Excel (`overtimeExcel.ts`).
-- Vista de preview/resumen mensual con tabla exportable
-  (`OvertimePreviewModal.tsx`) — el total por mes ya se muestra en el
-  listado (ver arriba), pero no hay vista de tabla detallada ni botón
-  de exportar.
-- `overtime_month_meta` (colaborador/cédula por mes) — sin pantalla
-  todavía; no hay dónde configurar esos datos en mobile.
+- Exportar a Excel (`overtimeExcel.ts`) — implementado en
+  `exportacion/requirements.md`, no acá.

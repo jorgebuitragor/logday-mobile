@@ -40,7 +40,7 @@ hasta tres archivos:
 | Branding | implementado (pendiente confirmación en vivo) | [`branding/`](./branding/requirements.md) |
 | Pantalla de Notes | implementado (CRUD, pinned/folder/tags y editor simplificado verificados en vivo; toolbar de markdown y vista previa pendientes) | [`pantalla-notes/`](./pantalla-notes/requirements.md) |
 | Pantalla de Dailys | implementado (pendiente confirmación en vivo) | [`pantalla-dailys/`](./pantalla-dailys/requirements.md) |
-| Pantalla de Overtime | implementado (pendiente confirmación en vivo) | [`pantalla-overtime/`](./pantalla-overtime/requirements.md) |
+| Pantalla de Overtime | implementado, incluye desglose visible/colaborador editable/vista previa (pendiente confirmación en vivo) | [`pantalla-overtime/`](./pantalla-overtime/requirements.md) |
 | Confirmación antes de eliminar | implementado (pendiente confirmación en vivo) | [`confirmacion-eliminar/`](./confirmacion-eliminar/requirements.md) |
 | Acciones desde la lista | implementado (pendiente confirmación en vivo) | [`acciones-lista/`](./acciones-lista/requirements.md) |
 | Búsqueda global | implementado (pendiente confirmación en vivo) | [`busqueda/`](./busqueda/requirements.md) |

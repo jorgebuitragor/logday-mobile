@@ -8,6 +8,7 @@
     "clearDate": "Quitar fecha",
     "selectTime": "Seleccionar hora",
     "today": "Hoy",
+    "close": "Cerrar",
     "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
   },
   "tabs": {
@@ -185,13 +186,24 @@
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",
     "loading": "Cargando...",
-    "monthTotal": "Total: {{hours}}h"
+    "monthTotal": "Total: {{hours}}h",
+    "noDescription": "Sin descripción",
+    "breakdownDay": "Diurnas",
+    "breakdownNight": "Nocturnas",
+    "breakdownDayFest": "Fest. día",
+    "breakdownNightFest": "Fest. noche"
   },
   "overtimeActions": {
     "menuLabel": "Más acciones del mes",
     "export": "Exportar",
     "formatXlsx": "Excel",
-    "formatXlsxHint": ".xlsx — hoja de cálculo con fórmulas"
+    "formatXlsxHint": ".xlsx — hoja de cálculo con fórmulas",
+    "preview": "Vista previa",
+    "previewTotalsRow": "Totales del mes",
+    "collaboratorData": "Datos del colaborador",
+    "collaboratorNamePlaceholder": "Nombre completo",
+    "collaboratorIdPlaceholder": "Cédula",
+    "collaboratorHint": "Se incluyen en el encabezado del reporte exportado."
   },
   "overtimeForm": {
     "newTitle": "Nueva hora extra",

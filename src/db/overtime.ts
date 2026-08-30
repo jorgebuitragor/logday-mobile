@@ -126,11 +126,8 @@ interface OvertimeMonthMetaRow {
   deleted_at: string | null;
 }
 
-// Solo lectura por ahora — mobile no tiene una pantalla para editar
-// colaborador/cedula todavía, se llenan desde desktop y llegan acá
-// por sync (ver `overtime_month_meta` en schema.ts). Necesaria para
-// que el export a Excel de un mes (`overtimeExport.ts`) pueda incluir
-// estos dos campos igual que desktop.
+// Necesaria para que el export a Excel de un mes (`overtimeExport.ts`)
+// pueda incluir estos dos campos igual que desktop.
 export async function getOvertimeMonthMeta(yearMonth: string): Promise<OvertimeMonthMeta | null> {
   const row = await getDb().getFirstAsync<OvertimeMonthMetaRow>(
     'SELECT * FROM overtime_month_meta WHERE year_month = ? AND deleted_at IS NULL',
@@ -144,4 +141,22 @@ export async function getOvertimeMonthMeta(yearMonth: string): Promise<OvertimeM
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
   };
+}
+
+// Agregado 2026-08-30 (antes solo lectura, ver arriba) — UI propia en
+// `OvertimeMonthActionsSheet` para editar colaborador/cédula por mes
+// sin depender de que llegue por sync desde desktop. Upsert (mismo
+// criterio que `upsertDailyEntry`): la fila puede no existir todavía
+// para un mes sin exportar antes.
+export async function upsertOvertimeMonthMeta(yearMonth: string, colaborador: string, cedula: string): Promise<void> {
+  const now = new Date().toISOString();
+  await getDb().runAsync(
+    `INSERT INTO overtime_month_meta (year_month, colaborador, cedula, updated_at, deleted_at)
+     VALUES (?, ?, ?, ?, NULL)
+     ON CONFLICT(year_month) DO UPDATE SET colaborador = excluded.colaborador, cedula = excluded.cedula, updated_at = excluded.updated_at, deleted_at = NULL`,
+    yearMonth,
+    colaborador,
+    cedula,
+    now
+  );
 }

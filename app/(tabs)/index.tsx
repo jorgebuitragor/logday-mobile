@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Calendar, CalendarRange, CheckCircle2, CheckSquare, Circle, Clock, List } from 'lucide-react-native';
+import { Calendar, CalendarRange, CheckSquare, Kanban, List } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -8,6 +8,8 @@ import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { TaskCalendarView } from '../../src/components/TaskCalendarView';
+import { TaskKanbanBoard } from '../../src/components/TaskKanbanBoard';
+import { TaskStatusIcon } from '../../src/components/TaskStatusIcon';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { listTasks, softDeleteTask, updateTaskStatus } from '../../src/db/tasks';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
@@ -17,14 +19,6 @@ import type { Task, TaskStatus } from '../../src/types/task';
 
 // Mismo orden de ciclo que `cycleStatus` en TaskList.tsx de desktop.
 const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'done'];
-
-// Colores fijos por estado (no theme-aware a propósito): mismo criterio que
-// desktop, donde amber/green de estado no cambian entre claro/oscuro.
-const STATUS_COLOR: Record<TaskStatus, string> = {
-  todo: '', // se resuelve con theme.textMuted, ver renderStatusIcon
-  'in-progress': '#fbbf24',
-  done: '#4ade80',
-};
 
 const OVERDUE_COLOR = '#dc2626';
 
@@ -54,6 +48,15 @@ export default function TasksScreen() {
     await updateTaskStatus(task.id, next);
   }
 
+  // Soltar una tarjeta en otra columna del Kanban hace lo mismo que
+  // `cycleStatus` (cambia `status`, sin un campo de orden manual que
+  // persistir — ver TaskKanbanBoard.tsx), pero a un estado elegido
+  // directo en vez de ciclar al siguiente.
+  async function handleKanbanStatusChange(task: Task, status: TaskStatus) {
+    setTasks((prev) => prev.map((item) => (item.id === task.id ? { ...item, status } : item)));
+    await updateTaskStatus(task.id, status);
+  }
+
   function statusLabel(status: TaskStatus) {
     return status === 'todo'
       ? t('taskForm.statusTodo')
@@ -62,16 +65,10 @@ export default function TasksScreen() {
         : t('taskForm.statusDone');
   }
 
-  function renderStatusIcon(status: TaskStatus) {
-    const color = status === 'todo' ? theme.textMuted : STATUS_COLOR[status];
-    if (status === 'in-progress') return <Clock size={18} color={color} />;
-    if (status === 'done') return <CheckCircle2 size={18} color={color} />;
-    return <Circle size={18} color={color} />;
-  }
-
   const viewOptions: { mode: TasksViewMode; icon: typeof List; label: string }[] = [
     { mode: 'list', icon: List, label: t('taskList.viewList') },
     { mode: 'calendar', icon: CalendarRange, label: t('taskList.viewCalendar') },
+    { mode: 'kanban', icon: Kanban, label: t('taskList.viewKanban') },
   ];
 
   return (
@@ -82,6 +79,12 @@ export default function TasksScreen() {
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           <TaskCalendarView tasks={tasks} onSelectTask={(task) => router.push(`/task/${task.id}`)} />
         </ScrollView>
+      ) : viewMode === 'kanban' ? (
+        <TaskKanbanBoard
+          tasks={tasks}
+          onSelectTask={(task) => router.push(`/task/${task.id}`)}
+          onStatusChange={handleKanbanStatusChange}
+        />
       ) : (
       <FlatList
         data={tasks}
@@ -105,7 +108,7 @@ export default function TasksScreen() {
                   style={styles.statusIcon}
                   accessibilityLabel={statusLabel(item.status)}
                 >
-                  {renderStatusIcon(item.status)}
+                  <TaskStatusIcon status={item.status} />
                 </Pressable>
                 <View style={styles.content}>
                   <Text

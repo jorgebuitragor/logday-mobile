@@ -49,5 +49,5 @@ hasta tres archivos:
 | Selector de hora | implementado (pendiente confirmación en vivo) | [`selector-hora/`](./selector-hora/requirements.md) |
 | Menú contextual de Notes | implementado, incluye Editar/Destacar/Carpeta/Tags/Eliminar desde la lista (pendiente confirmación en vivo) | [`menu-contextual-notas/`](./menu-contextual-notas/requirements.md) |
 | Exportación | Notes, Dailys y Overtime implementados (pendiente confirmación en vivo); + "Compartir" en Notes/Dailys | [`exportacion/`](./exportacion/requirements.md) |
-| Vistas de Tasks | Calendario implementado (pendiente confirmación en vivo); Kanban pendiente | [`vistas-tasks/`](./vistas-tasks/requirements.md) |
+| Vistas de Tasks | Calendario y Kanban implementados (pendiente confirmación en vivo) | [`vistas-tasks/`](./vistas-tasks/requirements.md) |
 | Vistas de Notes | Lista/Cuadrícula implementado (pendiente confirmación en vivo) | [`vistas-notas/`](./vistas-notas/requirements.md) |

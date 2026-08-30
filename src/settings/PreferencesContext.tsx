@@ -24,7 +24,8 @@ export type NotesViewMode = 'list' | 'grid';
 const NOTES_VIEW_STORAGE_KEY = 'notesViewMode';
 const NOTES_VIEW_DEFAULT: NotesViewMode = 'list';
 
-export type TasksViewMode = 'list' | 'calendar';
+// 'kanban' agregado 2026-08-30 — ver specs/vistas-tasks/.
+export type TasksViewMode = 'list' | 'calendar' | 'kanban';
 const TASKS_VIEW_STORAGE_KEY = 'tasksViewMode';
 const TASKS_VIEW_DEFAULT: TasksViewMode = 'list';
 
@@ -73,7 +74,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       }
     });
     AsyncStorage.getItem(TASKS_VIEW_STORAGE_KEY).then((stored) => {
-      if (stored === 'list' || stored === 'calendar') {
+      if (stored === 'list' || stored === 'calendar' || stored === 'kanban') {
         setTasksViewModeState(stored);
       }
     });

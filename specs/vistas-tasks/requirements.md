@@ -1,7 +1,7 @@
 # Vistas de Tasks — Requirements
 
-Estado: Calendario implementado, pendiente de confirmación en vivo.
-Kanban pendiente (próximo checkpoint).
+Estado: Calendario y Kanban implementados, pendiente de confirmación
+en vivo.
 
 ## Contexto
 
@@ -31,6 +31,29 @@ de este spec, ver "Fuera de este spec".
   de la app (agregado 2026-08-30 — revierte la reducción de alcance
   original de esta sección; pedido explícito del usuario: "me
   gustaría también que las vistas se guarden así cierre la app").
+- El selector DEBERÁ incluir Kanban como tercera opción (agregado
+  2026-08-30 — pedido explícito: "añade lo de kanban a tareas").
+
+## Requisitos (EARS) — Vista Kanban (agregado 2026-08-30)
+
+- El sistema DEBERÁ mostrar 3 columnas por estado (Por hacer / En
+  progreso / Hecho), scrolleables horizontalmente, cada una con su
+  propio scroll vertical y contador de tarjetas.
+- Cada tarjeta DEBERÁ mostrar al menos el título, y cuando existan:
+  código, proyecto, fecha de vencimiento (en rojo si está vencida) y
+  hasta 2 tags — mismos datos que la fila de la vista Lista, en
+  formato condensado.
+- Tocar una tarjeta con un toque corto DEBERÁ navegar a su pantalla de
+  edición — mismo destino que las otras vistas.
+- Mantener presionada una tarjeta (long-press) DEBERÁ iniciar un
+  arrastre; soltarla sobre otra columna DEBERÁ cambiar su `status` al
+  de esa columna. Soltarla fuera de cualquier columna, o sobre la
+  misma columna de origen, DEBERÁ dejarla sin cambios.
+- El arrastre NO reordena dentro de una columna (alcance reducido
+  deliberado — ver design.md: desktop tampoco persiste un orden
+  manual, soltar solo cambia `status`).
+- Una columna sin tasks DEBERÁ mostrar un estado vacío explícito, no
+  quedar en blanco.
 
 ## Requisitos (EARS) — Vista Calendario
 
@@ -59,4 +82,6 @@ de este spec, ver "Fuera de este spec".
   (desktop lo hace desde el menú contextual de una celda) — en mobile,
   el botón "+" ya existente sigue creando sin fecha, se completa
   dentro del formulario como cualquier otra task.
-- **Kanban** — próximo checkpoint, ver `tasks.md`.
+- **Reordenar tasks dentro de una misma columna del Kanban** — desktop
+  no lo persiste (soltar solo cambia `status`), así que mobile tampoco
+  lo implementa. Ver design.md.

@@ -1,11 +1,10 @@
 import { useRouter, Tabs } from 'expo-router';
 import { CalendarDays, CheckSquare, Notebook, Search, Settings, Timer } from 'lucide-react-native';
-import { Image, Pressable, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
+import { LogoMark } from '../../src/components/LogoMark';
 import { useTheme } from '../../src/theme/ThemeContext';
-
-const logoMark = require('../../assets/logo-mark.png');
 
 export default function TabsLayout() {
   const { t, i18n } = useTranslation();
@@ -22,9 +21,19 @@ export default function TabsLayout() {
       // specs/i18n/design.md.
       key={i18n.language}
       screenOptions={{
-        headerStyle: { backgroundColor: theme.bgPanel },
+        headerStyle: {
+          backgroundColor: theme.bgPanel,
+          borderBottomWidth: 1,
+          borderBottomColor: theme.border,
+        },
         headerTintColor: theme.textPrimary,
-        headerLeft: () => <Image source={logoMark} style={styles.headerLogo} />,
+        headerShadowVisible: false,
+        headerTitleStyle: { fontWeight: '700', fontSize: 17 },
+        headerLeft: () => (
+          <View style={styles.headerLogo}>
+            <LogoMark size={24} />
+          </View>
+        ),
         headerRight: () => (
           <Pressable onPress={() => router.push('/search')} style={styles.headerSearch}>
             <Search color={theme.textPrimary} size={20} />

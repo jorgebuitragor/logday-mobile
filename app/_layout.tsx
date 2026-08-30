@@ -78,8 +78,16 @@ function RootLayoutInner() {
       <Stack
         key={i18n.language}
         screenOptions={{
+          // `Stack` (expo-router) usa el header nativo (native-stack),
+          // a diferencia de `Tabs` (JS header, ver
+          // `app/(tabs)/_layout.tsx`) — su `headerStyle` solo acepta
+          // `backgroundColor`, no bordes/sombra manuales. La sombra
+          // nativa por defecto se quita igual con
+          // `headerShadowVisible`, que sí está soportado acá.
           headerStyle: { backgroundColor: theme.bgPanel },
           headerTintColor: theme.textPrimary,
+          headerShadowVisible: false,
+          headerTitleStyle: { fontWeight: '700', fontSize: 17 },
           contentStyle: { backgroundColor: theme.bgBase },
         }}
       >

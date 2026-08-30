@@ -1,6 +1,6 @@
 # Temas — Requirements
 
-Estado: en diseño.
+Estado: implementado, pendiente de confirmación en vivo.
 
 ## Contexto
 
@@ -26,18 +26,30 @@ respete el sistema visual ya establecido en `task-manager`
   `task-manager/src/App.css` (`:root` para dark, `:root[data-theme="light"]`
   para light) — no reinventarse.
 
-### Alcance de temas (MVP)
+### Alcance de temas (ampliado 2026-08-30)
 
-- El sistema DEBERÁ soportar **dark** y **light** — decidido con el
-  usuario 2026-08-29. Los otros 5 temas de desktop
-  (`high-contrast`/`visual-rest`/`sepia`/`oled`/`nordic`) quedan fuera
-  de este MVP, no se portan todavía.
+Revierte la reducción de alcance original de esta sección — pedido
+explícito del usuario: "incluye los temas que faltan en la app.
+Seleccionable desde el apartado de opciones, similar a como se hace
+en Logday-web".
+
+- El sistema DEBERÁ soportar los 8 temas fijos de desktop/logday-web:
+  **system**, **light**, **dark**, **high-contrast**, **visual-rest**,
+  **sepia**, **oled**, **nordic** — mismos valores hex que
+  `task-manager/src/App.css`, copiados literales (ver design.md).
 - El sistema DEBERÁ seguir el tema del sistema operativo por defecto
-  (`useColorScheme` de React Native).
+  (`useColorScheme` de React Native) cuando la preferencia es
+  **system** — igual que antes, "system" nunca resuelve a uno de los
+  5 temas especiales, solo alterna entre claro/oscuro simple (mismo
+  criterio que desktop/logday-web).
 - El sistema DEBERÁ permitir al usuario elegir explícitamente
-  Sistema/Claro/Oscuro desde el tab de Ajustes, y recordar esa
-  elección entre sesiones (agregado 2026-08-29, tras el tab de
-  Ajustes — ver `pantalla-ajustes/`).
+  cualquiera de los 8 desde el tab de Ajustes, con el mismo patrón
+  visual que `SettingsSection.tsx` de logday-web (fila con
+  ícono+etiqueta+descripción+indicador de selección, no una grilla —
+  logday-web ya documenta por qué: "en mobile una grilla de 3 columnas
+  deja cada opción muy chica para tocar"), y recordar esa elección
+  entre sesiones (ya existía para Sistema/Claro/Oscuro, ahora
+  extendido a los 8).
 
 ### Aplicación
 
@@ -48,8 +60,20 @@ respete el sistema visual ya establecido en `task-manager`
   formulario de Task) DEBERÁN migrarse a los tokens en el mismo
   cambio que introduce el sistema de temas — no quedan a medio migrar.
 
+### Logo adaptable al tema (agregado 2026-08-30)
+
+Pedido explícito del usuario tras notar que el logo del header no se
+veía bien: "Mira como lo está trabajando desktop el logo de Logday
+adaptable a temas."
+
+- El logo mostrado en el header de la app DEBERÁ adaptarse al tema
+  activo (color de acento) automáticamente, incluidos los 8 temas de
+  esta sección — no una imagen estática con colores fijos.
+
 ## Fuera de este spec
 
-- Los 5 temas adicionales de desktop.
-- Temas personalizados (`CustomTheme`, derivación HSL) — existen en
-  desktop/web, no se portan a mobile en este spec.
+- Temas personalizados (`CustomTheme`: acento/tinte/intensidad
+  elegidos por el usuario, con su propio editor) — existen en
+  desktop/web, no se portan a mobile en este checkpoint. El pedido del
+  usuario nombró específicamente "los temas que faltan" (los 8 fijos),
+  no el constructor de temas personalizados.

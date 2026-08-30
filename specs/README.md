@@ -34,7 +34,7 @@ hasta tres archivos:
 | Esquema de datos local | implementado (baseline) | [`esquema-datos/`](./esquema-datos/requirements.md) |
 | Navegación | implementado | [`navegacion/`](./navegacion/requirements.md) |
 | Pantalla de Tasks | implementado (pendiente confirmación en vivo) | [`pantalla-tasks/`](./pantalla-tasks/requirements.md) |
-| Temas | implementado (pendiente confirmación en vivo) | [`temas/`](./temas/requirements.md) |
+| Temas | implementado, 8 temas + logo adaptable (pendiente confirmación en vivo) | [`temas/`](./temas/requirements.md) |
 | i18n | implementado (pendiente confirmación en vivo) | [`i18n/`](./i18n/requirements.md) |
 | Pantalla de Ajustes | implementado (pendiente confirmación en vivo) | [`pantalla-ajustes/`](./pantalla-ajustes/requirements.md) |
 | Branding | implementado (pendiente confirmación en vivo) | [`branding/`](./branding/requirements.md) |

@@ -2,13 +2,47 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 
-import { dark, light, type ThemeTokens } from './tokens';
+import { dark, highContrast, light, nordic, oled, sepia, visualRest, type ThemeTokens } from './tokens';
 
-export type ThemePreference = 'system' | 'light' | 'dark';
+// 'system' resuelve siempre a claro/oscuro simple según el SO — mismo
+// criterio que desktop/logday-web, donde 'system' es una entrada más
+// de `BuiltInTheme`, no una opción que además pueda "seguir al SO
+// entre los 5 temas especiales" (esos se eligen a mano).
+export type ThemePreference = 'system' | 'light' | 'dark' | 'high-contrast' | 'visual-rest' | 'sepia' | 'oled' | 'nordic';
 
 const STORAGE_KEY = 'themePreference';
 
+const VALID_PREFERENCES: ThemePreference[] = ['system', 'light', 'dark', 'high-contrast', 'visual-rest', 'sepia', 'oled', 'nordic'];
+
 export type ResolvedScheme = 'light' | 'dark';
+
+// Qué tokens usa cada tema concreto (todo menos 'system', que se
+// resuelve aparte contra `useColorScheme()`).
+const TOKENS_BY_THEME: Record<Exclude<ThemePreference, 'system'>, ThemeTokens> = {
+  light,
+  dark,
+  'high-contrast': highContrast,
+  'visual-rest': visualRest,
+  sepia,
+  oled,
+  nordic,
+};
+
+// Base claro/oscuro de cada tema concreto — para la barra de estado
+// (íconos claros sobre temas oscuros, oscuros sobre temas claros) y
+// para cualquier otra decisión binaria que necesite "es este tema
+// fundamentalmente oscuro o claro" sin importar cuál de los 8 sea.
+// Mismo concepto que `CustomTheme.base` en desktop, aplicado acá a
+// los temas fijos (que no tienen ese campo explícito).
+const SCHEME_BY_THEME: Record<Exclude<ThemePreference, 'system'>, ResolvedScheme> = {
+  light: 'light',
+  dark: 'dark',
+  'high-contrast': 'dark',
+  'visual-rest': 'dark',
+  sepia: 'light',
+  oled: 'dark',
+  nordic: 'dark',
+};
 
 interface ThemeContextValue {
   tokens: ThemeTokens;
@@ -32,8 +66,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored === 'light' || stored === 'dark' || stored === 'system') {
-        setPreferenceState(stored);
+      if (stored && (VALID_PREFERENCES as string[]).includes(stored)) {
+        setPreferenceState(stored as ThemePreference);
       }
     });
   }, []);
@@ -43,8 +77,13 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(STORAGE_KEY, next);
   }
 
-  const effectiveScheme: ResolvedScheme = (preference === 'system' ? colorScheme : preference) === 'light' ? 'light' : 'dark';
-  const tokens = useMemo(() => (effectiveScheme === 'light' ? light : dark), [effectiveScheme]);
+  const effectiveScheme: ResolvedScheme =
+    preference === 'system' ? (colorScheme === 'light' ? 'light' : 'dark') : SCHEME_BY_THEME[preference];
+
+  const tokens = useMemo(() => {
+    if (preference === 'system') return effectiveScheme === 'light' ? light : dark;
+    return TOKENS_BY_THEME[preference];
+  }, [preference, effectiveScheme]);
 
   const value = useMemo(
     () => ({ tokens, scheme: effectiveScheme, preference, setPreference }),

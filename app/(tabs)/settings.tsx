@@ -1,4 +1,4 @@
-import { Clock, Languages, Moon, ShieldAlert, Smartphone, Sun } from 'lucide-react-native';
+import { BookOpen, Clock, Eye, Languages, Monitor, Moon, ShieldAlert, Smartphone, Snowflake, Sun, TriangleAlert } from 'lucide-react-native';
 import type { ComponentType } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
@@ -7,12 +7,47 @@ import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguag
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useTheme, useThemePreference, type ThemePreference } from '../../src/theme/ThemeContext';
 
-const THEME_PREFERENCES: ThemePreference[] = ['system', 'light', 'dark'];
+// Mismos 8 temas y mismo orden que `THEME_OPTIONS` en
+// `logday-web/src/components/settings/SettingsSection.tsx` — pedido
+// explícito del usuario ("seleccionable... similar a como se hace en
+// Logday-web"). Antes mobile solo tenía Sistema/Claro/Oscuro.
+const THEME_PREFERENCES: ThemePreference[] = ['system', 'light', 'dark', 'high-contrast', 'visual-rest', 'sepia', 'oled', 'nordic'];
 
 const THEME_ICONS: Record<ThemePreference, ComponentType<{ size?: number; color?: string }>> = {
-  system: Smartphone,
+  system: Monitor,
   light: Sun,
   dark: Moon,
+  'high-contrast': TriangleAlert,
+  'visual-rest': Eye,
+  sepia: BookOpen,
+  oled: Smartphone,
+  nordic: Snowflake,
+};
+
+// Mapa explícito en vez de derivar la clave con
+// `charAt(0).toUpperCase()+slice(1)` (que ya no alcanza con nombres
+// con guion como "high-contrast" → produciría una clave inválida
+// "themeHigh-contrast").
+const THEME_LABEL_KEY: Record<ThemePreference, string> = {
+  system: 'settings.themeSystem',
+  light: 'settings.themeLight',
+  dark: 'settings.themeDark',
+  'high-contrast': 'settings.themeHighContrast',
+  'visual-rest': 'settings.themeVisualRest',
+  sepia: 'settings.themeSepia',
+  oled: 'settings.themeOled',
+  nordic: 'settings.themeNordic',
+};
+
+const THEME_DESC_KEY: Record<ThemePreference, string> = {
+  system: 'settings.themeSystemDesc',
+  light: 'settings.themeLightDesc',
+  dark: 'settings.themeDarkDesc',
+  'high-contrast': 'settings.themeHighContrastDesc',
+  'visual-rest': 'settings.themeVisualRestDesc',
+  sepia: 'settings.themeSepiaDesc',
+  oled: 'settings.themeOledDesc',
+  nordic: 'settings.themeNordicDesc',
 };
 
 const TIME_FORMATS: TimeFormat[] = ['24h', '12h'];
@@ -30,7 +65,8 @@ export default function SettingsScreen() {
           <OptionRow
             key={pref}
             icon={THEME_ICONS[pref]}
-            label={t(`settings.theme${pref.charAt(0).toUpperCase()}${pref.slice(1)}`)}
+            label={t(THEME_LABEL_KEY[pref])}
+            description={t(THEME_DESC_KEY[pref])}
             selected={preference === pref}
             onPress={() => setPreference(pref)}
             isLast={i === THEME_PREFERENCES.length - 1}
@@ -108,12 +144,14 @@ function Section({
 function OptionRow({
   icon: Icon,
   label,
+  description,
   selected,
   onPress,
   isLast,
 }: {
   icon?: ComponentType<{ size?: number; color?: string }>;
   label: string;
+  description?: string;
   selected: boolean;
   onPress: () => void;
   isLast: boolean;
@@ -126,7 +164,12 @@ function OptionRow({
     >
       <View style={styles.rowLabel}>
         {Icon ? <Icon size={16} color={selected ? theme.accent : theme.textSecondary} /> : null}
-        <Text style={{ color: theme.textPrimary }}>{label}</Text>
+        <View style={{ flexShrink: 1 }}>
+          <Text style={{ color: theme.textPrimary }}>{label}</Text>
+          {description ? (
+            <Text style={{ color: theme.textHint, fontSize: 11, marginTop: 1 }}>{description}</Text>
+          ) : null}
+        </View>
       </View>
       {selected && <Text style={{ color: theme.accent, fontWeight: '700' }}>✓</Text>}
     </Pressable>

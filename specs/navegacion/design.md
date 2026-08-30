@@ -58,3 +58,61 @@ del stack de datos.
 - Pantallas de detalle/creación/edición por entidad — specs futuros.
 - Decidir si cada entidad necesita su propio stack anidado dentro del
   tab (ej. `(tabs)/tasks/[id].tsx`) cuando llegue el spec de detalle.
+
+## Transición sutil entre tabs: `animation: 'fade'` (agregado 2026-08-30)
+
+`Tabs` (el wrapper de `expo-router` sobre su copia vendorizada de
+`@react-navigation/bottom-tabs`) no anima el cambio de pestaña por
+defecto — el `screenOptions.animation` acepta `'none' | 'fade' |
+'shift'`, y sin especificarlo se comporta como `'none'` (corte
+instantáneo, confirmado observando el comportamiento antes de este
+cambio). Se eligió `'fade'` (cross-fade corto, sin desplazamiento)
+sobre `'shift'` (las pantallas se desplazan levemente a los lados) por
+ser la más discreta de las dos con animación real — coincide con "muy
+sutiles, pero notorias", el pedido explícito del usuario. Un solo
+`screenOptions.animation` en `app/(tabs)/_layout.tsx` cubre las 5
+pestañas, no hace falta tocar cada `Tabs.Screen`.
+
+## Flash blanco al entrar a pantallas modal: `expo-system-ui` (agregado 2026-08-30)
+
+Causa raíz: la ventana nativa raíz (la superficie del SO detrás de la
+vista de React Native) tiene fondo blanco por defecto y no se
+configura en ningún lado del proyecto. En uso normal es invisible
+(la vista de RN la cubre por completo), pero durante las transiciones
+de navegación nativas (fuera del control directo de React) se asoma un
+frame de esa ventana de fondo — visible como un destello blanco,
+mucho más notorio en los temas oscuros. `contentStyle` en
+`screenOptions` del `Stack` raíz (`app/_layout.tsx`) ya fija el fondo
+de cada pantalla, pero eso es la vista de contenido de React, no la
+ventana nativa que se asoma brevemente detrás durante la animación —
+son dos capas distintas.
+
+Se agregó `expo-system-ui` (`npx expo install expo-system-ui` —
+incluido en el set de módulos nativos que trae Expo Go por versión de
+SDK, no requiere development build nuevo) y se sincroniza la ventana
+nativa con el tema activo en `ThemeProvider`
+(`src/theme/ThemeContext.tsx`):
+
+```ts
+useEffect(() => {
+  SystemUI.setBackgroundColorAsync(tokens.bgBase);
+}, [tokens.bgBase]);
+```
+
+Vive en `ThemeProvider` (no en `app/_layout.tsx`) porque ahí ya se
+resuelven los tokens de los 8 temas — mismo lugar que ya reacciona a
+cambios de preferencia de tema, sin necesitar leer el contexto dos
+veces en dos archivos distintos. Cubre los 8 temas por igual (no solo
+oscuro/claro), incluidos los de fondo no-neutro como sepia.
+
+## Explícitamente pendiente (transiciones)
+
+- Verificación en vivo: cambiar de tab varias veces seguidas y
+  confirmar que el fade se siente fluido, no brusco ni con parpadeo;
+  entrar a cada una de las 7 pantallas modal (`task/new`, `task/[id]`,
+  `note/new`, `note/[id]`, `daily/[date]`, `overtime/new`,
+  `overtime/[id]`) en al menos 2 temas distintos (uno oscuro, uno
+  claro) y confirmar que no aparece ningún destello blanco; probar
+  también cambiando de tema desde Ajustes y confirmando que la
+  siguiente navegación ya usa el fondo nuevo (no el anterior, ver que
+  el `useEffect` corrió a tiempo).

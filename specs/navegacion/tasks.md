@@ -29,7 +29,37 @@ Estado: implementado y verificado en vivo.
 
 ## Pendiente cosmético (no bloqueante)
 
-Los tabs se ven sin ícono (cuadro vacío) — `Tabs.Screen` no define
-`tabBarIcon` todavía. No afecta la función, pero hace falta agregar
-íconos (ej. `@expo/vector-icons`, ya viene con Expo) en algún momento
-antes de considerar esto terminado visualmente.
+~~Los tabs se ven sin ícono~~ — resuelto tiempo después, cada
+`Tabs.Screen` en `app/(tabs)/_layout.tsx` ya define `tabBarIcon` con
+`lucide-react-native`.
+
+## Transiciones (agregado 2026-08-30)
+
+Pedido directo del usuario: "Puedes añadir animaciones al cambiar de
+pantallas. Muy sutiles, pero notorias. Además se ve un detalle blanco
+al entrar en pantallas de detalles para extras, notas, Dailys, etc."
+
+- [x] `app/(tabs)/_layout.tsx`: `screenOptions.animation = 'fade'` —
+      cross-fade sutil al cambiar de tab (antes instantáneo, sin
+      animación).
+- [x] `npx expo install expo-system-ui` — agregado a `package.json`
+      (`~57.0.3`), sin necesitar development build nuevo (incluido en
+      el set de módulos de Expo Go para esta versión de SDK).
+- [x] `src/theme/ThemeContext.tsx`: `SystemUI.setBackgroundColorAsync(tokens.bgBase)`
+      en un `useEffect` dentro de `ThemeProvider`, disparado cada vez
+      que cambia `tokens.bgBase` — sincroniza la ventana nativa raíz
+      con el tema activo, eliminando el destello blanco al entrar a
+      cualquier pantalla modal (causa raíz: la ventana nativa tiene
+      fondo blanco por defecto y se asoma un frame durante las
+      transiciones nativas, fuera del control de `contentStyle`). Ver
+      design.md.
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, sin errores de resolución
+      reales; `setBackgroundColorAsync`/`expo-system-ui` aparecen
+      resueltos en el bundle.
+- [ ] Verificar en vivo: cambiar de tab repetidamente y confirmar que
+      el fade se ve fluido; entrar a cada pantalla modal (task/note/
+      daily/overtime, nuevo y edición) en al menos un tema oscuro y
+      uno claro, confirmando que no aparece ningún destello blanco;
+      cambiar de tema desde Ajustes y confirmar que la siguiente
+      navegación ya refleja el fondo nuevo.

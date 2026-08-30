@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SystemUI from 'expo-system-ui';
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useColorScheme } from 'react-native';
 
@@ -84,6 +85,18 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     if (preference === 'system') return effectiveScheme === 'light' ? light : dark;
     return TOKENS_BY_THEME[preference];
   }, [preference, effectiveScheme]);
+
+  // Sin esto, la ventana nativa raíz (detrás de la superficie de RN)
+  // queda con su fondo blanco por defecto — invisible en uso normal,
+  // pero se asoma un frame durante las transiciones de navegación
+  // (nativas, fuera del control de React) como un "flash" blanco al
+  // entrar a pantallas de detalle (`presentation: 'modal'` en
+  // note/[id], daily/[date], overtime/[id], etc. — reportado por el
+  // usuario 2026-08-30). Mantener la ventana nativa sincronizada con
+  // el tema activo la elimina en cualquier tema, no solo oscuro.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(tokens.bgBase);
+  }, [tokens.bgBase]);
 
   const value = useMemo(
     () => ({ tokens, scheme: effectiveScheme, preference, setPreference }),

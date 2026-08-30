@@ -1,7 +1,8 @@
 # Navegación — Requirements
 
 Estado: implementado, pendiente de confirmación en vivo por el
-usuario.
+usuario. Sección "Transiciones" (2026-08-30) también implementada,
+pendiente de confirmación en vivo.
 
 ## Contexto
 
@@ -45,3 +46,18 @@ aquí).
 - Navegación anidada dentro de cada tab (ej. lista → detalle).
 - Onboarding / pantalla de bienvenida.
 - Configuración de servidor de sync.
+
+## Requisitos (EARS) — Transiciones (agregado 2026-08-30)
+
+Pedido directo del usuario: "Puedes añadir animaciones al cambiar de
+pantallas. Muy sutiles, pero notorias. Además se ve un detalle blanco
+al entrar en pantallas de detalles para extras, notas, Dailys, etc."
+
+- Cambiar de tab (Tareas/Notas/Dailys/Extras/Ajustes) DEBERÁ animar
+  con una transición sutil — no un corte instantáneo, pero tampoco un
+  desplazamiento llamativo.
+- Entrar a cualquier pantalla de detalle presentada como modal
+  (`task/new`, `task/[id]`, `note/new`, `note/[id]`, `daily/[date]`,
+  `overtime/new`, `overtime/[id]`) NO DEBERÁ mostrar un destello de
+  fondo blanco durante la transición, en ningún tema (incluidos los
+  oscuros, donde el contraste contra blanco es más notorio).

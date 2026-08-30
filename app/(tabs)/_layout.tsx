@@ -21,6 +21,12 @@ export default function TabsLayout() {
       // specs/i18n/design.md.
       key={i18n.language}
       screenOptions={{
+        // Sin esto el cambio de pestaña es instantáneo (comportamiento
+        // por defecto de `Tabs`). 'fade' es sutil (cross-fade corto,
+        // sin desplazamiento) pero notorio — pedido explícito del
+        // usuario 2026-08-30: "añade animaciones al cambiar de
+        // pantallas. Muy sutiles, pero notorias".
+        animation: 'fade',
         headerStyle: {
           backgroundColor: theme.bgPanel,
           borderBottomWidth: 1,

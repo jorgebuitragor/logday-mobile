@@ -46,6 +46,26 @@ justamente el tipo de diferencia que hace útil tener una segunda
 vista (más contexto por nota visible sin abrirla, a cambio de ver
 menos notas por scroll que en Lista).
 
+## Bug de ancho de tarjeta (corregido 2026-08-30)
+
+Reportado en vivo tras el primer deploy: las tarjetas se veían
+angostas e inconsistentes, con mucho espacio vacío a la derecha de la
+fila. Causa: `width: '47%'` vivía en `styles.card`, aplicado al
+`Pressable` interno de `NoteCard` — pero la raíz real de cada ítem de
+la fila `grid` es `SwipeableRow` (un `Swipeable` de gesture-handler),
+que no fuerza un ancho propio. El `47%` del `Pressable` resolvía
+entonces contra el ancho (indefinido) del contenedor interno de
+`Swipeable`, no contra el ancho de la fila `grid` — tamaño errático en
+vez de la mitad exacta del ancho disponible.
+
+Corregido moviendo el `width: '47%'` a un `View` envolvente
+(`cardWrap`) puesto directamente como hijo de `grid`, con
+`SwipeableRow`/`NoteCard` adentro sin ancho propio (heredan 100% de
+`cardWrap` por defecto). Mismo patrón a tener en cuenta si se agrega
+algo más envuelto en `SwipeableRow` dentro de un layout `flexWrap`
+(no en una columna simple, donde el 100% por defecto ya coincidía con
+el ancho deseado y ocultaba el problema).
+
 ## Explícitamente pendiente
 
 Ver "Fuera de este spec" en `requirements.md`.

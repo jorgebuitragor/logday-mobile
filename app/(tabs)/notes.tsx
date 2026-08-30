@@ -156,13 +156,14 @@ export default function NotesScreen() {
                   <Text style={[styles.gridSectionLabel, { color: theme.textHint }]}>{t('noteList.pinnedSection')}</Text>
                   <View style={styles.grid}>
                     {pinnedNotes.map((note) => (
-                      <NoteCard
-                        key={note.id}
-                        note={note}
-                        onPress={() => router.push(`/note/${note.id}`)}
-                        onMore={() => setActionsNote(note)}
-                        onDelete={() => confirmDelete.request(note, performDelete)}
-                      />
+                      <View key={note.id} style={styles.cardWrap}>
+                        <NoteCard
+                          note={note}
+                          onPress={() => router.push(`/note/${note.id}`)}
+                          onMore={() => setActionsNote(note)}
+                          onDelete={() => confirmDelete.request(note, performDelete)}
+                        />
+                      </View>
                     ))}
                   </View>
                 </>
@@ -174,13 +175,14 @@ export default function NotesScreen() {
                   ) : null}
                   <View style={styles.grid}>
                     {otherNotes.map((note) => (
-                      <NoteCard
-                        key={note.id}
-                        note={note}
-                        onPress={() => router.push(`/note/${note.id}`)}
-                        onMore={() => setActionsNote(note)}
-                        onDelete={() => confirmDelete.request(note, performDelete)}
-                      />
+                      <View key={note.id} style={styles.cardWrap}>
+                        <NoteCard
+                          note={note}
+                          onPress={() => router.push(`/note/${note.id}`)}
+                          onMore={() => setActionsNote(note)}
+                          onDelete={() => confirmDelete.request(note, performDelete)}
+                        />
+                      </View>
                     ))}
                   </View>
                 </>
@@ -369,8 +371,16 @@ const styles = StyleSheet.create({
     gap: 10,
     marginBottom: 8,
   },
-  card: {
+  // El ancho del 47% vive acá, no en `card` — `SwipeableRow` (la raíz
+  // real de cada ítem de la fila `grid`) no fuerza un ancho propio, así
+  // que un `width: '47%'` puesto en `card` (un nivel más adentro,
+  // dentro del `Swipeable`) resolvía contra un ancho padre indefinido
+  // en vez del ancho de la fila — tarjetas angostas e inconsistentes
+  // en la práctica (reportado en vivo: "no se ve bien la cuadrícula").
+  cardWrap: {
     width: '47%',
+  },
+  card: {
     padding: 12,
     borderWidth: 1,
     borderRadius: 12,

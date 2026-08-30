@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { MoreHorizontal, Notebook, Pin } from 'lucide-react-native';
+import { Grid2x2, List, MoreHorizontal, Notebook, Pin } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -10,6 +10,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { FilterChip } from '../../src/components/FilterChip';
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
+import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { createNote, listNotes, softDeleteNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { shareText } from '../../src/lib/exportFile';
@@ -18,14 +19,16 @@ import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Note } from '../../src/types/note';
 
+type NotesViewMode = 'list' | 'grid';
+
 // Mismo ámbar que desktop usa para el indicador de nota anclada
 // (`text-amber-400`, ver NoteList.tsx) — color semántico fijo, igual
 // criterio que el rojo de eliminar (`#dc2626`) ya usado en esta lista.
 const PIN_COLOR = '#f59e0b';
 
-function preview(content: string): string {
+function preview(content: string, max = 80): string {
   const flat = content.replace(/\s+/g, ' ').trim();
-  return flat.length > 80 ? `${flat.slice(0, 80)}…` : flat;
+  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
 }
 
 export default function NotesScreen() {
@@ -37,6 +40,9 @@ export default function NotesScreen() {
   const [filterFolder, setFilterFolder] = useState<string | null>(null);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [actionsNote, setActionsNote] = useState<Note | null>(null);
+  // No persistida, mismo criterio que `viewMode` de Tasks — ver
+  // specs/vistas-notas/design.md.
+  const [viewMode, setViewMode] = useState<NotesViewMode>('list');
   const confirmDelete = useConfirmDelete<Note>(confirmDestructiveActions);
 
   const reload = useCallback(() => {
@@ -97,8 +103,21 @@ export default function NotesScreen() {
     [notes, filterFolder, filterTag]
   );
 
+  // Solo para la vista Cuadrícula (estilo Google Keep: sección
+  // "Destacadas" separada arriba) — la vista Lista no cambia, ya
+  // muestra el pin inline en cada fila sin necesitar una sección
+  // aparte.
+  const pinnedNotes = useMemo(() => filteredNotes.filter((n) => n.pinned), [filteredNotes]);
+  const otherNotes = useMemo(() => filteredNotes.filter((n) => !n.pinned), [filteredNotes]);
+
+  const viewOptions: { mode: NotesViewMode; icon: typeof List; label: string }[] = [
+    { mode: 'list', icon: List, label: t('noteList.viewList') },
+    { mode: 'grid', icon: Grid2x2, label: t('noteList.viewGrid') },
+  ];
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
+      <ViewSwitch value={viewMode} options={viewOptions} onChange={setViewMode} />
       {(folders.length > 0 || tags.length > 0) && (
         <ScrollView
           horizontal
@@ -123,6 +142,53 @@ export default function NotesScreen() {
           ))}
         </ScrollView>
       )}
+      {viewMode === 'grid' ? (
+        <ScrollView contentContainerStyle={styles.gridScroll}>
+          {filteredNotes.length === 0 ? (
+            <EmptyState
+              icon={Notebook}
+              message={notes.length > 0 ? t('noteList.emptyFiltered') : t('noteList.empty')}
+            />
+          ) : (
+            <>
+              {pinnedNotes.length > 0 ? (
+                <>
+                  <Text style={[styles.gridSectionLabel, { color: theme.textHint }]}>{t('noteList.pinnedSection')}</Text>
+                  <View style={styles.grid}>
+                    {pinnedNotes.map((note) => (
+                      <NoteCard
+                        key={note.id}
+                        note={note}
+                        onPress={() => router.push(`/note/${note.id}`)}
+                        onMore={() => setActionsNote(note)}
+                        onDelete={() => confirmDelete.request(note, performDelete)}
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+              {otherNotes.length > 0 ? (
+                <>
+                  {pinnedNotes.length > 0 ? (
+                    <Text style={[styles.gridSectionLabel, { color: theme.textHint }]}>{t('noteList.othersSection')}</Text>
+                  ) : null}
+                  <View style={styles.grid}>
+                    {otherNotes.map((note) => (
+                      <NoteCard
+                        key={note.id}
+                        note={note}
+                        onPress={() => router.push(`/note/${note.id}`)}
+                        onMore={() => setActionsNote(note)}
+                        onDelete={() => confirmDelete.request(note, performDelete)}
+                      />
+                    ))}
+                  </View>
+                </>
+              ) : null}
+            </>
+          )}
+        </ScrollView>
+      ) : (
       <FlatList
         data={filteredNotes}
         keyExtractor={(note) => note.id}
@@ -184,6 +250,7 @@ export default function NotesScreen() {
           </SwipeableRow>
         )}
       />
+      )}
       <Pressable style={[styles.fab, { backgroundColor: theme.accentStrong }]} onPress={() => router.push('/note/new')}>
         <Text style={styles.fabText}>+</Text>
       </Pressable>
@@ -213,6 +280,64 @@ export default function NotesScreen() {
   );
 }
 
+// Tarjeta de la vista Cuadrícula — estilo Google Keep (título +
+// preview más larga que en Lista, sin fila de metadata separada para
+// no recargar una tarjeta angosta). Envuelta en `SwipeableRow` igual
+// que la fila de Lista: es el único camino de borrado desde el
+// listado (el menú "⋮" de `NoteActionsSheet` no ofrece Eliminar a
+// propósito, ver specs/menu-contextual-notas/design.md), así que la
+// vista Cuadrícula necesita conservarlo.
+function NoteCard({
+  note,
+  onPress,
+  onMore,
+  onDelete,
+}: {
+  note: Note;
+  onPress: () => void;
+  onMore: () => void;
+  onDelete: () => void;
+}) {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  return (
+    <SwipeableRow deleteLabel={t('common.delete')} onDelete={onDelete}>
+      <Pressable
+        style={[styles.card, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
+        onPress={onPress}
+      >
+        <View style={styles.cardTitleRow}>
+          <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={2}>
+            {note.title || t('noteForm.titlePlaceholder')}
+          </Text>
+          <Pressable onPress={onMore} hitSlop={8} style={styles.moreButton} accessibilityLabel={t('noteActions.menuLabel')}>
+            <MoreHorizontal size={16} color={theme.textFaint} />
+          </Pressable>
+        </View>
+        {note.content ? (
+          <Text style={{ color: theme.textMuted, fontSize: 13 }} numberOfLines={6}>
+            {preview(note.content, 180)}
+          </Text>
+        ) : null}
+        {note.folder || note.tags.length > 0 ? (
+          <View style={styles.metaRow}>
+            {note.folder ? (
+              <Text style={[styles.folderText, { color: theme.textHint }]} numberOfLines={1}>
+                {note.folder}
+              </Text>
+            ) : null}
+            {note.tags.slice(0, 2).map((tag) => (
+              <View key={tag} style={[styles.tagChip, { backgroundColor: theme.accentSoft }]}>
+                <Text style={[styles.tagChipText, { color: theme.accentInk }]}>{tag}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </Pressable>
+    </SwipeableRow>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -225,6 +350,36 @@ const styles = StyleSheet.create({
   list: {
     padding: 16,
     gap: 8,
+  },
+  gridScroll: {
+    padding: 16,
+    paddingTop: 12,
+  },
+  gridSectionLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 8,
+    marginTop: 4,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 8,
+  },
+  card: {
+    width: '47%',
+    padding: 12,
+    borderWidth: 1,
+    borderRadius: 12,
+    gap: 6,
+  },
+  cardTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
   },
   row: {
     padding: 12,

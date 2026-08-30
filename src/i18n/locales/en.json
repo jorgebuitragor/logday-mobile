@@ -88,7 +88,11 @@
     "empty": "No notes yet. Create the first one!",
     "emptyFiltered": "No notes match this filter.",
     "loading": "Loading...",
-    "pinnedLabel": "Pinned note"
+    "pinnedLabel": "Pinned note",
+    "viewList": "List",
+    "viewGrid": "Grid",
+    "pinnedSection": "Pinned",
+    "othersSection": "Others"
   },
   "noteForm": {
     "title": "Title",

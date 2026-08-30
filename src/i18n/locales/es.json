@@ -88,7 +88,11 @@
     "empty": "Sin notas. ¡Crea la primera!",
     "emptyFiltered": "Sin notas para este filtro.",
     "loading": "Cargando...",
-    "pinnedLabel": "Nota destacada"
+    "pinnedLabel": "Nota destacada",
+    "viewList": "Lista",
+    "viewGrid": "Cuadrícula",
+    "pinnedSection": "Destacadas",
+    "othersSection": "Otras"
   },
   "noteForm": {
     "title": "Título",

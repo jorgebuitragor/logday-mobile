@@ -8,6 +8,7 @@ import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { TaskCalendarView } from '../../src/components/TaskCalendarView';
+import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { listTasks, softDeleteTask, updateTaskStatus } from '../../src/db/tasks';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
@@ -82,21 +83,7 @@ export default function TasksScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
-      <View style={[styles.viewSwitch, { borderColor: theme.border }]}>
-        {viewOptions.map(({ mode, icon: Icon, label }) => (
-          <Pressable
-            key={mode}
-            onPress={() => setViewMode(mode)}
-            style={[styles.viewOption, viewMode === mode && { backgroundColor: theme.accentSoft }]}
-            accessibilityLabel={label}
-          >
-            <Icon size={14} color={viewMode === mode ? theme.accentInk : theme.textSecondary} />
-            <Text style={{ color: viewMode === mode ? theme.accentInk : theme.textSecondary, fontSize: 12, fontWeight: '600' }}>
-              {label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
+      <ViewSwitch value={viewMode} options={viewOptions} onChange={setViewMode} />
 
       {viewMode === 'calendar' ? (
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -192,24 +179,6 @@ export default function TasksScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  viewSwitch: {
-    flexDirection: 'row',
-    margin: 16,
-    marginBottom: 0,
-    borderWidth: 1,
-    borderRadius: 10,
-    padding: 3,
-    gap: 3,
-  },
-  viewOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 5,
-    paddingVertical: 7,
-    borderRadius: 7,
   },
   list: {
     padding: 16,

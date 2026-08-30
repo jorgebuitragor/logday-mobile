@@ -188,12 +188,12 @@ revertir el editor WYSIWYG. Ver design.md, "Vista previa".
 
 ## Descarte de notas vacías al salir (agregado 2026-08-30)
 
-- [x] `app/note/[id].tsx`: nuevo `useEffect([id])` cuyo cleanup, al
-      salir de la pantalla (unmount o cambio de `id` sin desmontar),
-      llama `softDeleteNote(id)` en silencio si título y contenido
-      siguen vacíos — puerto de `isNewEmptyNote`/`handleSelectNote`
-      de `NoteList.tsx` en desktop, adaptado al modelo de navegación
-      de mobile (sin panel dividido). Ver design.md.
+- [x] `app/note/[id].tsx` (primera versión): `useEffect([id])` cuyo
+      cleanup, al salir de la pantalla, llama `softDeleteNote(id)` en
+      silencio si título y contenido siguen vacíos — puerto de
+      `isNewEmptyNote`/`handleSelectNote` de `NoteList.tsx` en
+      desktop, adaptado al modelo de navegación de mobile (sin panel
+      dividido). Ver design.md.
 - [x] Mismo cleanup cancela el `setTimeout` de autoguardado pendiente
       y, si la nota no quedó vacía, hace flush síncrono — resuelve de
       paso el "riesgo menor" ya documentado en "Indicador de
@@ -201,8 +201,30 @@ revertir el editor WYSIWYG. Ver design.md, "Vista previa".
 - [x] `./node_modules/.bin/tsc --noEmit` sin errores.
 - [x] Bundle de Metro pedido directo, sin errores de resolución
       reales.
+
+### Corrección: reemplazo del cleanup por `beforeRemove` (mismo día)
+
+Reportado en vivo por el usuario: "en ocasiones alcanzo a verla por
+casi un segundo antes de que se borre la nota vacía" — el cleanup de
+`useEffect` no podía bloquear la navegación, así que el borrado async
+corría en carrera contra el `reload()` por foco de la lista. Ver
+design.md, "Primera versión... y por qué se reemplazó".
+
+- [x] `app/note/[id].tsx`: reemplazado el cleanup de `useEffect` por
+      un listener `navigation.addListener('beforeRemove', ...)` (vía
+      `useNavigation()` de `expo-router`) — `e.preventDefault()` +
+      espera el borrado/flush + `navigation.dispatch(e.data.action)`
+      recién al terminar. Bloquea la navegación hasta que SQLite ya
+      tiene el cambio, sin ninguna carrera posible con el `reload()`
+      de la lista.
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, sin errores de resolución
+      reales; `beforeRemove`/`useNavigation` aparecen resueltos.
 - [ ] Verificar en vivo: crear nota nueva y volver atrás sin escribir
-      — no debe quedar en la lista; vaciar el título/contenido de una
-      nota existente y volver atrás — también debe desaparecer;
-      escribir y volver atrás casi de inmediato (<600ms) — el
-      contenido SÍ debe guardarse, no perderse.
+      — no debe quedar en la lista, **ni brevemente** (esto es lo que
+      falló en la primera versión); vaciar el título/contenido de una
+      nota existente y volver atrás — también debe desaparecer sin
+      parpadeo; escribir y volver atrás casi de inmediato (<600ms) —
+      el contenido SÍ debe guardarse, no perderse; volver atrás desde
+      una nota normal (ya guardada, con contenido) debe sentirse igual
+      de instantáneo que antes, sin retraso agregado por el listener.

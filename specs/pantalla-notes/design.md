@@ -369,21 +369,69 @@ Mobile no tiene panel dividido (navega con `router.push`/`back`, la
 lista no queda visible durante la edición), así que no hay un
 "seleccionar otra nota" equivalente. El disparador que sí existe en
 mobile y cumple el mismo propósito ("abandonar esta nota") es salir
-de la pantalla — implementado en `app/note/[id].tsx` como el cleanup
-de un `useEffect([id])`: si al desmontar (o al cambiar `id` sin
-desmontar, ej. `handleDuplicate`) el título y el contenido siguen
-vacíos, se llama `softDeleteNote(id)` en silencio, sin toast ni
-confirmación — mismo criterio genérico que desktop (no distingue
-"recién creada" de "vaciada a mano"). Usa `softDeleteNote` (marca
-`deleted_at`, no borra la fila) en vez de un delete físico porque es
-la función de borrado ya establecida en toda esta pantalla — la fila
-soft-deleted simplemente no vuelve a aparecer en `listNotes()`.
+de la pantalla. Usa `softDeleteNote` (marca `deleted_at`, no borra la
+fila) en vez de un delete físico porque es la función de borrado ya
+establecida en toda esta pantalla — la fila soft-deleted simplemente
+no vuelve a aparecer en `listNotes()`.
 
-Efecto colateral positivo: el mismo cleanup cancela el `setTimeout`
-de autoguardado pendiente al salir y, si la nota no quedó vacía, hace
-el flush de forma síncrona en su lugar — resuelve el "riesgo menor"
-ya documentado arriba en "Indicador de guardado" (el guardado con
-debounce que seguía corriendo después de abandonar la pantalla).
+### Primera versión (cleanup de `useEffect`) y por qué se reemplazó
+
+La primera implementación ponía la lógica en el cleanup de un
+`useEffect([id])`: al desmontar (o cambiar `id` sin desmontar, ej.
+`handleDuplicate`), si título y contenido seguían vacíos, llamaba
+`softDeleteNote(id)` sin esperar el resultado (un cleanup no puede
+bloquear nada). El usuario reportó: "en ocasiones alcanzo a verla por
+casi un segundo antes de que se borre la nota vacía". Causa: el
+cleanup corre como reacción al desmontaje, que a su vez es
+consecuencia de una navegación (`router.back()`, gesto, botón físico)
+que ya estaba en curso — `app/(tabs)/notes.tsx` recupera el foco y
+recarga (`useFocusEffect(reload)`) en paralelo, en carrera contra ese
+`UPDATE ... SET deleted_at = ?` async. Cuando el `reload()` ganaba la
+carrera, la lista pintaba la fila vacía por el tiempo que tardara el
+`UPDATE` en terminar (variable, hasta ~1s reportado en el dispositivo
+del usuario) antes de que un futuro `reload()` la hiciera desaparecer.
+
+### Versión actual: listener `beforeRemove`
+
+Se reemplazó por el listener `beforeRemove` de React Navigation (vía
+`useNavigation()` de `expo-router`) — el patrón oficial para "hacer
+algo async antes de irse de verdad de una pantalla" (el mismo que la
+documentación de React Navigation usa para diálogos de "¿salir sin
+guardar?", adaptado acá a un discard silencioso en vez de un diálogo):
+
+```ts
+const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+  const isEmpty = !titleRef.current.trim() && !contentRef.current.trim();
+  const hadPendingSave = saveTimeoutRef.current !== null;
+  if (!isEmpty && !hadPendingSave) return; // nada que hacer, dejar salir directo
+
+  e.preventDefault();
+  // ...cancela el debounce...
+  const pending = isEmpty ? softDeleteNote(id) : updateNote(id, {...});
+  pending.then(() => navigation.dispatch(e.data.action));
+});
+```
+
+`e.preventDefault()` cancela la navegación en curso; solo al resolver
+la promesa (borrado o flush) se repite la acción original con
+`navigation.dispatch(e.data.action)`. Esto bloquea la navegación hasta
+que SQLite ya tiene el cambio aplicado — ya no hay ninguna carrera
+posible con el `reload()` de la lista, porque la lista no puede ganar
+el foco antes de que la navegación efectivamente ocurra. Cubre back
+por gesto, botón físico del sistema y `router.replace` (ej.
+`handleDuplicate`) por igual, ya que las tres remueven la pantalla del
+stack y por lo tanto disparan `beforeRemove`. Cuando no hay nada que
+descartar ni flushear (caso común: nota con contenido, ya guardada),
+el listener no llama `preventDefault` y la navegación sigue su curso
+normal sin ningún retraso perceptible.
+
+Efecto colateral positivo (ya presente desde la primera versión, se
+mantiene): el mismo listener cancela el `setTimeout` de autoguardado
+pendiente al salir y, si la nota no quedó vacía, hace el flush en su
+lugar (ahora también bloqueando la salida hasta que termine) —
+resuelve el "riesgo menor" ya documentado arriba en "Indicador de
+guardado" (el guardado con debounce que seguía corriendo después de
+abandonar la pantalla).
 
 ## Explícitamente pendiente
 
@@ -408,8 +456,14 @@ debounce que seguía corriendo después de abandonar la pantalla).
   pierde la posición de scroll ni la selección al alternar).
 - **Verificación en vivo pendiente** del descarte de notas vacías: crear
   una nota nueva y volver atrás sin escribir nada — no debe quedar en
-  la lista; abrir una nota existente con contenido, borrar todo el
-  título y el contenido, volver atrás — también debe desaparecer;
-  escribir en una nota normal y volver atrás casi de inmediato (dentro
-  de los 600ms del debounce) — el contenido SÍ debe quedar guardado
-  (flush síncrono, no debe perderse).
+  la lista, **ni siquiera brevemente** (el bug de la primera versión,
+  reportado por el usuario: "en ocasiones alcanzo a verla por casi un
+  segundo antes de que se borre", ya corregido con `beforeRemove`, ver
+  arriba); abrir una nota existente con contenido, borrar todo el
+  título y el contenido, volver atrás — también debe desaparecer sin
+  parpadeo; escribir en una nota normal y volver atrás casi de
+  inmediato (dentro de los 600ms del debounce) — el contenido SÍ debe
+  quedar guardado (flush síncrono, no debe perderse); confirmar que
+  volver atrás desde una nota normal (con contenido, ya guardada) se
+  siente igual de instantáneo que antes, sin ningún retraso agregado
+  por el listener `beforeRemove`.

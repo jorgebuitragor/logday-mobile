@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Eye, EyeOff, Folder, MoreHorizontal, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -86,6 +86,7 @@ export default function NoteEditorScreen() {
   const theme = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const navigation = useNavigation();
   const { confirmDestructiveActions } = usePreferences();
   const [note, setNote] = useState<Note | null | undefined>(undefined);
   const [title, setTitle] = useState('');
@@ -151,38 +152,61 @@ export default function NoteEditorScreen() {
   // sola en silencio. Desktop lo dispara al seleccionar OTRA nota
   // desde el panel dividido (la lista siempre visible al lado); mobile
   // no tiene ese panel, así que el disparador equivalente es salir de
-  // esta pantalla (volver atrás) — el cleanup de este efecto corre
-  // tanto en un unmount real como al cambiar `id` sin desmontar (ej.
-  // `handleDuplicate`), leyendo los refs (siempre al día) en el
-  // momento exacto en que se abandona la nota. Igual que desktop, no
-  // distingue "recién creada" de "existente que quedó vacía" — mismo
-  // criterio genérico, deliberado para mantener paridad.
+  // esta pantalla. Igual que desktop, no distingue "recién creada" de
+  // "existente que quedó vacía" — mismo criterio genérico, deliberado
+  // para mantener paridad.
+  //
+  // Iteración sobre un cleanup de `useEffect` (primera versión,
+  // 2026-08-30): el usuario reportó "en ocasiones alcanzo a verla por
+  // casi un segundo antes de que se borre la nota vacía" — el cleanup
+  // dispara `softDeleteNote(id)` sin esperar (una función de cleanup
+  // no puede bloquear la navegación), y el `router.back()` que activa
+  // el desmontaje ya venía en curso: `app/(tabs)/notes.tsx` recupera
+  // el foco y recarga (`useFocusEffect(reload)`) en carrera contra ese
+  // borrado async, así que a veces la lista alcanzaba a pintar la fila
+  // vacía antes de que el `UPDATE ... deleted_at` terminara. Se
+  // reemplaza por el listener `beforeRemove` de React Navigation
+  // (patrón oficial para "hacer algo async antes de irse de verdad",
+  // el mismo que documentan para diálogos de "¿salir sin guardar?"):
+  // se cancela la navegación con `e.preventDefault()`, se espera a que
+  // el borrado (o el flush, ver abajo) termine, y solo entonces se
+  // repite la acción original con `navigation.dispatch(e.data.action)`
+  // — la navegación queda bloqueada hasta que SQLite ya tiene el
+  // cambio, así ya no hay ninguna carrera con el `reload()` de la
+  // lista. Cubre back por gesto, botón físico y `router.replace` (ej.
+  // `handleDuplicate`) por igual, ya que las tres remueven la pantalla
+  // del stack.
   //
   // De paso resuelve el "riesgo menor" ya documentado en design.md
   // ("Indicador de guardado"): si quedaba un guardado con debounce
   // pendiente (<600ms desde la última tecla) al salir, antes se
   // ejecutaba igual más tarde sin que la pantalla ya estuviera
   // presente; ahora se cancela y, si la nota NO quedó vacía, se
-  // vuelca de inmediato (flush síncrono) en vez de perderse.
+  // vuelca de inmediato (flush síncrono, también bloqueando la salida
+  // hasta que termine) en vez de perderse.
   useEffect(() => {
-    return () => {
+    const unsubscribe = navigation.addListener('beforeRemove', (e) => {
+      const isEmpty = !titleRef.current.trim() && !contentRef.current.trim();
       const hadPendingSave = saveTimeoutRef.current !== null;
+      if (!isEmpty && !hadPendingSave) return;
+
+      e.preventDefault();
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
-      if (!titleRef.current.trim() && !contentRef.current.trim()) {
-        softDeleteNote(id);
-      } else if (hadPendingSave) {
-        updateNote(id, {
-          title: titleRef.current.trim(),
-          content: contentRef.current,
-          folder: folderRef.current,
-          tags: tagsRef.current,
-        });
-      }
-    };
-  }, [id]);
+      const pending = isEmpty
+        ? softDeleteNote(id)
+        : updateNote(id, {
+            title: titleRef.current.trim(),
+            content: contentRef.current,
+            folder: folderRef.current,
+            tags: tagsRef.current,
+          });
+      pending.then(() => navigation.dispatch(e.data.action));
+    });
+    return unsubscribe;
+  }, [navigation, id]);
 
   function scheduleSave() {
     setSaveState('pending');

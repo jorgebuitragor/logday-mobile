@@ -124,6 +124,17 @@ el lado que llama:
   desde la copia, el usuario regresa al listado, no a la nota
   original, que es el punto de partida real acá.
 
+## Mantener presionado (agregado 2026-08-30)
+
+`onLongPress` de `Pressable` (RN core, sin gesture-handler ni
+dependencia nueva) en la fila de Lista y en la tarjeta de Cuadrícula,
+llamando el mismo `setActionsNote(item)`/`onMore` que ya dispara el
+botón "⋮" — no un flujo distinto, el mismo destino por dos gestos. No
+hay conflicto con `SwipeableRow` (que envuelve ambas): `Swipeable`
+solo intercepta el gesto de pan horizontal más allá de un umbral, deja
+pasar tap/long-press del `Pressable` hijo sin pelear por el gesto,
+igual que ya pasaba con `onPress`.
+
 ## Explícitamente pendiente
 
 - Verificación en vivo (agregado 2026-08-30) de la ampliación desde la

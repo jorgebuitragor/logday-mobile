@@ -245,6 +245,7 @@ export default function NotesScreen() {
             <Pressable
               style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
               onPress={() => router.push(`/note/${item.id}`)}
+              onLongPress={() => setActionsNote(item)}
             >
               <View style={styles.titleRow}>
                 <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
@@ -354,6 +355,7 @@ function NoteCard({
       <Pressable
         style={[styles.card, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
         onPress={onPress}
+        onLongPress={onMore}
       >
         <View style={styles.cardTitleRow}>
           <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={2}>

@@ -75,6 +75,14 @@ ofrece.
 - **Eliminar** desde la hoja DEBERÁ convivir con el swipe-para-eliminar
   ya existente (`SwipeableRow`) — dos caminos al mismo resultado a
   propósito, no un reemplazo del gesto.
+- Mantener presionada una fila/tarjeta de la lista (Lista o Cuadrícula)
+  DEBERÁ abrir la misma hoja que el botón "⋮" — pedido explícito del
+  usuario, un segundo camino de descubrimiento además del botón
+  visible (mantener presionado es un gesto conocido de "más opciones"
+  en Android/iOS, aunque el botón "⋮" siga siendo el camino principal
+  y visible). Alcance acotado a listados de ítems individuales (Notes)
+  — los encabezados de mes de Dailys/Overtime no son "un ítem de
+  lista" en el mismo sentido, quedan fuera.
 
 ## Fuera de este spec
 

@@ -84,3 +84,15 @@ Estado: implementado, pendiente de confirmación en vivo.
       Destacar/Quitar, Carpeta, Tags, Eliminar); que no aparecen
       dentro del editor (solo desde la lista); que el teclado no tapa
       el input de carpeta/tag nuevo (riesgo conocido, ver design.md).
+
+## Mantener presionado para abrir el menú (agregado 2026-08-30)
+
+- [x] `app/(tabs)/notes.tsx`: `onLongPress={() => setActionsNote(item)}`
+      en la fila de Lista; `NoteCard` recibe `onLongPress={onMore}` en
+      su `Pressable` (Cuadrícula).
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, HTTP 200.
+- [ ] Verificar en vivo: mantener presionado una fila (Lista) y una
+      tarjeta (Cuadrícula) abre la misma hoja que el botón "⋮"; no
+      interfiere con el swipe-para-eliminar ni con el tap normal
+      (que sigue navegando a la nota).

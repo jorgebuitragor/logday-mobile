@@ -1,9 +1,11 @@
-import { BookOpen, Clock, Eye, Languages, Monitor, Moon, ShieldAlert, Smartphone, Snowflake, Sun, TriangleAlert } from 'lucide-react-native';
+import { BookOpen, Clock, Eye, FlaskConical, Languages, Monitor, Moon, ShieldAlert, Smartphone, Snowflake, Sun, TriangleAlert } from 'lucide-react-native';
 import type { ComponentType } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
+import { runYjsSpike } from '../../src/lib/yjsSpike';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useTheme, useThemePreference, type ThemePreference } from '../../src/theme/ThemeContext';
 
@@ -57,6 +59,8 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { preference, setPreference } = useThemePreference();
   const { confirmDestructiveActions, setConfirmDestructiveActions, timeFormat, setTimeFormat } = usePreferences();
+  // SPIKE TEMPORAL — Fase 0 de specs/sync-mobile/, ver yjsSpike.ts.
+  const [yjsResult, setYjsResult] = useState<{ ok: boolean; detail: string } | null>(null);
 
   return (
     <ScrollView style={{ backgroundColor: theme.bgBase }} contentContainerStyle={styles.content}>
@@ -112,6 +116,27 @@ export default function SettingsScreen() {
             onValueChange={setConfirmDestructiveActions}
             trackColor={{ true: theme.accentStrong }}
           />
+        </Pressable>
+      </Section>
+
+      {/* SPIKE TEMPORAL — Fase 0 de specs/sync-mobile/. Se borra tras
+          el checkpoint en vivo (esta sección, el import de
+          runYjsSpike y src/lib/yjsSpike.ts). */}
+      <Section title="Spike: Yjs en Hermes" icon={FlaskConical}>
+        <Pressable style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => setYjsResult(runYjsSpike())}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>Probar Yjs</Text>
+            {yjsResult ? (
+              <Text style={{ color: yjsResult.ok ? '#4ade80' : '#dc2626', fontSize: 12, marginTop: 4 }}>
+                {yjsResult.ok ? '✓ ' : '✗ '}
+                {yjsResult.detail}
+              </Text>
+            ) : (
+              <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }}>
+                Toca para correr el spike de Fase 0 (sync).
+              </Text>
+            )}
+          </View>
         </Pressable>
       </Section>
     </ScrollView>

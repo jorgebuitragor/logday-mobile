@@ -1,11 +1,23 @@
-import { BookOpen, Clock, Eye, Languages, Monitor, Moon, ShieldAlert, Smartphone, Snowflake, Sun, TriangleAlert } from 'lucide-react-native';
+import { BookOpen, Clock, Cloud, CloudOff, Eye, EyeOff, Languages, Monitor, Moon, RefreshCw, ShieldAlert, Smartphone, Snowflake, Sun, TriangleAlert } from 'lucide-react-native';
 import type { ComponentType } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
+import { useSync } from '../../src/settings/SyncContext';
 import { useTheme, useThemePreference, type ThemePreference } from '../../src/theme/ThemeContext';
+
+const CONNECTED_COLOR = '#4ade80';
+const ERROR_COLOR = '#dc2626';
+
+function relativeTime(t: (key: string, opts?: Record<string, unknown>) => string, iso: string): string {
+  const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
+  if (diffMin < 1) return t('sync.justNow');
+  if (diffMin < 60) return t('sync.minutesAgo', { count: diffMin });
+  return t('sync.hoursAgo', { count: Math.floor(diffMin / 60) });
+}
 
 // Mismos 8 temas y mismo orden que `THEME_OPTIONS` en
 // `logday-web/src/components/settings/SettingsSection.tsx` — pedido
@@ -114,7 +126,141 @@ export default function SettingsScreen() {
           />
         </Pressable>
       </Section>
+
+      <SyncSection />
     </ScrollView>
+  );
+}
+
+function SyncSection() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, syncConnect, syncDisconnect, checkConnection } = useSync();
+  const [serverUrl, setServerUrl] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [checking, setChecking] = useState(false);
+
+  const isConnected = syncConnectionStatus === 'connected';
+  const isConnecting = syncConnectionStatus === 'connecting';
+  const statusColor = isConnected ? CONNECTED_COLOR : syncConnectionStatus === 'error' ? ERROR_COLOR : theme.textFaint;
+  const statusLabel =
+    syncConnectionStatus === 'connected'
+      ? t('sync.statusConnected')
+      : syncConnectionStatus === 'connecting'
+        ? t('sync.connecting')
+        : syncConnectionStatus === 'error'
+          ? t('sync.statusError')
+          : t('sync.statusDisconnected');
+
+  async function handleConnect() {
+    try {
+      await syncConnect(serverUrl, email, password);
+      setPassword('');
+    } catch {
+      // el error ya queda en syncErrorMsg, se muestra abajo
+    }
+  }
+
+  async function handleCheck() {
+    setChecking(true);
+    await checkConnection();
+    setChecking(false);
+  }
+
+  return (
+    <Section title={t('sync.title')} icon={isConnected ? Cloud : CloudOff}>
+      <View style={[styles.syncBody, { borderColor: theme.border }]}>
+        <View style={styles.syncStatusRow}>
+          <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+          <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>{statusLabel}</Text>
+          {isConnecting ? <ActivityIndicator size="small" color={theme.textSecondary} /> : null}
+        </View>
+
+        {syncConfig.enabled ? (
+          <>
+            <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 4 }}>
+              {t('sync.connectedAs', { email: syncConfig.email })} · {syncConfig.serverUrl}
+            </Text>
+            <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }}>
+              {lastCheckedAt ? t('sync.lastChecked', { time: relativeTime(t, lastCheckedAt) }) : t('sync.lastCheckedNever')}
+            </Text>
+            {syncErrorMsg ? (
+              <Text style={{ color: ERROR_COLOR, fontSize: 12, marginTop: 6 }}>{syncErrorMsg}</Text>
+            ) : null}
+            <View style={styles.syncButtonRow}>
+              <Pressable
+                style={[styles.syncButton, { borderColor: theme.border }]}
+                onPress={handleCheck}
+                disabled={checking}
+              >
+                {checking ? (
+                  <ActivityIndicator size="small" color={theme.textSecondary} />
+                ) : (
+                  <RefreshCw size={14} color={theme.textSecondary} />
+                )}
+                <Text style={{ color: theme.textSecondary, fontSize: 13 }}>{t('sync.checkConnection')}</Text>
+              </Pressable>
+              <Pressable style={[styles.syncButton, { borderColor: ERROR_COLOR }]} onPress={() => syncDisconnect()}>
+                <Text style={{ color: ERROR_COLOR, fontSize: 13, fontWeight: '600' }}>{t('sync.disconnect')}</Text>
+              </Pressable>
+            </View>
+          </>
+        ) : (
+          <>
+            {syncErrorMsg ? (
+              <Text style={{ color: ERROR_COLOR, fontSize: 12, marginTop: 6, marginBottom: 4 }}>{syncErrorMsg}</Text>
+            ) : null}
+            <TextInput
+              style={[styles.syncInput, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
+              value={serverUrl}
+              onChangeText={setServerUrl}
+              placeholder={t('sync.serverUrlPlaceholder')}
+              placeholderTextColor={theme.textFaint}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+            <TextInput
+              style={[styles.syncInput, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
+              value={email}
+              onChangeText={setEmail}
+              placeholder={t('sync.emailPlaceholder')}
+              placeholderTextColor={theme.textFaint}
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.syncInput, { flex: 1, borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
+                value={password}
+                onChangeText={setPassword}
+                placeholder={t('sync.password')}
+                placeholderTextColor={theme.textFaint}
+                autoCapitalize="none"
+                secureTextEntry={!showPassword}
+              />
+              <Pressable style={styles.passwordToggle} onPress={() => setShowPassword((prev) => !prev)} hitSlop={8}>
+                {showPassword ? (
+                  <EyeOff size={16} color={theme.textSecondary} />
+                ) : (
+                  <Eye size={16} color={theme.textSecondary} />
+                )}
+              </Pressable>
+            </View>
+            <Pressable
+              style={[styles.connectButton, { backgroundColor: theme.accentStrong }]}
+              onPress={handleConnect}
+              disabled={isConnecting || !serverUrl.trim() || !email.trim() || !password}
+            >
+              <Text style={styles.connectButtonText}>{isConnecting ? t('sync.connecting') : t('sync.connect')}</Text>
+            </Pressable>
+          </>
+        )}
+      </View>
+    </Section>
   );
 }
 
@@ -210,5 +356,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
+  },
+  syncBody: {
+    padding: 12,
+  },
+  syncStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  syncInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 12,
+    top: 20,
+  },
+  connectButton: {
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  connectButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  syncButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 12,
+  },
+  syncButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
 });

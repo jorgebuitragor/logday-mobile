@@ -29,7 +29,8 @@
       "expo-status-bar",
       "expo-router",
       "expo-localization",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-secure-store"
     ]
   }
 }

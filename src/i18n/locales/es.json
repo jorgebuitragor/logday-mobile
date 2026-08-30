@@ -290,5 +290,27 @@
   "db": {
     "initializing": "Inicializando DB...",
     "error": "DB error: {{message}}"
+  },
+  "sync": {
+    "title": "Sincronización",
+    "serverUrlPlaceholder": "URL del servidor (ej. http://192.168.1.10:8080)",
+    "emailPlaceholder": "Correo",
+    "password": "Contraseña",
+    "connect": "Conectar",
+    "connecting": "Conectando...",
+    "disconnect": "Desconectar",
+    "checkConnection": "Verificar conexión",
+    "statusConnected": "Conectado",
+    "statusDisconnected": "Desconectado",
+    "statusError": "Error",
+    "connectedAs": "Conectado como {{email}}",
+    "lastChecked": "Última verificación: {{time}}",
+    "lastCheckedNever": "Última verificación: nunca",
+    "justNow": "ahora mismo",
+    "minutesAgo_one": "hace {{count}} min",
+    "minutesAgo_other": "hace {{count}} min",
+    "hoursAgo_one": "hace {{count}} h",
+    "hoursAgo_other": "hace {{count}} h",
+    "sessionExpiredMsg": "La sesión de sincronización expiró — conecta de nuevo."
   }
 }

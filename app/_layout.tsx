@@ -9,6 +9,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../src/i18n';
 import { initDb } from '../src/db';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
+import { SyncProvider } from '../src/settings/SyncContext';
 import { ThemeProvider, useTheme, useThemeScheme } from '../src/theme/ThemeContext';
 
 // `SafeAreaProvider` no estaba montado en ningún lado — nada en la
@@ -23,7 +24,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <PreferencesProvider>
-            <RootLayoutInner />
+            <SyncProvider>
+              <RootLayoutInner />
+            </SyncProvider>
           </PreferencesProvider>
         </ThemeProvider>
       </SafeAreaProvider>

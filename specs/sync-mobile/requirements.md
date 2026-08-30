@@ -1,6 +1,7 @@
 # Sync con logday-server — Requirements
 
-Estado: en progreso. Fase 0 (spike de Yjs) en curso.
+Estado: en progreso. Fase 0 confirmada. Fase 1 (auth + conexión)
+implementada, pendiente de checkpoint en vivo.
 
 ## Contexto
 
@@ -45,15 +46,33 @@ que Hermes no expone).
   cambiar de librería CRDT — cambiar de Yjs implicaría perder
   compatibilidad de merge con desktop/web, que ya lo usan.
 
+## Requisitos (EARS) — Fase 1: auth + pantalla de conexión
+
+- El sistema DEBERÁ permitir conectar contra un `logday-server` con
+  URL/correo/contraseña, sin sincronizar ninguna entidad todavía.
+- El sistema DEBERÁ persistir la sesión (tokens + config) entre
+  reinicios de la app — el usuario no debe tener que volver a
+  ingresar sus credenciales cada vez que abre la app.
+- Los tokens de acceso/refresh DEBERÁN guardarse cifrados
+  (Keychain/Keystore vía `expo-secure-store`), no en texto plano.
+- Cuando el access token venza (15 min), el sistema DEBERÁ renovarlo
+  automáticamente con el refresh token en la siguiente llamada
+  autenticada, sin que el usuario tenga que reconectar a mano.
+- Si el refresh token también está vencido o revocado, el sistema
+  DEBERÁ desconectar la sesión localmente y mostrar un mensaje claro
+  — no debe fallar en silencio ni quedar en un estado ambiguo.
+- El usuario DEBERÁ poder desconectar manualmente en cualquier
+  momento, sin que eso borre ningún dato local.
+
 ## Requisitos (EARS) — Fases siguientes
 
 Se detallan en `design.md`/`tasks.md` a medida que arranca cada fase
-(Fase 1: auth + conexión; Fase 2: sync de metadatos LWW para Task/
-OvertimeEntry/OvertimeMonthMeta/AbsenceDay; Fase 3: Note/DailyEntry,
-metadatos + contenido CRDT; Fase 4: migración inicial de datos
-preexistentes) — no se escriben de antemano en detalle para no
-comprometerse a un diseño antes de que el spike de Fase 0 y cada
-checkpoint en vivo confirmen los supuestos de la fase anterior.
+(Fase 2: sync de metadatos LWW para Task/OvertimeEntry/
+OvertimeMonthMeta/AbsenceDay; Fase 3: Note/DailyEntry, metadatos +
+contenido CRDT; Fase 4: migración inicial de datos preexistentes) —
+no se escriben de antemano en detalle para no comprometerse a un
+diseño antes de que cada checkpoint en vivo confirme los supuestos de
+la fase anterior.
 
 ## Fuera de este spec
 

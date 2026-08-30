@@ -1,6 +1,7 @@
 # Sync con logday-server — Tareas
 
-Estado: Fase 0 en curso.
+Estado: Fase 0 confirmada. Fase 1 implementada, pendiente de
+checkpoint en vivo.
 
 ## Plan completo (referencia)
 
@@ -47,3 +48,39 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       confunda con un problema real si vuelve a aparecer más adelante.
 - [x] Tras el checkpoint: borrado `src/lib/yjsSpike.ts`, la sección
       temporal en `app/(tabs)/settings.tsx` y su import.
+
+## Fase 1 — Auth + pantalla de conexión
+
+- [x] `expo-secure-store` instalado (`npx expo install`), plugin
+      agregado en `app.json` automáticamente.
+- [x] `src/types/sync.ts` (nuevo): `SyncConfig`/`SyncConnectionStatus`.
+- [x] `src/lib/syncApi.ts` (nuevo): `login`/`refreshToken`/
+      `listDevicesRemote` vía `fetch`, `SyncApiError`,
+      `normalizeServerUrl`.
+- [x] `src/settings/SyncContext.tsx` (nuevo): `SyncProvider`/`useSync`
+      — persistencia (tokens en `expo-secure-store`, resto en
+      `AsyncStorage`), `syncConnect`/`syncDisconnect`/
+      `checkConnection`/`withSyncAuth` (puerto del guard de refresh
+      compartido + relectura de config fresca de desktop). Ver
+      design.md.
+- [x] `app/_layout.tsx`: `SyncProvider` agregado al árbol de
+      providers.
+- [x] `app/(tabs)/settings.tsx`: sección "Sincronización" —
+      formulario de conexión / estado + acciones según
+      `syncConnectionStatus`.
+- [x] i18n: sección `sync.*` en es/en. Paridad verificada (276 = 276).
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, sin errores de resolución
+      reales; `SyncProvider`/`useSync`/`withSyncAuth`/`SecureStore`
+      aparecen resueltos.
+- [ ] **Checkpoint en vivo**: conectar contra un `logday-server` real
+      (URL/correo/contraseña de una cuenta existente) — confirmar que
+      pasa a "Conectado" y muestra el correo/URL; cerrar la app del
+      todo y reabrirla — debe seguir "Conectado" sin pedir credenciales
+      de nuevo; tocar "Verificar conexión" — debe mostrar "Última
+      verificación: ahora mismo"; esperar más de 15 minutos (vencimiento
+      del access token) y tocar "Verificar conexión" de nuevo — debe
+      seguir funcionando (el refresh debe correr solo, sin que el
+      usuario note nada); tocar "Desconectar" — debe volver al
+      formulario, sin que los datos locales (tasks/notes/etc.) se
+      hayan tocado.

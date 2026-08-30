@@ -1,6 +1,7 @@
 # Sync con logday-server — Design
 
-Estado: Fase 0 en curso.
+Estado: Fase 0 confirmada. Fase 1 (auth + pantalla de conexión)
+implementada, pendiente de checkpoint en vivo.
 
 ## Por qué portar desktop en vez de diseñar desde cero
 
@@ -132,8 +133,64 @@ confundirlo con un problema real si reaparece en Fase 3.
 Yjs queda confirmado como viable para el contenido CRDT de Note/
 DailyEntry (Fase 3) sin necesidad de buscar una librería alternativa.
 
+## Fase 1 — Auth + pantalla de conexión
+
+Sin sincronizar ninguna entidad todavía — el objetivo de esta fase es
+solo probar login, persistencia de tokens y el camino de refresh
+automático de punta a punta.
+
+- `src/types/sync.ts`: `SyncConfig`/`SyncConnectionStatus`, puerto
+  literal de los mismos tipos en desktop.
+- `src/lib/syncApi.ts`: cliente HTTP vía `fetch` nativo (reemplaza el
+  comando Tauri `syncRequest` que usa desktop — React Native no tiene
+  el mismo problema de CORS/certificados en un webview que motivó ese
+  rodeo). Implementa `login`/`refreshToken`/`listDevicesRemote` — sin
+  `revokeDeviceRemote` ni las de entidad todavía, no tienen ningún
+  caller en esta fase (se agregan cuando el panel de dispositivos o
+  cada fase de sync de entidades las necesite, no antes).
+- `src/settings/SyncContext.tsx` (nuevo, mismo patrón que
+  `PreferencesContext`/`ThemeContext`): guarda `syncConfig` completo
+  en estado; persiste `accessToken`/`refreshToken` en
+  `expo-secure-store` (Keychain/Keystore) y el resto
+  (`enabled`/`serverUrl`/`email`/`deviceId`) en `AsyncStorage` como un
+  único blob JSON — separado a propósito, no todo junto, así los
+  tokens nunca terminan en el `AsyncStorage` no cifrado ni por
+  accidente. Expone `syncConnect`/`syncDisconnect`/`checkConnection` y
+  `withSyncAuth`, puerto casi literal de la función homónima en
+  `appStore.ts` de desktop — mismo guard de refresh compartido en
+  vuelo (`inFlightRefresh`, a nivel de módulo) y mismo patrón de
+  releer la config más fresca antes de reintentar en vez de quedarse
+  con la capturada al entrar a la función (las dos condiciones de
+  carrera que ese código documenta como ya encontradas en producción,
+  no hipotéticas — ver arriba, "Por qué portar desktop").
+- `checkConnection()`: acción nueva, sin equivalente directo en
+  desktop (que recién prueba el token real cuando llega la Fase 2 de
+  sync de entidades) — pide `GET /devices` (liviano, ya autenticado)
+  vía `withSyncAuth`. Sin sync de entidades todavía en esta fase, no
+  había ninguna otra forma de ejercitar el camino de refresh de
+  tokens de punta a punta ni de darle al usuario una señal real de
+  "esto sigue funcionando" más allá de un estado local optimista. Se
+  quedará en la app más allá de esta fase (es información útil, no
+  scaffolding descartable).
+- `app/(tabs)/settings.tsx`: nueva sección "Sincronización" —
+  formulario URL/correo/contraseña (contraseña con toggle mostrar/
+  ocultar) cuando está desconectado; pill de estado + "conectado
+  como..." + última verificación + botones "Verificar conexión"/
+  "Desconectar" cuando está conectado. Modelado sobre
+  `SyncSettingsTab.tsx` de desktop, sin el panel de dispositivos
+  (`DevicesPanel`) — fast-follow explícito, no bloquea que sync
+  funcione.
+- `app/_layout.tsx`: `SyncProvider` agregado al árbol de providers,
+  mismo nivel que `PreferencesProvider`/`ThemeProvider`.
+- Sin confirmación antes de "Desconectar" — a diferencia de las
+  eliminaciones de datos (`useConfirmDelete`), desconectar sync no
+  borra nada local, es reversible con solo volver a conectar; no
+  ameritaba reusar ese hook para algo que no es su semántica.
+
 ## Explícitamente pendiente
 
-- Diseño detallado de Fases 1-4 — se escribe en este mismo archivo a
+- Diseño detallado de Fases 2-4 — se escribe en este mismo archivo a
   medida que arranca cada fase (no de antemano, para no comprometerse
   a decisiones que un checkpoint en vivo anterior podría invalidar).
+- Panel de dispositivos/sesiones (listar/revocar) — fast-follow, no
+  bloquea que sync funcione.

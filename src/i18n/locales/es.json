@@ -7,7 +7,8 @@
     "selectDate": "Seleccionar fecha",
     "clearDate": "Quitar fecha",
     "selectTime": "Seleccionar hora",
-    "today": "Hoy"
+    "today": "Hoy",
+    "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
   },
   "tabs": {
     "tasks": "Tareas",
@@ -121,6 +122,7 @@
   "noteActions": {
     "menuLabel": "Más acciones",
     "copy": "Copiar",
+    "share": "Compartir",
     "duplicate": "Duplicar",
     "export": "Exportar",
     "formatMd": "Markdown",
@@ -156,11 +158,27 @@
     "pickDateTitle": "Elegir fecha para daily",
     "goToDate": "Ir"
   },
+  "dailyActions": {
+    "menuLabel": "Más acciones del mes",
+    "share": "Compartir",
+    "export": "Exportar",
+    "formatMd": "Markdown",
+    "formatMdHint": ".md — con formato original",
+    "formatTxt": "Texto plano",
+    "formatTxtHint": ".txt — sin formato",
+    "formatPdf": "PDF",
+    "formatPdfHint": ".pdf — documento portable"
+  },
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",
     "loading": "Cargando...",
-    "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"],
     "monthTotal": "Total: {{hours}}h"
+  },
+  "overtimeActions": {
+    "menuLabel": "Más acciones del mes",
+    "export": "Exportar",
+    "formatXlsx": "Excel",
+    "formatXlsxHint": ".xlsx — hoja de cálculo con fórmulas"
   },
   "overtimeForm": {
     "newTitle": "Nueva hora extra",

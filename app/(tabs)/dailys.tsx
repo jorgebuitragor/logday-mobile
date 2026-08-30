@@ -1,17 +1,20 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { CalendarDays, CalendarPlus } from 'lucide-react-native';
-import { useCallback, useState } from 'react';
+import { CalendarDays, CalendarPlus, MoreHorizontal } from 'lucide-react-native';
+import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { AppCalendarGrid } from '../../src/components/AppDatePicker';
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { parseActivityItems } from '../../src/components/DailyActivityList';
+import { DailyMonthActionsSheet } from '../../src/components/DailyMonthActionsSheet';
 import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { listDailyEntries, softDeleteDailyEntry } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { todayISO } from '../../src/lib/dates';
+import { buildDailyMonthDoc, exportDailyMonth, type DailyMonthExportFormat } from '../../src/lib/dailyMonthExport';
+import { shareText } from '../../src/lib/exportFile';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { DailyEntry } from '../../src/types/dailyEntry';
@@ -24,6 +27,29 @@ function preview(content: string): string {
   return flat.length > 80 ? `${flat.slice(0, 80)}…` : flat;
 }
 
+interface MonthSection {
+  title: string; // "YYYY-MM"
+  data: DailyEntry[];
+}
+
+// Mismo agrupado por mes que `overtime.tsx` (`groupByMonth`) —
+// reemplaza la navegación mes-a-mes de desktop por un único historial
+// continuo con encabezados de mes, ahora también el punto de entrada
+// del export mensual (el "⋮" del encabezado).
+function groupByMonth(entries: DailyEntry[]): MonthSection[] {
+  const sections: MonthSection[] = [];
+  for (const entry of entries) {
+    const key = entry.date.slice(0, 7);
+    const last = sections[sections.length - 1];
+    if (last && last.title === key) {
+      last.data.push(entry);
+    } else {
+      sections.push({ title: key, data: [entry] });
+    }
+  }
+  return sections;
+}
+
 export default function DailysScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -32,7 +58,9 @@ export default function DailysScreen() {
   const [entries, setEntries] = useState<DailyEntry[]>([]);
   const [pickerVisible, setPickerVisible] = useState(false);
   const [pickerDate, setPickerDate] = useState(todayISO());
+  const [actionsMonth, setActionsMonth] = useState<string | null>(null);
   const confirmDelete = useConfirmDelete<DailyEntry>(confirmDestructiveActions);
+  const monthNames = t('common.months', { returnObjects: true }) as string[];
 
   const reload = useCallback(() => {
     listDailyEntries().then(setEntries);
@@ -45,13 +73,53 @@ export default function DailysScreen() {
     reload();
   }
 
+  function monthLabel(yearMonth: string): string {
+    const [year, month] = yearMonth.split('-').map(Number);
+    return `${monthNames[month - 1] ?? yearMonth} ${year}`;
+  }
+
+  // Entradas del mes tocado, en orden cronológico ascendente — mismo
+  // criterio que desktop antes de armar el export (ver
+  // src/lib/dailyMonthExport.ts).
+  const monthEntries = useMemo((): [string, string][] => {
+    if (!actionsMonth) return [];
+    return entries
+      .filter((e) => e.date.startsWith(actionsMonth))
+      .map((e): [string, string] => [e.date, e.content])
+      .sort(([a], [b]) => a.localeCompare(b));
+  }, [entries, actionsMonth]);
+
+  async function handleShareMonth() {
+    if (!actionsMonth) return;
+    await shareText(buildDailyMonthDoc(monthLabel(actionsMonth), monthEntries, 'txt'));
+  }
+
+  async function handleExportMonth(format: DailyMonthExportFormat) {
+    if (!actionsMonth) return;
+    await exportDailyMonth(actionsMonth, monthLabel(actionsMonth), monthEntries, format);
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
-      <FlatList
-        data={entries}
+      <SectionList
+        sections={groupByMonth(entries)}
         keyExtractor={(entry) => entry.date}
         contentContainerStyle={styles.list}
+        stickySectionHeadersEnabled={false}
         ListEmptyComponent={<EmptyState icon={CalendarDays} message={t('dailyList.empty')} />}
+        renderSectionHeader={({ section }) => (
+          <View style={styles.sectionHeader}>
+            <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{monthLabel(section.title)}</Text>
+            <Pressable
+              onPress={() => setActionsMonth(section.title)}
+              hitSlop={8}
+              style={styles.moreButton}
+              accessibilityLabel={t('dailyActions.menuLabel')}
+            >
+              <MoreHorizontal size={16} color={theme.textFaint} />
+            </Pressable>
+          </View>
+        )}
         renderItem={({ item }) => (
           <SwipeableRow
             deleteLabel={t('common.delete')}
@@ -118,6 +186,13 @@ export default function DailysScreen() {
           confirmDelete.cancel();
         }}
       />
+
+      <DailyMonthActionsSheet
+        visible={actionsMonth !== null}
+        onClose={() => setActionsMonth(null)}
+        onShare={handleShareMonth}
+        onExport={handleExportMonth}
+      />
     </View>
   );
 }
@@ -129,6 +204,22 @@ const styles = StyleSheet.create({
   list: {
     padding: 16,
     gap: 8,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    paddingBottom: 6,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  moreButton: {
+    padding: 2,
   },
   row: {
     padding: 12,

@@ -11,6 +11,7 @@ import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { createNote, listNotes, softDeleteNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
@@ -54,6 +55,10 @@ export default function NotesScreen() {
   // specs/menu-contextual-notas/design.md, "Desde la lista".
   async function handleCopyNote(note: Note) {
     await Clipboard.setStringAsync(buildMarkdownDoc(note.title, note.content));
+  }
+
+  async function handleShareNote(note: Note) {
+    await shareText(buildMarkdownDoc(note.title, note.content));
   }
 
   async function handleDuplicateNote(note: Note) {
@@ -199,6 +204,7 @@ export default function NotesScreen() {
         visible={actionsNote !== null}
         onClose={() => setActionsNote(null)}
         onCopy={() => actionsNote && handleCopyNote(actionsNote)}
+        onShare={() => actionsNote && handleShareNote(actionsNote)}
         onDuplicate={() => actionsNote && handleDuplicateNote(actionsNote)}
         onExport={(format) => actionsNote && handleExportNote(actionsNote, format)}
       />

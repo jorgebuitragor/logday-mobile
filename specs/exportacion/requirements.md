@@ -1,7 +1,7 @@
 # Exportación — Requirements
 
-Estado: Notes implementado, pendiente de confirmación en vivo. Dailys
-y Overtime pendientes (ver "Fuera de este spec").
+Estado: Notes, Dailys y Overtime implementados, pendiente de
+confirmación en vivo.
 
 ## Contexto
 
@@ -20,8 +20,8 @@ antes de implementar, ver el spec de cada pantalla):
 | Entidad | Formatos en desktop | Alcance | Estado en mobile |
 |---|---|---|---|
 | Notes | Markdown, Texto plano, PDF | Por nota | **Implementado** |
-| Dailys | Markdown, Texto plano, PDF | Por mes | Pendiente |
-| Overtime | Excel (.xlsx) | Por mes | Pendiente |
+| Dailys | Markdown, Texto plano, PDF | Por mes | **Implementado** |
+| Overtime | Excel (.xlsx) | Por mes | **Implementado** |
 | Tasks | (ninguno) | — | N/A — desktop tampoco lo tiene |
 
 ## Requisitos (EARS) — Notes
@@ -45,22 +45,50 @@ antes de implementar, ver el spec de cada pantalla):
   (saneado: sin caracteres inválidos de nombre de archivo), con un
   nombre por defecto si la nota no tiene título.
 
+## Requisitos (EARS) — Dailys (agregado 2026-08-29)
+
+- El sistema DEBERÁ ofrecer, por mes, exportar todas las entradas de
+  ese mes en Markdown (`.md`), texto plano (`.txt`) o PDF (`.pdf`) —
+  mismos 3 formatos y mismo contenido (encabezado + días separados
+  por `---`) que `dailyMonthExport.ts` de desktop.
+- Las entradas DEBERÁN ordenarse cronológicamente ascendente en el
+  documento exportado (el listado en pantalla es descendente).
+- El PDF DEBERÁ renderizar la lista de actividades de cada día con
+  formato real (viñetas), no como líneas de texto con `- ` crudo.
+- El punto de entrada DEBERÁ ser un botón "⋮" en el encabezado de cada
+  mes en `app/(tabs)/dailys.tsx` (el listado se agrupa por mes para
+  esto, antes era una lista plana).
+
+## Requisitos (EARS) — Overtime (agregado 2026-08-29)
+
+- El sistema DEBERÁ ofrecer, por mes, exportar todas las entradas de
+  ese mes a Excel (`.xlsx`) — único formato, igual que desktop.
+- El archivo DEBERÁ replicar la estructura y estilos de
+  `overtimeExcel.ts` de desktop (encabezado, cabecera de
+  colaborador/cédula, tabla con bordes y fórmulas `SUM`, leyenda) —
+  no una hoja de datos simplificada.
+- El archivo DEBERÁ incluir colaborador/cédula desde
+  `overtime_month_meta` (tabla ya sincronizada con desktop, ver
+  `db/schema.ts`) si existen para ese mes, o quedar en blanco si no.
+- El punto de entrada DEBERÁ ser un botón "⋮" en el encabezado de mes
+  ya existente en `app/(tabs)/overtime.tsx` (junto al total de horas).
+
+## Requisitos (EARS) — Compartir (agregado 2026-08-29)
+
+- Notes y Dailys DEBERÁN ofrecer, además de "Exportar", una acción
+  "Compartir" que abre la hoja de compartir nativa del SO
+  directamente con el contenido como texto (sin escribir ningún
+  archivo) — más rápido que "Exportar" para el caso de uso "mandar
+  esto a alguien ya" (WhatsApp, email, Slack), útil específicamente en
+  mobile (sin equivalente en desktop, que no tiene hoja de compartir
+  del sistema).
+- Overtime NO ofrece "Compartir": no tiene una versión de texto plano
+  natural (es una tabla con fórmulas) y "Exportar" ya termina en la
+  hoja de compartir nativa igual — un segundo camino al mismo destino
+  no aportaría nada.
+
 ## Fuera de este spec
 
-- **Exportación de Dailys** (Markdown/Texto plano/PDF, por mes) —
-  próximo checkpoint. El mecanismo compartido (`src/lib/exportFile.ts`)
-  ya está listo para reusar; falta la función de armado de contenido
-  específica de Dailys (agregación de un mes de `daily_entries`,
-  mismo formato que `dailyMonthExport.ts` de desktop) y la UI que la
-  dispara (el listado de Dailys no tiene hoy ningún menú de más
-  acciones por mes).
-- **Exportación de Overtime** (Excel, por mes) — próximo checkpoint.
-  Requiere evaluar una librería de escritura de `.xlsx` en JS puro
-  (candidata: `exceljs`) ya que desktop usa `xlsx-js-style`
-  (dependencia de Node/navegador, no directamente portable) para
-  generar un archivo con estilos/fórmulas — alcance de fidelidad
-  (¿replicar el estilo exacto de celdas o solo los datos?) sin decidir
-  todavía.
 - Cualquier variante de "guardar en una ruta elegida por el usuario"
   (Storage Access Framework en Android, document picker) en vez de la
   hoja de compartir — se evaluó y se prefirió compartir por ser el

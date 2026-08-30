@@ -39,3 +39,17 @@ Estado: implementado, pendiente de confirmación en vivo.
       `router.push` (el botón atrás del sistema debe volver al
       listado, no a la nota original); las 3 acciones funcionan igual
       que desde dentro del editor.
+
+## Compartir (agregado 2026-08-29)
+
+- [x] `src/lib/exportFile.ts`: `shareText(content)` — `Share.share`
+      nativo de RN, sin escribir archivo.
+- [x] `NoteActionsSheet.tsx`: nueva fila "Compartir" (ícono `Share2`,
+      reasignado desde "Exportar", que ahora usa `Download`).
+- [x] `app/note/[id].tsx` y `app/(tabs)/notes.tsx`: `handleShare`/
+      `handleShareNote` conectados, mismo `buildMarkdownDoc` que
+      Copiar.
+- [x] i18n: `noteActions.share` en es/en. Paridad verificada.
+- [x] `npx tsc --noEmit` sin errores.
+- [ ] Verificar en vivo: "Compartir" abre la hoja de compartir nativa
+      de Android con el texto correcto (con y sin título).

@@ -1,7 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 
 import { calcOvertimeBreakdown } from '../lib/overtimeCalc';
-import type { OvertimeEntry } from '../types/overtime';
+import type { OvertimeEntry, OvertimeMonthMeta } from '../types/overtime';
 import { getDb } from './index';
 
 interface OvertimeEntryRow {
@@ -116,4 +116,32 @@ export async function updateOvertimeEntry(id: string, input: OvertimeInput): Pro
 export async function softDeleteOvertimeEntry(id: string): Promise<void> {
   const now = new Date().toISOString();
   await getDb().runAsync('UPDATE overtime_entries SET deleted_at = ? WHERE id = ?', now, id);
+}
+
+interface OvertimeMonthMetaRow {
+  year_month: string;
+  colaborador: string;
+  cedula: string;
+  updated_at: string;
+  deleted_at: string | null;
+}
+
+// Solo lectura por ahora — mobile no tiene una pantalla para editar
+// colaborador/cedula todavía, se llenan desde desktop y llegan acá
+// por sync (ver `overtime_month_meta` en schema.ts). Necesaria para
+// que el export a Excel de un mes (`overtimeExport.ts`) pueda incluir
+// estos dos campos igual que desktop.
+export async function getOvertimeMonthMeta(yearMonth: string): Promise<OvertimeMonthMeta | null> {
+  const row = await getDb().getFirstAsync<OvertimeMonthMetaRow>(
+    'SELECT * FROM overtime_month_meta WHERE year_month = ? AND deleted_at IS NULL',
+    yearMonth
+  );
+  if (!row) return null;
+  return {
+    yearMonth: row.year_month,
+    colaborador: row.colaborador,
+    cedula: row.cedula,
+    updatedAt: row.updated_at,
+    deletedAt: row.deleted_at,
+  };
 }

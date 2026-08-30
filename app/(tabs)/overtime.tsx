@@ -1,14 +1,16 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Timer } from 'lucide-react-native';
+import { MoreHorizontal, Timer } from 'lucide-react-native';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
+import { OvertimeMonthActionsSheet } from '../../src/components/OvertimeMonthActionsSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
-import { listOvertimeEntries, softDeleteOvertimeEntry } from '../../src/db/overtime';
+import { getOvertimeMonthMeta, listOvertimeEntries, softDeleteOvertimeEntry } from '../../src/db/overtime';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { exportOvertimeMonth } from '../../src/lib/overtimeExport';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { OvertimeEntry } from '../../src/types/overtime';
@@ -50,8 +52,9 @@ export default function OvertimeScreen() {
   const router = useRouter();
   const { confirmDestructiveActions } = usePreferences();
   const [entries, setEntries] = useState<OvertimeEntry[]>([]);
+  const [actionsMonth, setActionsMonth] = useState<MonthSection | null>(null);
   const confirmDelete = useConfirmDelete<OvertimeEntry>(confirmDestructiveActions);
-  const monthNames = t('overtimeList.months', { returnObjects: true }) as string[];
+  const monthNames = t('common.months', { returnObjects: true }) as string[];
 
   const reload = useCallback(() => {
     listOvertimeEntries().then(setEntries);
@@ -69,6 +72,12 @@ export default function OvertimeScreen() {
     return `${monthNames[month - 1] ?? yearMonth} ${year}`;
   }
 
+  async function handleExportMonth() {
+    if (!actionsMonth) return;
+    const meta = await getOvertimeMonthMeta(actionsMonth.title);
+    await exportOvertimeMonth(actionsMonth.title, monthLabel(actionsMonth.title), actionsMonth.data, meta);
+  }
+
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
       <SectionList
@@ -80,9 +89,19 @@ export default function OvertimeScreen() {
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
             <Text style={[styles.sectionTitle, { color: theme.textSecondary }]}>{monthLabel(section.title)}</Text>
-            <Text style={[styles.sectionTotal, { color: theme.accent }]}>
-              {t('overtimeList.monthTotal', { hours: fmt(section.totalHoras) })}
-            </Text>
+            <View style={styles.sectionHeaderRight}>
+              <Text style={[styles.sectionTotal, { color: theme.accent }]}>
+                {t('overtimeList.monthTotal', { hours: fmt(section.totalHoras) })}
+              </Text>
+              <Pressable
+                onPress={() => setActionsMonth(section)}
+                hitSlop={8}
+                style={styles.moreButton}
+                accessibilityLabel={t('overtimeActions.menuLabel')}
+              >
+                <MoreHorizontal size={16} color={theme.textFaint} />
+              </Pressable>
+            </View>
           </View>
         )}
         renderItem={({ item }) => (
@@ -121,6 +140,12 @@ export default function OvertimeScreen() {
           confirmDelete.cancel();
         }}
       />
+
+      <OvertimeMonthActionsSheet
+        visible={actionsMonth !== null}
+        onClose={() => setActionsMonth(null)}
+        onExport={handleExportMonth}
+      />
     </View>
   );
 }
@@ -146,9 +171,17 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
+  sectionHeaderRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   sectionTotal: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  moreButton: {
+    padding: 2,
   },
   row: {
     flexDirection: 'row',

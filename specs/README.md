@@ -47,4 +47,4 @@ hasta tres archivos:
 | Selector de fecha | implementado (pendiente confirmación en vivo) | [`selector-fecha/`](./selector-fecha/requirements.md) |
 | Selector de hora | implementado (pendiente confirmación en vivo) | [`selector-hora/`](./selector-hora/requirements.md) |
 | Menú contextual de Notes | implementado (pendiente confirmación en vivo) | [`menu-contextual-notas/`](./menu-contextual-notas/requirements.md) |
-| Exportación | Notes implementado (pendiente confirmación en vivo); Dailys/Overtime pendientes | [`exportacion/`](./exportacion/requirements.md) |
+| Exportación | Notes, Dailys y Overtime implementados (pendiente confirmación en vivo); + "Compartir" en Notes/Dailys | [`exportacion/`](./exportacion/requirements.md) |

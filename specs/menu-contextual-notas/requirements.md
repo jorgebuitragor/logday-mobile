@@ -25,10 +25,17 @@ editor abierto).
 - El sistema DEBERÁ ofrecer el mismo botón "⋮" en cada fila del
   listado de notas (`app/(tabs)/notes.tsx`), sin necesidad de abrir la
   nota — mismas 3 acciones, operando sobre la nota de esa fila.
-- La hoja DEBERÁ ofrecer, como mínimo: Copiar, Duplicar, Exportar.
+- La hoja DEBERÁ ofrecer, como mínimo: Copiar, Compartir, Duplicar,
+  Exportar.
 - **Copiar** DEBERÁ copiar al portapapeles el contenido en el mismo
   formato que desktop: `"# {título}\n\n{contenido}"` si hay título, o
   solo el contenido si no lo hay.
+- **Compartir** (agregado 2026-08-29, sin equivalente en desktop —
+  desktop no tiene hoja de compartir del sistema) DEBERÁ abrir
+  directo la hoja de compartir nativa del SO con el mismo texto que
+  Copiar, sin escribir ningún archivo — mismo texto, dos destinos
+  distintos (portapapeles vs. compartir directo a otra app). Ver
+  `exportacion/requirements.md`, "Compartir" para el criterio general.
 - **Duplicar** DEBERÁ crear una nota nueva con el mismo
   contenido/carpeta/tags, título con sufijo `" (copia)"` (o solo
   `"(copia)"` si el título original está vacío — mismo criterio que

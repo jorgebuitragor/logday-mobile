@@ -16,7 +16,10 @@ Dos modos internos (`mode: 'actions' | 'export'`), sin navegación
 propia — evita crear una ruta/pantalla nueva solo para el selector de
 formato:
 
-- `'actions'`: Copiar, Duplicar, Exportar (con ícono `Share2`).
+- `'actions'`: Copiar, Compartir (ícono `Share2`, agregado 2026-08-29),
+  Duplicar, Exportar (ícono `Download` — antes usaba `Share2`, se le
+  reasignó ese ícono a la nueva fila "Compartir", que encaja mejor
+  semánticamente con ese símbolo).
 - `'export'`: vuelve a mostrar la lista pero con los 3 formatos
   (Markdown/Texto plano/PDF, con subtítulo explicando la extensión —
   mismo texto que el modal `ExportModal` de desktop, ver
@@ -36,6 +39,19 @@ existe justamente para las acciones "secundarias pero frecuentes"
 sacadas del cuerpo del formulario. Ponerlas TAMBIÉN en este menú
 sería un segundo camino al mismo resultado sin aportar nada — se
 prefiere una única superficie por acción.
+
+## Compartir (agregado 2026-08-29)
+
+`shareText(content)` (`src/lib/exportFile.ts`) usa el `Share` nativo
+de React Native (`Share.share({ message: content })`) — no
+`expo-sharing`, que solo comparte *archivos* ya escritos a disco.
+"Compartir" no escribe ningún archivo: abre directo la hoja de
+compartir del SO con el texto como mensaje, útil para mandar la nota
+por WhatsApp/email/Slack sin el paso intermedio de "elegir un
+formato" que sí tiene sentido para "Exportar" (que si necesita un
+archivo real, para poder abrirlo en otra app o guardarlo). Mismo
+contenido que "Copiar" (`buildMarkdownDoc`), dos mecanismos de salida
+distintos.
 
 ## Copiar y Duplicar — reuso de lógica de exportación
 

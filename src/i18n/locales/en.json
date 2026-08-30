@@ -7,7 +7,8 @@
     "selectDate": "Select date",
     "clearDate": "Clear date",
     "selectTime": "Select time",
-    "today": "Today"
+    "today": "Today",
+    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   },
   "tabs": {
     "tasks": "Tasks",
@@ -121,6 +122,7 @@
   "noteActions": {
     "menuLabel": "More actions",
     "copy": "Copy",
+    "share": "Share",
     "duplicate": "Duplicate",
     "export": "Export",
     "formatMd": "Markdown",
@@ -156,11 +158,27 @@
     "pickDateTitle": "Choose date for daily",
     "goToDate": "Go"
   },
+  "dailyActions": {
+    "menuLabel": "More month actions",
+    "share": "Share",
+    "export": "Export",
+    "formatMd": "Markdown",
+    "formatMdHint": ".md — with original formatting",
+    "formatTxt": "Plain text",
+    "formatTxtHint": ".txt — no formatting",
+    "formatPdf": "PDF",
+    "formatPdfHint": ".pdf — portable document"
+  },
   "overtimeList": {
     "empty": "No overtime entries yet.",
     "loading": "Loading...",
-    "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
     "monthTotal": "Total: {{hours}}h"
+  },
+  "overtimeActions": {
+    "menuLabel": "More month actions",
+    "export": "Export",
+    "formatXlsx": "Excel",
+    "formatXlsxHint": ".xlsx — spreadsheet with formulas"
   },
   "overtimeForm": {
     "newTitle": "New overtime entry",

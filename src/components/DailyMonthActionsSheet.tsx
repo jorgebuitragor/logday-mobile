@@ -1,27 +1,23 @@
-import { ChevronLeft, Copy, CopyPlus, Download, FileDown, FileText, FileType2, Share2 } from 'lucide-react-native';
+import { ChevronLeft, Download, FileDown, FileText, FileType2, Share2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '../theme/ThemeContext';
-import type { NoteExportFormat } from '../lib/noteExport';
+import type { DailyMonthExportFormat } from '../lib/dailyMonthExport';
 
-interface NoteActionsSheetProps {
+interface DailyMonthActionsSheetProps {
   visible: boolean;
   onClose: () => void;
-  onCopy: () => void;
   onShare: () => void;
-  onDuplicate: () => void;
-  onExport: (format: NoteExportFormat) => void;
+  onExport: (format: DailyMonthExportFormat) => void;
 }
 
-// Reemplaza el menú contextual (clic derecho) de desktop
-// (`NoteList.tsx`) — mobile no tiene clic derecho, así que estas
-// mismas acciones (Copiar, Duplicar, Exportar) viven detrás de un
-// botón "⋮" en la barra de la pantalla de nota. "Renombrar" y "Mostrar
-// en Finder/Explorador" no se portan — ver
-// specs/pantalla-notes/design.md, "Menú de más acciones", por qué.
-export function NoteActionsSheet({ visible, onClose, onCopy, onShare, onDuplicate, onExport }: NoteActionsSheetProps) {
+// Mismo patrón que `NoteActionsSheet` (acá sin "Duplicar" — no aplica
+// a un mes completo de dailys) — el mes no tiene un menú contextual
+// equivalente en desktop (ahí se activa con clic derecho sobre el
+// encabezado del mes en el sidebar); ver specs/exportacion/design.md.
+export function DailyMonthActionsSheet({ visible, onClose, onShare, onExport }: DailyMonthActionsSheetProps) {
   const theme = useTheme();
   const { t } = useTranslation();
   const [mode, setMode] = useState<'actions' | 'export'>('actions');
@@ -34,10 +30,10 @@ export function NoteActionsSheet({ visible, onClose, onCopy, onShare, onDuplicat
     onClose();
   }
 
-  const formats: { format: NoteExportFormat; icon: typeof FileText; label: string; subtitle: string }[] = [
-    { format: 'md', icon: FileText, label: t('noteActions.formatMd'), subtitle: t('noteActions.formatMdHint') },
-    { format: 'txt', icon: FileType2, label: t('noteActions.formatTxt'), subtitle: t('noteActions.formatTxtHint') },
-    { format: 'pdf', icon: FileDown, label: t('noteActions.formatPdf'), subtitle: t('noteActions.formatPdfHint') },
+  const formats: { format: DailyMonthExportFormat; icon: typeof FileText; label: string; subtitle: string }[] = [
+    { format: 'md', icon: FileText, label: t('dailyActions.formatMd'), subtitle: t('dailyActions.formatMdHint') },
+    { format: 'txt', icon: FileType2, label: t('dailyActions.formatTxt'), subtitle: t('dailyActions.formatTxtHint') },
+    { format: 'pdf', icon: FileDown, label: t('dailyActions.formatPdf'), subtitle: t('dailyActions.formatPdfHint') },
   ];
 
   return (
@@ -49,16 +45,14 @@ export function NoteActionsSheet({ visible, onClose, onCopy, onShare, onDuplicat
         >
           {mode === 'actions' ? (
             <>
-              <Row icon={Copy} label={t('noteActions.copy')} onPress={() => { onCopy(); close(); }} theme={theme} />
-              <Row icon={Share2} label={t('noteActions.share')} onPress={() => { onShare(); close(); }} theme={theme} />
-              <Row icon={CopyPlus} label={t('noteActions.duplicate')} onPress={() => { onDuplicate(); close(); }} theme={theme} />
-              <Row icon={Download} label={t('noteActions.export')} onPress={() => setMode('export')} theme={theme} />
+              <Row icon={Share2} label={t('dailyActions.share')} onPress={() => { onShare(); close(); }} theme={theme} />
+              <Row icon={Download} label={t('dailyActions.export')} onPress={() => setMode('export')} theme={theme} />
             </>
           ) : (
             <>
               <Pressable style={styles.backRow} onPress={() => setMode('actions')} hitSlop={6}>
                 <ChevronLeft size={16} color={theme.textSecondary} />
-                <Text style={[styles.backText, { color: theme.textSecondary }]}>{t('noteActions.export')}</Text>
+                <Text style={[styles.backText, { color: theme.textSecondary }]}>{t('dailyActions.export')}</Text>
               </Pressable>
               {formats.map(({ format, icon: Icon, label, subtitle }) => (
                 <Pressable
@@ -87,7 +81,7 @@ function Row({
   onPress,
   theme,
 }: {
-  icon: typeof Copy;
+  icon: typeof Share2;
   label: string;
   onPress: () => void;
   theme: ReturnType<typeof useTheme>;

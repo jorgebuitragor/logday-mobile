@@ -12,6 +12,7 @@ import { MarkdownToolbar, type TextSelection } from '../../src/components/Markdo
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { createNote, getNote, setNotePinned, softDeleteNote, updateNote, type NoteInput } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
@@ -265,6 +266,10 @@ export default function NoteEditorScreen() {
     await exportNote(titleRef.current, contentRef.current, format);
   }
 
+  async function handleShare() {
+    await shareText(buildMarkdownDoc(titleRef.current, contentRef.current));
+  }
+
   if (note === undefined) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bgBase }]}>
@@ -452,6 +457,7 @@ export default function NoteEditorScreen() {
         visible={actionsOpen}
         onClose={() => setActionsOpen(false)}
         onCopy={handleCopyToClipboard}
+        onShare={handleShare}
         onDuplicate={handleDuplicate}
         onExport={handleExport}
       />

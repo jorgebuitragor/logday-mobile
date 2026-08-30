@@ -116,12 +116,24 @@ de crypto pesadas que arrastra `isomorphic-webcrypto`
 dentro de Hermes — eso es exactamente lo que confirma o refuta el
 checkpoint en vivo de abajo.
 
+## Fase 0 — resultado confirmado (2026-08-30)
+
+Checkpoint en vivo pasó: "✓ OK — merge correcto ('Hola desde
+mobile'), update de 34 bytes." Yjs + `isomorphic-webcrypto` corren
+bien en Hermes, sin polyfills adicionales. Único hallazgo: un warning
+de LogBox no fatal de `asmcrypto.js` ("seems to be load from an
+insecure origin... may cause MitM-attack") — falso positivo conocido
+de esa librería (detecta el protocolo de origen como si se sirviera
+por HTTP/HTTPS vía script tag en un navegador, algo que no aplica
+cuando corre empaquetada dentro de un bundle de Metro); no interrumpe
+nada ni afecta el resultado. Vale la pena tenerlo presente para no
+confundirlo con un problema real si reaparece en Fase 3.
+
+Yjs queda confirmado como viable para el contenido CRDT de Note/
+DailyEntry (Fase 3) sin necesidad de buscar una librería alternativa.
+
 ## Explícitamente pendiente
 
 - Diseño detallado de Fases 1-4 — se escribe en este mismo archivo a
   medida que arranca cada fase (no de antemano, para no comprometerse
   a decisiones que un checkpoint en vivo anterior podría invalidar).
-- Resultado del spike de Fase 0 en el dispositivo real (bundle ya
-  resuelve limpio con `isomorphic-webcrypto` instalado — falta
-  confirmar que corre sin excepción y que el merge da el resultado
-  esperado).

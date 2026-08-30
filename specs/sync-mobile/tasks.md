@@ -35,11 +35,15 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       los template strings de Metro), resuelto instalando
       `isomorphic-webcrypto`; segundo intento HTTP 200 sin errores de
       resolución reales.
-- [ ] **Checkpoint en vivo**: abrir Ajustes, tocar "Probar Yjs",
-      confirmar que muestra "✓ OK — merge correcto..." sin que la
-      pantalla truene. Si falla, documentar acá el error exacto antes
-      de intentar un fix (candidato ya evaluado y descartado por
-      inspección de código: `global.window`/`atob`/`btoa` — ver
-      design.md).
-- [ ] Tras el checkpoint: borrar `src/lib/yjsSpike.ts`, la sección
+- [x] **Checkpoint en vivo (2026-08-30, confirmado con captura)**:
+      "✓ OK — merge correcto ('Hola desde mobile'), update de 34
+      bytes." Yjs corre bien en Hermes con `isomorphic-webcrypto`
+      instalado. Único efecto secundario observado: un warning de
+      LogBox no fatal de `asmcrypto.js` ("seems to be load from an
+      insecure origin... MitM-attack") — falso positivo conocido de
+      esa librería cuando corre empaquetada en vez de servida por
+      script tag en un navegador; no afecta a Hermes/RN, no truena
+      nada, el spike igual dio éxito. Documentado acá para que no se
+      confunda con un problema real si vuelve a aparecer más adelante.
+- [x] Tras el checkpoint: borrado `src/lib/yjsSpike.ts`, la sección
       temporal en `app/(tabs)/settings.tsx` y su import.

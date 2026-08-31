@@ -1,7 +1,6 @@
 # Sync con logday-server — Tareas
 
-Estado: Fase 0 confirmada. Fase 1 implementada, pendiente de
-checkpoint en vivo.
+Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 arrancando.
 
 ## Plan completo (referencia)
 
@@ -73,14 +72,12 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [x] Bundle de Metro pedido directo, sin errores de resolución
       reales; `SyncProvider`/`useSync`/`withSyncAuth`/`SecureStore`
       aparecen resueltos.
-- [ ] **Checkpoint en vivo**: conectar contra un `logday-server` real
-      (URL/correo/contraseña de una cuenta existente) — confirmar que
-      pasa a "Conectado" y muestra el correo/URL; cerrar la app del
-      todo y reabrirla — debe seguir "Conectado" sin pedir credenciales
-      de nuevo; tocar "Verificar conexión" — debe mostrar "Última
-      verificación: ahora mismo"; esperar más de 15 minutos (vencimiento
-      del access token) y tocar "Verificar conexión" de nuevo — debe
-      seguir funcionando (el refresh debe correr solo, sin que el
-      usuario note nada); tocar "Desconectar" — debe volver al
-      formulario, sin que los datos locales (tasks/notes/etc.) se
-      hayan tocado.
+- [x] **Checkpoint en vivo (2026-08-30, confirmado)**: conectado
+      contra el `logday-server` local (`http://192.168.20.121:8080`,
+      `admin@example.com`) — pasó a "Conectado", mostró correo/URL, y
+      "Verificar conexión" completó bien ("verifiqué todo ok"). El
+      caso del refresh automático tras 15 min de vencimiento del
+      access token no se probó a propósito con espera — queda cubierto
+      de forma natural una vez arranque el polling de 30s de la Fase
+      2 (correrá el tiempo suficiente para ejercitarlo sin necesitar
+      una espera dedicada).

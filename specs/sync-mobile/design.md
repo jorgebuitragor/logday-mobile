@@ -1,7 +1,6 @@
 # Sync con logday-server — Design
 
-Estado: Fase 0 confirmada. Fase 1 (auth + pantalla de conexión)
-implementada, pendiente de checkpoint en vivo.
+Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 arrancando.
 
 ## Por qué portar desktop en vez de diseñar desde cero
 

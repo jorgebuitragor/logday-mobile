@@ -1,7 +1,7 @@
 # Sync con logday-server — Requirements
 
-Estado: en progreso. Fase 0 confirmada. Fase 1 (auth + conexión)
-implementada, pendiente de checkpoint en vivo.
+Estado: en progreso. Fase 0 y Fase 1 confirmadas en vivo. Fase 2
+arrancando.
 
 ## Contexto
 

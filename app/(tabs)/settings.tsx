@@ -1,8 +1,8 @@
 import { BookOpen, Clock, Cloud, CloudOff, Eye, EyeOff, Languages, Monitor, Moon, RefreshCw, ShieldAlert, Smartphone, Snowflake, Sun, TriangleAlert } from 'lucide-react-native';
 import type { ComponentType } from 'react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
@@ -85,8 +85,45 @@ export default function SettingsScreen() {
   });
   const keyboardSpacer = useAnimatedStyle(() => ({ height: keyboard.height.value }));
 
+  // El espacio extra de arriba alcanza para poder scrollear, pero no
+  // mueve la vista solo — el usuario lo reportó ("no lo sube y ajusta
+  // automáticamente... debo hacer scroll"). Se agrega el ajuste
+  // automático: al enfocar un campo se mide su posición real en
+  // pantalla (`measureInWindow`, mismo API ya usado en esta sesión
+  // para el drop de Kanban) y, si queda tapado por el teclado, se
+  // desplaza el `ScrollView` lo justo para destaparlo. Con `setTimeout`
+  // porque `onFocus` dispara ANTES de que el teclado termine de
+  // animar su apertura — medir de inmediato usaría la altura vieja
+  // (0 o la anterior) del teclado, no la real.
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollYRef = useRef(0);
+  const windowHeight = useWindowDimensions().height;
+
+  function scrollInputIntoView(node: TextInput | null) {
+    if (!node) return;
+    setTimeout(() => {
+      node.measureInWindow((x, y, width, height) => {
+        const keyboardTop = windowHeight - keyboard.height.value;
+        const margin = 16;
+        const overlap = y + height - (keyboardTop - margin);
+        if (overlap > 0) {
+          scrollRef.current?.scrollTo({ y: scrollYRef.current + overlap, animated: true });
+        }
+      });
+    }, 300);
+  }
+
   return (
-    <ScrollView style={{ backgroundColor: theme.bgBase }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      ref={scrollRef}
+      style={{ backgroundColor: theme.bgBase }}
+      contentContainerStyle={styles.content}
+      keyboardShouldPersistTaps="handled"
+      onScroll={(e) => {
+        scrollYRef.current = e.nativeEvent.contentOffset.y;
+      }}
+      scrollEventThrottle={16}
+    >
       <Section title={t('settings.theme')} icon={Sun}>
         {THEME_PREFERENCES.map((pref, i) => (
           <OptionRow
@@ -142,13 +179,13 @@ export default function SettingsScreen() {
         </Pressable>
       </Section>
 
-      <SyncSection />
+      <SyncSection scrollInputIntoView={scrollInputIntoView} />
       <Animated.View style={keyboardSpacer} />
     </ScrollView>
   );
 }
 
-function SyncSection() {
+function SyncSection({ scrollInputIntoView }: { scrollInputIntoView: (node: TextInput | null) => void }) {
   const { t } = useTranslation();
   const theme = useTheme();
   const { syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, syncConnect, syncDisconnect, checkConnection } = useSync();
@@ -157,6 +194,9 @@ function SyncSection() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [checking, setChecking] = useState(false);
+  const serverUrlRef = useRef<TextInput>(null);
+  const emailRef = useRef<TextInput>(null);
+  const passwordRef = useRef<TextInput>(null);
 
   const isConnected = syncConnectionStatus === 'connected';
   const isConnecting = syncConnectionStatus === 'connecting';
@@ -229,9 +269,11 @@ function SyncSection() {
               <Text style={{ color: ERROR_COLOR, fontSize: 12, marginTop: 6, marginBottom: 4 }}>{syncErrorMsg}</Text>
             ) : null}
             <TextInput
+              ref={serverUrlRef}
               style={[styles.syncInput, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
               value={serverUrl}
               onChangeText={setServerUrl}
+              onFocus={() => scrollInputIntoView(serverUrlRef.current)}
               placeholder={t('sync.serverUrlPlaceholder')}
               placeholderTextColor={theme.textFaint}
               autoCapitalize="none"
@@ -239,9 +281,11 @@ function SyncSection() {
               keyboardType="url"
             />
             <TextInput
+              ref={emailRef}
               style={[styles.syncInput, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
               value={email}
               onChangeText={setEmail}
+              onFocus={() => scrollInputIntoView(emailRef.current)}
               placeholder={t('sync.emailPlaceholder')}
               placeholderTextColor={theme.textFaint}
               autoCapitalize="none"
@@ -250,9 +294,11 @@ function SyncSection() {
             />
             <View style={styles.passwordRow}>
               <TextInput
+                ref={passwordRef}
                 style={[styles.syncInput, { flex: 1, borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
                 value={password}
                 onChangeText={setPassword}
+                onFocus={() => scrollInputIntoView(passwordRef.current)}
                 placeholder={t('sync.password')}
                 placeholderTextColor={theme.textFaint}
                 autoCapitalize="none"

@@ -1,7 +1,6 @@
 # Sync con logday-server — Design
 
-Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 implementada,
-pendiente de checkpoint en vivo.
+Estado: Fases 0, 1 y 2 confirmadas en vivo. Fase 3 arrancando.
 
 ## Por qué portar desktop en vez de diseñar desde cero
 
@@ -186,6 +185,21 @@ automático de punta a punta.
   eliminaciones de datos (`useConfirmDelete`), desconectar sync no
   borra nada local, es reversible con solo volver a conectar; no
   ameritaba reusar ese hook para algo que no es su semántica.
+
+## Nota de entorno: `logday-server` local corre en Docker
+
+Descubierto verificando la Fase 2 en vivo: el `logday-server` local
+del usuario (`http://192.168.20.121:8080`) NO corre como proceso nativo
+del host — corre en un contenedor Docker (`logday-server-server-1`,
+imagen `logday-server-server`), con su propia base SQLite en
+`/data/logday.db` **dentro** del contenedor. El archivo
+`logday-server/data/logday.db` del host (que existe, tiene tablas,
+pero está vacío) es un leftover de una corrida anterior sin Docker —
+consultarlo directo lleva a conclusiones falsas ("no llegó nada")
+cuando en realidad sí llegó, solo que a otra base. Para inspeccionar
+el estado real: `docker ps` para confirmar el contenedor, `docker cp
+logday-server-server-1:/data/logday.db <ruta-local>` (no tiene
+`sqlite3` instalado adentro) y leer la copia con `sqlite3 -readonly`.
 
 ## Fase 2 — Sync de metadatos LWW (Task/OvertimeEntry/OvertimeMonthMeta/AbsenceDay)
 

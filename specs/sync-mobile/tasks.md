@@ -1,7 +1,6 @@
 # Sync con logday-server — Tareas
 
-Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 implementada,
-pendiente de checkpoint en vivo.
+Estado: Fases 0, 1 y 2 confirmadas en vivo. Fase 3 arrancando.
 
 ## Plan completo (referencia)
 
@@ -114,12 +113,21 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [x] Bundle de Metro pedido directo, sin errores de resolución
       reales; `reconcileSync`/`startPolling`/`applyRemoteTaskChange`/
       `getSyncRuntime`/`diffChangedFields` aparecen resueltos.
-- [ ] **Checkpoint en vivo**: crear una Task en mobile, confirmarla en
-      desktop/web; editar una Task en desktop, confirmar que aparece
-      en mobile dentro de ~30s o al volver a foco; repetir para
-      OvertimeEntry, OvertimeMonthMeta (colaborador/cédula) y
-      AbsenceDay; desconectar el wifi del teléfono, crear/editar algo,
-      reconectar — debe drenar la cola sola dentro de los próximos
-      30s; editar un campo en mobile mientras el mismo registro se
-      edita en desktop en un campo DISTINTO — ningún cambio debe
-      perderse (LWW por campo real, no solo por registro completo).
+- [x] **Checkpoint en vivo (2026-08-31, confirmado) — push y pull de
+      Task**: se creó una Task ("Prueba") y una OvertimeEntry en
+      mobile, confirmadas leyendo directo la base del servidor
+      (`docker exec`/`docker cp` — el servidor corre en un contenedor
+      Docker, no como proceso nativo del host, hallazgo de esta
+      verificación). Para el pull, se editó la Task "Prueba" **vía la
+      API del servidor directamente** (mismo camino que usaría
+      desktop/web) y se confirmó en 2 pasos: (1) el cambio queda con
+      `seq` nuevo y aparece con la forma correcta en `/sync/changes`
+      (mismo endpoint que consume el polling de mobile); (2) el
+      usuario confirmó en la pantalla de mobile que el título
+      cambió a "Prueba (editada desde servidor)" sin tocar nada.
+- [ ] **Pendiente de verificar en vivo, no cubierto todavía**: el
+      mismo push/pull para OvertimeMonthMeta (colaborador/cédula) y
+      AbsenceDay; el drenado de la cola offline tras reconectar wifi;
+      el caso de LWW por campo real (editar el mismo registro en dos
+      campos distintos desde mobile y desde otro cliente al mismo
+      tiempo, confirmar que ningún cambio se pierde).

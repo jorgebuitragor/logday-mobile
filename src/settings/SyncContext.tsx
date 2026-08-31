@@ -5,6 +5,8 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { useTranslation } from 'react-i18next';
 
 import { SyncApiError, listDevicesRemote, login as loginRemote, refreshToken as refreshTokenRemote } from '../lib/syncApi';
+import { drainSyncQueue, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
+import { setSyncRuntime } from '../lib/syncRuntime';
 import type { SyncConfig, SyncConnectionStatus } from '../types/sync';
 
 const CONFIG_STORAGE_KEY = 'syncConfig'; // enabled/serverUrl/email/deviceId — no sensible
@@ -199,6 +201,36 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setSyncErrorMsg(e instanceof SyncApiError ? e.message : e instanceof Error ? e.message : String(e));
     }
   }
+
+  // Empuja el estado más reciente al puente imperativo que usa el
+  // código de sync fuera de React (`src/db/*.ts`, `syncEngine.ts`) —
+  // ver el comentario en `syncRuntime.ts`. `withSyncAuth` se vuelve a
+  // crear en cada render, pero como lee `configRef.current` (no
+  // `syncConfig` cerrado por closure), guardar una versión "vieja" acá
+  // no genera datos obsoletos — solo importa que exista alguna.
+  useEffect(() => {
+    setSyncRuntime(
+      syncConfig.enabled
+        ? { enabled: true, connected: syncConnectionStatus === 'connected', serverUrl: syncConfig.serverUrl, withSyncAuth }
+        : null
+    );
+  }, [syncConfig.enabled, syncConfig.serverUrl, syncConnectionStatus]);
+
+  // Arranca/para el polling (drena la cola + reconcilia contra
+  // `/sync/changes`) según el estado de conexión — cubre tanto
+  // conectar recién como recuperar una sesión ya conectada al abrir
+  // la app (el efecto de restauración de arriba también deja
+  // `syncConnectionStatus` en 'connected'). Corre una vez de
+  // inmediato al conectar, no espera los 30s del primer tick.
+  useEffect(() => {
+    if (syncConnectionStatus !== 'connected') {
+      stopPolling();
+      return;
+    }
+    void drainSyncQueue().then(() => reconcileSync());
+    startPolling();
+    return () => stopPolling();
+  }, [syncConnectionStatus]);
 
   const value = useMemo(
     () => ({ syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, syncConnect, syncDisconnect, checkConnection }),

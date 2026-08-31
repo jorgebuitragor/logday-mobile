@@ -1,6 +1,7 @@
 # Sync con logday-server — Tareas
 
-Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 arrancando.
+Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 implementada,
+pendiente de checkpoint en vivo.
 
 ## Plan completo (referencia)
 
@@ -81,3 +82,44 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       de forma natural una vez arranque el polling de 30s de la Fase
       2 (correrá el tiempo suficiente para ejercitarlo sin necesitar
       una espera dedicada).
+
+## Fase 2 — Sync de metadatos LWW (Task/OvertimeEntry/OvertimeMonthMeta/AbsenceDay)
+
+- [x] `src/lib/syncMapping.ts`: tipos + funciones de mapeo + `*_FIELD_MAP`
+      para las 4 entidades. Ver design.md.
+- [x] `src/lib/syncQueue.ts`: cola offline (`AsyncStorage`).
+- [x] `src/lib/objectDiff.ts` (nuevo): `diffChangedFields` genérico,
+      con comparación por valor para campos array (`tags`).
+- [x] `src/lib/syncRuntime.ts` (nuevo): puente síncrono entre
+      `SyncContext` y el código de sync fuera de React.
+- [x] `src/lib/syncApi.ts`: agregado `syncChangesRemote` + REST de
+      Task/OvertimeEntry/OvertimeMonthMeta/AbsenceDay (create/patch/
+      delete).
+- [x] `src/db/tasks.ts`/`overtime.ts`/`absences.ts`: cada función
+      pública existente (`createTask`, `updateTask`,
+      `updateTaskStatus`, `softDeleteTask`, sus equivalentes de
+      overtime/absences) dispara el push correspondiente al final;
+      `applyRemote<Entidad>Change` (usado por el pull) escribe con SQL
+      directo para evitar el ciclo de import con `syncEngine.ts`. Ver
+      design.md, "Dónde vive el push/apply de cada entidad".
+- [x] `src/lib/syncEngine.ts` (nuevo): `reconcileSync`,
+      `drainSyncQueue`, `startPolling`/`stopPolling` (30s).
+- [x] `src/settings/SyncContext.tsx`: 2 `useEffect` nuevos —
+      sincroniza `syncRuntime.ts` y arranca/para el polling según el
+      estado de conexión.
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores (tras ajustar la
+      restricción genérica de `diffChangedFields` de
+      `Record<string, unknown>` a `object` — los tipos concretos de
+      cada entidad no tienen index signature).
+- [x] Bundle de Metro pedido directo, sin errores de resolución
+      reales; `reconcileSync`/`startPolling`/`applyRemoteTaskChange`/
+      `getSyncRuntime`/`diffChangedFields` aparecen resueltos.
+- [ ] **Checkpoint en vivo**: crear una Task en mobile, confirmarla en
+      desktop/web; editar una Task en desktop, confirmar que aparece
+      en mobile dentro de ~30s o al volver a foco; repetir para
+      OvertimeEntry, OvertimeMonthMeta (colaborador/cédula) y
+      AbsenceDay; desconectar el wifi del teléfono, crear/editar algo,
+      reconectar — debe drenar la cola sola dentro de los próximos
+      30s; editar un campo en mobile mientras el mismo registro se
+      edita en desktop en un campo DISTINTO — ningún cambio debe
+      perderse (LWW por campo real, no solo por registro completo).

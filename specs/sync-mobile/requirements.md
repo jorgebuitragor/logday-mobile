@@ -1,7 +1,7 @@
 # Sync con logday-server — Requirements
 
 Estado: en progreso. Fase 0 y Fase 1 confirmadas en vivo. Fase 2
-arrancando.
+implementada, pendiente de checkpoint en vivo.
 
 ## Contexto
 
@@ -64,15 +64,35 @@ que Hermes no expone).
 - El usuario DEBERÁ poder desconectar manualmente en cualquier
   momento, sin que eso borre ningún dato local.
 
+## Requisitos (EARS) — Fase 2: sync de metadatos LWW
+
+- El sistema DEBERÁ sincronizar Task, OvertimeEntry,
+  OvertimeMonthMeta y AbsenceDay: crear/editar/borrar en mobile
+  DEBERÁ reflejarse en el servidor (y en otros clientes), y viceversa.
+- Un PATCH DEBERÁ mandar únicamente los campos que de verdad
+  cambiaron — no el registro completo — para no pisar en el servidor
+  una edición concurrente a un campo distinto hecha desde otro
+  cliente (LWW por campo).
+- Sin conexión (o si una escritura falla), el sistema DEBERÁ encolarla
+  localmente y reintentarla más adelante, en el mismo orden en que se
+  hicieron — sin perder la edición ni bloquearse esperando red.
+- El sistema DEBERÁ reconciliar cambios hechos en otros clientes
+  (desktop, logday-web, otro dispositivo mobile) sin necesitar que el
+  usuario haga nada — un chequeo periódico (~30s) alcanza, no hace
+  falta tiempo real (ver design.md, "por qué portar desktop": ni
+  siquiera desktop lo tiene todavía).
+- Una edición local todavía sin confirmar (en cola) DEBERÁ tener
+  prioridad sobre cualquier cambio remoto que llegue mientras tanto
+  para ese mismo campo — no se pierde una edición del usuario por una
+  reconciliación en curso.
+
 ## Requisitos (EARS) — Fases siguientes
 
 Se detallan en `design.md`/`tasks.md` a medida que arranca cada fase
-(Fase 2: sync de metadatos LWW para Task/OvertimeEntry/
-OvertimeMonthMeta/AbsenceDay; Fase 3: Note/DailyEntry, metadatos +
-contenido CRDT; Fase 4: migración inicial de datos preexistentes) —
-no se escriben de antemano en detalle para no comprometerse a un
-diseño antes de que cada checkpoint en vivo confirme los supuestos de
-la fase anterior.
+(Fase 3: Note/DailyEntry, metadatos + contenido CRDT; Fase 4:
+migración inicial de datos preexistentes) — no se escriben de
+antemano en detalle para no comprometerse a un diseño antes de que
+cada checkpoint en vivo confirme los supuestos de la fase anterior.
 
 ## Fuera de este spec
 

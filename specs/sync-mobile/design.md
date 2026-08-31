@@ -1,6 +1,7 @@
 # Sync con logday-server — Design
 
-Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 arrancando.
+Estado: Fase 0 y Fase 1 confirmadas en vivo. Fase 2 implementada,
+pendiente de checkpoint en vivo.
 
 ## Por qué portar desktop en vez de diseñar desde cero
 
@@ -186,10 +187,112 @@ automático de punta a punta.
   borra nada local, es reversible con solo volver a conectar; no
   ameritaba reusar ese hook para algo que no es su semántica.
 
+## Fase 2 — Sync de metadatos LWW (Task/OvertimeEntry/OvertimeMonthMeta/AbsenceDay)
+
+Aisladas del contenido CRDT a propósito — son puro REST + LWW por
+campo, sin la complejidad de Yjs (esa llega en la Fase 3 con Note/
+DailyEntry).
+
+- `src/lib/syncMapping.ts`: tipos `*CreatePayload`/`*PatchPayload`/
+  `*ApiResponse` + funciones `*ToCreatePayload`/`*FieldsToPatchPayload`/
+  `*FromApiResponse` + `*_FIELD_MAP` (local↔servidor) por entidad —
+  puerto directo de `task-manager/src/lib/syncMapping.ts`, recortado a
+  estas 4. Los nombres de campo de mobile ya coincidían 1:1 con los de
+  desktop (`OvertimeEntry` ya usaba español — `fecha`/`solicitadaPor`/
+  etc. — desde que se portó esa pantalla), así que el mapeo es
+  prácticamente una copia literal, no una traducción.
+- `src/lib/syncQueue.ts`: puerto de la cola offline de desktop
+  (`QueuedWrite`/`enqueue`/`drainQueue`/`hasNewerQueuedField`),
+  `AsyncStorage` en vez de `localStorage` (por eso todas las funciones
+  son async acá, a diferencia de desktop).
+- `src/lib/objectDiff.ts` (nuevo, sin equivalente directo en desktop):
+  `diffChangedFields<T>(prev, next, keys)` genérico — desktop escribe
+  una función de diff por entidad (`diffTaskFields`,
+  `diffOvertimeEntryFields`, ...) porque su tipado de campos es más
+  heterogéneo; acá se generalizó a una sola función reusada por las 4
+  entidades. Único caso especial: comparación por valor (no por
+  referencia) para `tags` (el único campo array de las 4 entidades) —
+  sin eso, cualquier edición marcaría `tags` como "cambiado" aunque el
+  contenido fuera idéntico (el caller arma un array nuevo cada vez),
+  mandándolo en cada PATCH y arriesgando pisar una edición concurrente
+  real a tags hecha desde otro cliente.
+- `src/lib/syncRuntime.ts` (nuevo, sin equivalente en desktop —
+  desktop no lo necesita porque Zustand es accesible desde cualquier
+  módulo vía `get()/set()` importado): puente síncrono entre
+  `SyncContext.tsx` (dueño del estado de conexión, componente) y el
+  código imperativo de sync que vive fuera de React (`db/*.ts`,
+  `syncEngine.ts`, que no pueden llamar `useSync()`). `SyncContext`
+  empuja el estado más reciente en un `useEffect`
+  (`setSyncRuntime({enabled, connected, serverUrl, withSyncAuth})`);
+  el resto lo lee de forma síncrona (`getSyncRuntime()`) cuando lo
+  necesita.
+- **Dónde vive el push/apply de cada entidad — decisión de
+  arquitectura importante**: NO en `syncEngine.ts`, sino dentro de
+  cada `src/db/tasks.ts`/`overtime.ts`/`absences.ts`. Motivo: evitar
+  un ciclo de import. `syncEngine.ts` necesita las funciones
+  `applyRemote<Entidad>Change` de cada `db/*.ts` para aplicar el pull;
+  si las funciones de push (`syncCreate/Patch/Delete<Entidad>`)
+  también vivieran en `syncEngine.ts`, y `db/*.ts` necesita llamarlas
+  después de cada escritura local, el import sería circular
+  (`db/tasks.ts` → `syncEngine.ts` → `db/tasks.ts`). Con el push y el
+  apply-de-remoto los dos dentro del mismo `db/*.ts`, la dependencia
+  queda en una sola dirección: `db/*.ts` → `syncApi.ts`/
+  `syncMapping.ts`/`syncQueue.ts`/`syncRuntime.ts` (ninguno de esos
+  importa `db/*.ts`), y `syncEngine.ts` → `db/*.ts` (solo para
+  `applyRemote*Change`, el dispatch del pull). Coincide además con el
+  criterio ya escrito en `requirements.md`: `db/*.ts` es el punto
+  central de mutación de mobile, equivalente a los action creators de
+  Zustand en desktop.
+- **Por qué el apply-de-remoto NO reusa `createTask`/`updateTask`/
+  etc.**: esas funciones, al final de cada escritura, disparan el push
+  de sync (`void syncCreateTask(...)`) — si `applyRemoteTaskChange`
+  las reusara para escribir el cambio que acaba de llegar del pull, se
+  generaría un loop (aplicar un cambio remoto dispararía mandarlo de
+  vuelta al servidor). Por eso el apply-de-remoto escribe con SQL
+  directo (`writeTaskRow`/equivalentes), separado de las funciones
+  públicas que sí usan las pantallas.
+- Cada `db/*.ts` gana, al final de cada función pública ya existente
+  (`createTask`/`updateTask`/`updateTaskStatus`/`softDeleteTask`,
+  y sus equivalentes en `overtime.ts`/`absences.ts`), una llamada
+  fire-and-forget (`void syncCreateX(...)`) al push correspondiente —
+  intenta mandar ya si hay conexión, encola si no (o si falla). Mismo
+  patrón que `syncCreateTask` en `appStore.ts` de desktop.
+  `updateTask`/`updateOvertimeEntry`/`saveAbsenceDay` primero calculan
+  qué campos cambiaron de verdad (`diffChangedFields`) antes de armar
+  el PATCH — un PATCH con todos los campos, aunque no hayan cambiado,
+  pisaría en el servidor cualquier edición concurrente a un campo que
+  acá ni se tocó (mismo motivo que `diffTaskFields` en desktop).
+- `syncEngine.ts`: el orquestador — `reconcileSync()` (pull paginado
+  desde `/sync/changes`, cursor en `AsyncStorage`, full-resync
+  automático ante 410 — puerto de `reconcileSync`/`fetchAllChanges` en
+  `appStore.ts`), `drainSyncQueue()` (reenvía la cola offline, mismo
+  despacho por entidad+operación que `dispatchQueuedWrite` de
+  desktop), y el polling de 30s (`startPolling`/`stopPolling`, arranca
+  al conectar) que reemplaza el WebSocket en tiempo real que desktop
+  tampoco tiene todavía — cada tick drena la cola antes de reconciliar
+  (mismo motivo que desktop: sin esto una entrada quedaría en cola
+  para siempre aunque la app siga "Conectado").
+- `SyncContext.tsx`: 2 `useEffect` nuevos — uno empuja el runtime a
+  `syncRuntime.ts` en cada cambio relevante de `syncConfig`/
+  `syncConnectionStatus`; otro arranca `drainSyncQueue().then(reconcileSync)`
+  de inmediato (no espera los 30s del primer tick) + `startPolling()`
+  al pasar a "Conectado" (cubre tanto conectar recién como recuperar
+  una sesión ya conectada al abrir la app), y para el polling al
+  desconectar.
+
 ## Explícitamente pendiente
 
-- Diseño detallado de Fases 2-4 — se escribe en este mismo archivo a
-  medida que arranca cada fase (no de antemano, para no comprometerse
-  a decisiones que un checkpoint en vivo anterior podría invalidar).
+- Diseño detallado de Fases 3-4 — se escribe en este mismo archivo a
+  medida que arranca cada fase.
 - Panel de dispositivos/sesiones (listar/revocar) — fast-follow, no
   bloquea que sync funcione.
+- **Verificación en vivo pendiente de la Fase 2**: crear una Task en
+  mobile y confirmarla en desktop/web; editar una Task en desktop y
+  confirmar que aparece en mobile dentro de ~30s o al volver a foco;
+  mismo par de pruebas para OvertimeEntry, OvertimeMonthMeta
+  (colaborador/cédula) y AbsenceDay; desconectar el wifi del teléfono,
+  crear/editar algo, reconectar — debe drenar la cola solo dentro de
+  los próximos 30s; confirmar que un campo editado en mobile mientras
+  el mismo registro se edita en desktop en un campo DISTINTO no pierde
+  ninguno de los dos cambios (LWW por campo funcionando de verdad, no
+  solo por registro completo).

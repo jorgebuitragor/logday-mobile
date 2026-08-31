@@ -51,4 +51,4 @@ hasta tres archivos:
 | Exportación | Notes, Dailys y Overtime implementados (pendiente confirmación en vivo); + "Compartir" en Notes/Dailys | [`exportacion/`](./exportacion/requirements.md) |
 | Vistas de Tasks | Calendario y Kanban implementados (pendiente confirmación en vivo) | [`vistas-tasks/`](./vistas-tasks/requirements.md) |
 | Vistas de Notes | Lista/Cuadrícula implementado (pendiente confirmación en vivo) | [`vistas-notas/`](./vistas-notas/requirements.md) |
-| Sync con logday-server | en progreso — Fase 2 de 4 (metadatos LWW), Fases 0-1 confirmadas en vivo | [`sync-mobile/`](./sync-mobile/requirements.md) |
+| Sync con logday-server | en progreso — Fase 3 de 4 (Notes/Dailys CRDT), Fases 0-2 confirmadas en vivo | [`sync-mobile/`](./sync-mobile/requirements.md) |

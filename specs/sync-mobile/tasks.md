@@ -1,6 +1,7 @@
 # Sync con logday-server — Tareas
 
-Estado: Fases 0, 1 y 2 confirmadas en vivo. Fase 3 arrancando.
+Estado: Fases 0, 1 y 2 confirmadas en vivo. Fase 3 implementada,
+pendiente de checkpoint en vivo.
 
 ## Plan completo (referencia)
 
@@ -131,3 +132,50 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       el caso de LWW por campo real (editar el mismo registro en dos
       campos distintos desde mobile y desde otro cliente al mismo
       tiempo, confirmar que ningún cambio se pierde).
+
+## Fase 3 — Note y DailyEntry: metadatos (LWW) + contenido (Yjs CRDT)
+
+- [x] `src/db/index.ts`: `ensureColumn()` (primera migración real de
+      este esquema) + `content_state TEXT` agregado a `notes`/
+      `daily_entries`.
+- [x] `src/lib/crdtText.ts` (nuevo): helpers puros de Yjs, sin
+      dependencias de SQLite (evita ciclo de import).
+- [x] `src/lib/contentSyncQueue.ts` (nuevo): cola coalescente por
+      `entidad:key` (`AsyncStorage`).
+- [x] `src/lib/syncMapping.ts`: mapeo de metadata de Note +
+      `DailyEntryApiResponse`.
+- [x] `src/lib/syncApi.ts`: REST de Note (metadata + contenido) y
+      DailyEntry (contenido); `SyncEntityType` extendido.
+- [x] `src/lib/syncQueue.ts`: `EntityType` extendido con `note`/
+      `daily_entry`.
+- [x] `src/db/notes.ts`: push/apply de metadata (mismo patrón que
+      Fase 2) + canal de contenido CRDT (`pushNoteContent`/
+      `applyRemoteNoteContentState`) + `applyRemoteNoteChange` (pull).
+- [x] `src/db/dailyEntries.ts`: canal de contenido CRDT (sin metadata
+      separada) + `applyRemoteDailyEntryChange` (pull).
+- [x] `src/lib/syncEngine.ts`: `APPLY_BY_TYPE`/`dispatchQueuedWrite`
+      extendidos con Note/DailyEntry; `drainContentSyncQueue()` nueva;
+      polling drena las 2 colas antes de reconciliar.
+- [x] **Fix de paso**: `dispatchQueuedWrite` no aplicaba la respuesta
+      del servidor tras drenar un create/patch en cola (bug ya
+      existente desde la Fase 2, no introducido acá) — se corrige
+      exportando `applyTaskResponse`/`applyOvertimeEntryResponse`/
+      `applyOvertimeMonthMetaResponse`/`applyAbsenceDayResponse` y
+      llamándolas desde `dispatchQueuedWrite`. Ver design.md.
+- [x] **Sin cambios en `app/`** — ni `note/[id].tsx` ni
+      `daily/[date].tsx` necesitaron tocarse; toda la complejidad CRDT
+      quedó encapsulada en `db/notes.ts`/`db/dailyEntries.ts`, detrás
+      de las mismas funciones que las pantallas ya llamaban.
+      Desviación positiva del plan original, ver design.md.
+- [x] `./node_modules/.bin/tsc --noEmit` sin errores.
+- [x] Bundle de Metro pedido directo, sin errores de resolución
+      reales; `applyRemoteNoteChange`/`applyRemoteDailyEntryChange`/
+      `pushNoteContentRemote`/`applyTextEdit`/`drainContentSyncQueue`
+      aparecen resueltos.
+- [ ] **Checkpoint en vivo**: crear/editar/borrar una Note en mobile,
+      confirmar en desktop/web (metadata Y contenido); editar el
+      contenido de la misma nota desde mobile y desde desktop casi al
+      mismo tiempo, en partes DISTINTAS del texto — confirmar que el
+      merge conserva ambas ediciones; mismo par de pruebas para un
+      DailyEntry; modo avión, escribir en una nota, reconectar —
+      confirmar que el contenido llega completo.

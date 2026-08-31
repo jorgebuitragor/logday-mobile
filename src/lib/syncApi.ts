@@ -6,6 +6,8 @@
 // React Native no tiene ese problema, usa `fetch` nativo directo.
 import type {
   AbsenceDayCreatePayload, AbsenceDayApiResponse, AbsenceDayPatchPayload,
+  DailyEntryApiResponse,
+  NoteCreatePayload, NoteApiResponse, NotePatchPayload,
   OvertimeEntryCreatePayload, OvertimeEntryApiResponse, OvertimeEntryPatchPayload,
   OvertimeMonthMetaApiResponse, OvertimeMonthMetaPatchPayload,
   TaskCreatePayload, TaskApiResponse, TaskPatchPayload,
@@ -82,9 +84,9 @@ export function listDevicesRemote(baseUrl: string, token: string): Promise<Devic
   return request(baseUrl, 'GET', '/devices', { token });
 }
 
-// ─── Delta de cambios (Fase 2) ───
+// ─── Delta de cambios ───
 
-export type SyncEntityType = 'task' | 'overtime_entry' | 'overtime_month_meta' | 'absence_day';
+export type SyncEntityType = 'task' | 'overtime_entry' | 'overtime_month_meta' | 'absence_day' | 'note' | 'daily_entry';
 
 export interface SyncChange {
   type: SyncEntityType;
@@ -147,4 +149,43 @@ export function patchAbsenceDayRemote(baseUrl: string, token: string, id: string
 }
 export function deleteAbsenceDayRemote(baseUrl: string, token: string, id: string): Promise<void> {
   return request(baseUrl, 'DELETE', `/absence-days/${id}`, { token });
+}
+
+// ─── Note (metadata) ───
+
+export function createNoteRemote(baseUrl: string, token: string, payload: NoteCreatePayload): Promise<NoteApiResponse> {
+  return request(baseUrl, 'POST', '/notes', { token, body: payload });
+}
+export function patchNoteRemote(baseUrl: string, token: string, id: string, payload: NotePatchPayload): Promise<NoteApiResponse> {
+  return request(baseUrl, 'PATCH', `/notes/${id}`, { token, body: payload });
+}
+export function deleteNoteRemote(baseUrl: string, token: string, id: string): Promise<void> {
+  return request(baseUrl, 'DELETE', `/notes/${id}`, { token });
+}
+
+// ─── Note (contenido, CRDT) ───
+// Canal separado del PATCH de metadata de arriba (LWW) — el body va
+// como `content_update` (no `update`), y la respuesta es la fila
+// completa de la nota (mismo shape que create/patch): el servidor
+// mergea el update Yjs (nunca lo rechaza por antigüedad, los updates
+// conmutan) y devuelve el `content`/`content_state` ya resultante.
+export function pushNoteContentRemote(baseUrl: string, token: string, id: string, updateB64: string): Promise<NoteApiResponse> {
+  return request(baseUrl, 'POST', `/notes/${id}/content`, {
+    token,
+    body: { content_update: updateB64, updated_at: new Date().toISOString() },
+  });
+}
+
+// ─── DailyEntry (contenido, CRDT) ───
+// PUT-only (natural key = date, sin POST) — mismo patrón que
+// pushNoteContentRemote.
+
+export function putDailyEntryContentRemote(baseUrl: string, token: string, date: string, updateB64: string): Promise<DailyEntryApiResponse> {
+  return request(baseUrl, 'PUT', `/daily-entries/${date}`, {
+    token,
+    body: { content_update: updateB64, updated_at: new Date().toISOString() },
+  });
+}
+export function deleteDailyEntryRemote(baseUrl: string, token: string, date: string): Promise<void> {
+  return request(baseUrl, 'DELETE', `/daily-entries/${date}`, { token });
 }

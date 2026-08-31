@@ -171,7 +171,7 @@ async function writeAbsenceDayRow(absence: AbsenceDay, updatedAt: string): Promi
   );
 }
 
-async function applyAbsenceDayResponse(id: string, sinceIso: string, response: AbsenceDayApiResponse): Promise<void> {
+export async function applyAbsenceDayResponse(id: string, sinceIso: string, response: AbsenceDayApiResponse): Promise<void> {
   const current = await getAbsenceDay(id);
   if (!current) return;
   const mapped = absenceDayFromApiResponse(response);

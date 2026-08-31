@@ -1,6 +1,7 @@
 # Sync con logday-server — Design
 
-Estado: Fases 0, 1 y 2 confirmadas en vivo. Fase 3 arrancando.
+Estado: Fases 0, 1 y 2 confirmadas en vivo. Fase 3 implementada,
+pendiente de checkpoint en vivo.
 
 ## Por qué portar desktop en vez de diseñar desde cero
 
@@ -294,19 +295,114 @@ DailyEntry).
   una sesión ya conectada al abrir la app), y para el polling al
   desconectar.
 
+## Fase 3 — Note y DailyEntry: metadatos (LWW) + contenido (Yjs CRDT)
+
+La fase de mayor riesgo del plan original — pero terminó tocando
+mucho menos superficie de lo anticipado, ver "Desviación positiva del
+plan original" abajo.
+
+- **Migración de esquema**: `src/db/index.ts` gana `ensureColumn()` —
+  primera migración real de este proyecto (todos los cambios de
+  esquema anteriores fueron tablas nuevas, que `CREATE TABLE IF NOT
+  EXISTS` ya cubre solo). Agrega `content_state TEXT` a `notes` y
+  `daily_entries` (snapshot Yjs completo, base64) revisando `PRAGMA
+  table_info` antes de cada `ALTER TABLE` — no depende de capturar el
+  mensaje de error de "columna duplicada", que `expo-sqlite` no
+  distingue de cualquier otro fallo por código.
+- `src/lib/crdtText.ts` (nuevo): helpers puros de Yjs — puerto de
+  `noteContentSync.ts` de desktop, generalizado para servir a Note y
+  DailyEntry (mismo algoritmo, ver `applyTextEdit`) ya que el único
+  cambio real entre las dos es DÓNDE se persiste el estado (eso vive
+  en cada `db/*.ts`, no acá) — **sin dependencias de SQLite a
+  propósito**, mismo motivo que separó `syncApi.ts`/`syncMapping.ts`/
+  `syncQueue.ts` en la Fase 2 (evita un ciclo de import con
+  `db/notes.ts`/`db/dailyEntries.ts`).
+- `src/lib/contentSyncQueue.ts` (nuevo): puerto de la cola de
+  contenido de desktop — mapa coalescente por `entidad:key`, no FIFO
+  (cada guardado nuevo pisa al anterior, el estado Yjs ya viaja
+  completo y acumulativo). `AsyncStorage` en vez de `localStorage`.
+- `src/lib/syncMapping.ts`/`syncApi.ts`: agregado el mapeo de
+  metadata de Note (`NOTE_FIELD_MAP`: title/folder/tags/created/
+  updated/pinned — `content`/`content_state` quedan afuera a
+  propósito, van por el canal CRDT) y el tipo `DailyEntryApiResponse`
+  (sin mapeo de metadata: DailyEntry es PUT-only, sin campos LWW
+  aparte del contenido). `SyncEntityType`/`syncQueue.EntityType`
+  extendidos con `'note'`/`'daily_entry'`.
+- `src/db/notes.ts`: mismo patrón que la Fase 2 (push/apply dentro del
+  propio archivo, evita el ciclo con `syncEngine.ts`) más el canal de
+  contenido — `pushNoteContent()` (carga el `Y.Doc` persistido,
+  diffea contra su texto actual con `applyTextEdit`, persiste,
+  empuja) y `applyRemoteNoteContentState()` (aplica un update
+  entrante, conmutativo/idempotente, reescribe `notes.content` si
+  cambió). `createNote` NO empuja contenido (una nota nueva siempre
+  arranca vacía, evita un round-trip de un `Y.Doc` vacío sin
+  propósito); `updateNote` empuja metadata (diffeada) y contenido
+  (si cambió) por separado, cada uno por su canal.
+- `src/db/dailyEntries.ts`: mismo canal de contenido, sin metadata
+  separada — `upsertDailyEntry` es la única puerta de entrada
+  (`app/daily/[date].tsx` no necesitó ningún cambio, sigue llamándola
+  igual que antes). `softDeleteDailyMonth` (borrado masivo de un mes)
+  confirmado leyendo el código real de desktop: **tampoco sincroniza
+  nada ahí**, es puramente local — mobile replica ese mismo
+  comportamiento (no sincronizar), no es un corte de alcance propio.
+- `src/lib/syncEngine.ts`: `APPLY_BY_TYPE` extendido con `note`/
+  `daily_entry`; `dispatchQueuedWrite` extendido con Note (create/
+  patch/delete) y DailyEntry (solo delete, el contenido no pasa por
+  esta cola); nueva `drainContentSyncQueue()` (drena la cola de
+  contenido, separada de `drainSyncQueue`); el polling ahora drena
+  las 2 colas antes de reconciliar.
+- **Bug real encontrado y corregido de paso (no introducido en esta
+  fase, ya existía desde la Fase 2)**: `dispatchQueuedWrite` (el
+  reenvío de una escritura que quedó en cola) nunca aplicaba la
+  respuesta del servidor de vuelta al estado local tras un create/
+  patch exitoso — a diferencia del envío directo (que sí lo hace vía
+  `applyTaskResponse`/etc.). Cualquier normalización o merge
+  concurrente que el servidor hubiera hecho quedaba sin reflejarse
+  localmente después de drenar la cola offline. Se corrige exportando
+  `applyTaskResponse`/`applyOvertimeEntryResponse`/
+  `applyOvertimeMonthMetaResponse`/`applyAbsenceDayResponse` (antes
+  privadas a cada `db/*.ts`) y llamándolas desde `dispatchQueuedWrite`
+  — mismo comportamiento que desktop, que sí las aplica ahí.
+
+### Desviación positiva del plan original: los editores no cambiaron
+
+El plan original decía "mantener un `Y.Doc` por nota/día abierto" en
+`app/note/[id].tsx`/`app/daily/[date].tsx` — replicando el patrón de
+desktop, donde `NoteEditor.tsx` mantiene un `Y.Doc` vivo en memoria
+durante toda la sesión de edición. Al implementar se encontró una
+simplificación real: como el autoguardado de mobile ya debounce a
+600ms (Notes) o guarda por operación discreta (Dailys) — nunca
+tecla-por-tecla directo — no hace falta un `Y.Doc` persistente en el
+componente de React. Cada llamada a `updateNote`/`upsertDailyEntry`
+recarga el `Y.Doc` persistido desde SQLite, diferencia contra su
+texto actual, aplica, persiste y empuja — mismo patrón que ya usa
+`pushDailyContentUpdate` en desktop (que tampoco mantiene un doc vivo
+por componente, a diferencia de `NoteEditor.tsx`). Resultado: **ningún
+archivo bajo `app/` cambió en esta fase** — toda la complejidad CRDT
+quedó encapsulada en `db/notes.ts`/`db/dailyEntries.ts`, detrás de las
+mismas funciones que las pantallas ya llamaban. Reduce el riesgo real
+de esta fase bastante por debajo de lo anticipado en el plan.
+
 ## Explícitamente pendiente
 
-- Diseño detallado de Fases 3-4 — se escribe en este mismo archivo a
-  medida que arranca cada fase.
+- Diseño detallado de la Fase 4 — se escribe en este mismo archivo al
+  arrancar.
 - Panel de dispositivos/sesiones (listar/revocar) — fast-follow, no
   bloquea que sync funcione.
-- **Verificación en vivo pendiente de la Fase 2**: crear una Task en
-  mobile y confirmarla en desktop/web; editar una Task en desktop y
-  confirmar que aparece en mobile dentro de ~30s o al volver a foco;
-  mismo par de pruebas para OvertimeEntry, OvertimeMonthMeta
-  (colaborador/cédula) y AbsenceDay; desconectar el wifi del teléfono,
-  crear/editar algo, reconectar — debe drenar la cola solo dentro de
-  los próximos 30s; confirmar que un campo editado en mobile mientras
-  el mismo registro se edita en desktop en un campo DISTINTO no pierde
-  ninguno de los dos cambios (LWW por campo funcionando de verdad, no
-  solo por registro completo).
+- **Verificación en vivo pendiente de la Fase 2** (no cubierta
+  todavía): mismo push/pull para OvertimeMonthMeta (colaborador/
+  cédula) y AbsenceDay; el drenado de la cola offline tras reconectar
+  wifi; LWW por campo real (editar el mismo registro en dos campos
+  distintos desde mobile y desde otro cliente a la vez, confirmar que
+  ningún cambio se pierde).
+- **Verificación en vivo pendiente de la Fase 3**: crear/editar/borrar
+  una Note en mobile, confirmar en desktop/web (metadata Y contenido);
+  editar el contenido de la misma nota desde mobile y desde desktop
+  casi al mismo tiempo, en partes DISTINTAS del texto — confirmar que
+  el merge conserva ambas ediciones (no que gana la última); mismo par
+  de pruebas para un DailyEntry; poner el teléfono en modo avión,
+  escribir bastante en una nota, reconectar — confirmar que el
+  contenido llega completo, no solo el último fragmento (la cola de
+  contenido coalesce, así que solo se manda el estado final, no cada
+  guardado intermedio — comportamiento esperado, no un bug si el
+  historial intermedio no aparece en otros clientes).

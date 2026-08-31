@@ -1,12 +1,14 @@
 import type { Task, TaskStatus } from '../types/task';
+import type { Note } from '../types/note';
 import type { OvertimeEntry, OvertimeMonthMeta } from '../types/overtime';
 import type { AbsenceDay, AbsenceType } from '../types/absence';
 
 // Conversión tipo local <-> payload REST de logday-server, por
-// entidad. Puerto de task-manager/src/lib/syncMapping.ts, recortado a
+// entidad. Puerto de task-manager/src/lib/syncMapping.ts. Ahora cubre
 // las 4 entidades de la Fase 2 (Task/OvertimeEntry/OvertimeMonthMeta/
-// AbsenceDay) — Note/DailyEntry (con contenido CRDT) y CalendarEvent
-// (sin tabla local en mobile) quedan para cuando corresponda. `id` es
+// AbsenceDay) + Note (metadata — su contenido es CRDT, va por un
+// canal aparte, ver `crdtText.ts`/`db/notes.ts`) de la Fase 3.
+// CalendarEvent (sin tabla local en mobile) queda fuera. `id` es
 // generado por el cliente (uuid) tanto acá como en logday-server, así
 // que viaja tal cual en ambas direcciones.
 function nowIso(): string {
@@ -285,3 +287,93 @@ export function absenceDayFromApiResponse(payload: AbsenceDayApiResponse): Omit<
 export const ABSENCE_DAY_FIELD_MAP: Record<string, string> = {
   date: 'date', type: 'type', note: 'note',
 };
+
+// ─── Note (metadata) ───
+// Content es CRDT (Y.Text), va por POST /notes/:id/content — fuera de
+// este mapeo, ver crdtText.ts/db/notes.ts.
+
+export interface NoteCreatePayload {
+  id: string;
+  title: string;
+  folder: string;
+  tags: string[];
+  created: string;
+  updated: string;
+  pinned: boolean;
+  updated_at: string;
+}
+
+export interface NotePatchPayload {
+  title?: string;
+  folder?: string;
+  tags?: string[];
+  created?: string;
+  updated?: string;
+  pinned?: boolean;
+  updated_at: string;
+}
+
+export interface NoteApiResponse extends NoteCreatePayload {
+  content: string;
+  content_state?: string;
+  seq: number;
+  deleted_at?: string;
+}
+
+export function noteToCreatePayload(note: Note): NoteCreatePayload {
+  return {
+    id: note.id,
+    title: note.title,
+    folder: note.folder,
+    tags: note.tags,
+    created: note.created,
+    updated: note.updated,
+    pinned: note.pinned,
+    updated_at: nowIso(),
+  };
+}
+
+export function noteFieldsToPatchPayload(fields: Partial<Note>): NotePatchPayload {
+  const payload: NotePatchPayload = { updated_at: nowIso() };
+  if ('title' in fields) payload.title = fields.title;
+  if ('folder' in fields) payload.folder = fields.folder;
+  if ('tags' in fields) payload.tags = fields.tags;
+  if ('created' in fields) payload.created = fields.created;
+  if ('updated' in fields) payload.updated = fields.updated;
+  if ('pinned' in fields) payload.pinned = fields.pinned;
+  return payload;
+}
+
+// content/content_state quedan afuera — metadata únicamente.
+export function noteFromApiResponse(payload: NoteApiResponse): Omit<Note, 'content' | 'updatedAt' | 'deletedAt'> {
+  return {
+    id: payload.id,
+    title: payload.title,
+    folder: payload.folder,
+    tags: payload.tags,
+    created: payload.created,
+    updated: payload.updated,
+    pinned: payload.pinned,
+  };
+}
+
+export const NOTE_FIELD_MAP: Record<string, string> = {
+  title: 'title', folder: 'folder', tags: 'tags', created: 'created', updated: 'updated', pinned: 'pinned',
+};
+
+// ─── DailyEntry (contenido, CRDT) ───
+// Sin tipo local propio de metadata — un daily es solo `{date,
+// content}` (ver types/dailyEntry.ts), `date` es la key natural tanto
+// acá como en logday-server (PUT /daily-entries/:date). Todo el
+// contenido es CRDT, PUT-only con content_update — sin create ni
+// patch de metadata, por eso no hace falta un CreatePayload/
+// PatchPayload acá como en las demás entidades.
+
+export interface DailyEntryApiResponse {
+  date: string;
+  content: string;
+  content_state?: string;
+  seq: number;
+  updated_at: string;
+  deleted_at?: string;
+}

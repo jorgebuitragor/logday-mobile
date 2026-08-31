@@ -209,7 +209,7 @@ async function syncDeleteTask(id: string): Promise<void> {
  * real; pisarlo ahora con una respuesta vieja perdería la edición
  * todavía no enviada. Escribe directo por SQL, no via `updateTask`
  * (evita volver a disparar un push de vuelta). */
-async function applyTaskResponse(id: string, sinceIso: string, response: TaskApiResponse): Promise<void> {
+export async function applyTaskResponse(id: string, sinceIso: string, response: TaskApiResponse): Promise<void> {
   const current = await getTask(id);
   if (!current) return; // se borró localmente mientras tanto
   const mapped = taskFromApiResponse(response);

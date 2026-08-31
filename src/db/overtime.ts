@@ -296,7 +296,7 @@ async function writeOvertimeEntryRow(entry: OvertimeEntry, updatedAt: string): P
   );
 }
 
-async function applyOvertimeEntryResponse(id: string, sinceIso: string, response: OvertimeEntryApiResponse): Promise<void> {
+export async function applyOvertimeEntryResponse(id: string, sinceIso: string, response: OvertimeEntryApiResponse): Promise<void> {
   const current = await getOvertimeEntry(id);
   if (!current) return;
   const mapped = overtimeEntryFromApiResponse(response);
@@ -309,7 +309,7 @@ async function applyOvertimeEntryResponse(id: string, sinceIso: string, response
   await writeOvertimeEntryRow(merged as unknown as OvertimeEntry, response.updated_at);
 }
 
-async function applyOvertimeMonthMetaResponse(yearMonth: string, sinceIso: string, response: OvertimeMonthMetaApiResponse): Promise<void> {
+export async function applyOvertimeMonthMetaResponse(yearMonth: string, sinceIso: string, response: OvertimeMonthMetaApiResponse): Promise<void> {
   const current = await getOvertimeMonthMeta(yearMonth);
   const mapped = overtimeMonthMetaFromApiResponse(response);
   const merged = { ...current, yearMonth } as Record<string, unknown>;

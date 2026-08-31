@@ -1,7 +1,7 @@
 # Sync con logday-server — Requirements
 
 Estado: en progreso. Fases 0, 1 y 2 confirmadas en vivo. Fase 3
-arrancando.
+implementada, pendiente de checkpoint en vivo.
 
 ## Contexto
 
@@ -86,12 +86,27 @@ que Hermes no expone).
   para ese mismo campo — no se pierde una edición del usuario por una
   reconciliación en curso.
 
+## Requisitos (EARS) — Fase 3: Note y DailyEntry (metadatos + contenido CRDT)
+
+- El sistema DEBERÁ sincronizar metadatos de Note (título, carpeta,
+  tags, destacado) igual que las entidades de la Fase 2 — LWW por
+  campo, solo se manda lo que cambió.
+- El sistema DEBERÁ sincronizar el contenido de Note y DailyEntry vía
+  CRDT (no LWW) — dos ediciones concurrentes en partes distintas del
+  texto DEBERÁN conservarse ambas al mergear, no que la última en
+  llegar pise a la otra.
+- El merge de contenido DEBERÁ ser conmutativo e idempotente — no
+  importa el orden de llegada de los updates, ni si alguno ya se
+  había aplicado antes.
+- Sin conexión, una edición de contenido DEBERÁ quedar guardada
+  localmente y encolada para mandar en cuanto haya conexión — sin
+  perder ni una parte de lo escrito offline.
+
 ## Requisitos (EARS) — Fases siguientes
 
 Se detallan en `design.md`/`tasks.md` a medida que arranca cada fase
-(Fase 3: Note/DailyEntry, metadatos + contenido CRDT; Fase 4:
-migración inicial de datos preexistentes) — no se escriben de
-antemano en detalle para no comprometerse a un diseño antes de que
+(Fase 4: migración inicial de datos preexistentes) — no se escriben
+de antemano en detalle para no comprometerse a un diseño antes de que
 cada checkpoint en vivo confirme los supuestos de la fase anterior.
 
 ## Fuera de este spec

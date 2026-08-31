@@ -6,7 +6,7 @@ import { randomUUID } from 'expo-crypto';
 // `localStorage`. Persistida, no en memoria: sobrevive a que la app se
 // cierre con escrituras sin drenar.
 
-export type EntityType = 'task' | 'overtime_entry' | 'overtime_month_meta' | 'absence_day';
+export type EntityType = 'task' | 'overtime_entry' | 'overtime_month_meta' | 'absence_day' | 'note' | 'daily_entry';
 
 // PATCH no crea-si-no-existe salvo overtime_month_meta (ver
 // syncMapping.ts) — una entidad recién creada offline tiene que

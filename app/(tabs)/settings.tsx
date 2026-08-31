@@ -3,6 +3,7 @@ import type { ComponentType } from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
@@ -70,8 +71,22 @@ export default function SettingsScreen() {
   const { preference, setPreference } = useThemePreference();
   const { confirmDestructiveActions, setConfirmDestructiveActions, timeFormat, setTimeFormat } = usePreferences();
 
+  // El teclado tapaba el formulario de Sincronización (reportado con
+  // captura) — mismo problema y misma solución ya establecida en el
+  // editor de notas (`note/[id].tsx`): `KeyboardAvoidingView` no
+  // funciona en este dispositivo (edge-to-edge en Android no dispara
+  // los eventos clásicos de `Keyboard`), así que se lee la altura real
+  // del teclado vía `useAnimatedKeyboard` y se agrega como espacio
+  // extra al final del `ScrollView` — le da lugar de sobra para
+  // desplazarse y que el campo enfocado quede arriba del teclado.
+  const keyboard = useAnimatedKeyboard({
+    isStatusBarTranslucentAndroid: true,
+    isNavigationBarTranslucentAndroid: true,
+  });
+  const keyboardSpacer = useAnimatedStyle(() => ({ height: keyboard.height.value }));
+
   return (
-    <ScrollView style={{ backgroundColor: theme.bgBase }} contentContainerStyle={styles.content}>
+    <ScrollView style={{ backgroundColor: theme.bgBase }} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
       <Section title={t('settings.theme')} icon={Sun}>
         {THEME_PREFERENCES.map((pref, i) => (
           <OptionRow
@@ -128,6 +143,7 @@ export default function SettingsScreen() {
       </Section>
 
       <SyncSection />
+      <Animated.View style={keyboardSpacer} />
     </ScrollView>
   );
 }

@@ -1,10 +1,11 @@
-import { Trash2 } from 'lucide-react-native';
+import { ShieldAlert, Trash2 } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { getAbsenceDayByDate, saveAbsenceDay, saveAbsenceDayRange } from '../db/absences';
 import { todayISO } from '../lib/dates';
+import { useSync } from '../settings/SyncContext';
 import { useTheme } from '../theme/ThemeContext';
 import type { AbsenceDay, AbsenceType } from '../types/absence';
 import { AppDatePicker } from './AppDatePicker';
@@ -32,6 +33,7 @@ const ABSENCE_TYPES: AbsenceType[] = ['incapacidad', 'vacaciones', 'otro'];
 export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete }: AbsenceModalProps) {
   const theme = useTheme();
   const { t } = useTranslation();
+  const { syncConfig, sensitiveDataAccepted, acceptSensitiveDataConsent } = useSync();
   const [mode, setMode] = useState<'single' | 'range'>('single');
   const [date, setDate] = useState(initialDate ?? todayISO());
   const [rangeStart, setRangeStart] = useState(date);
@@ -39,6 +41,7 @@ export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete 
   const [type, setType] = useState<AbsenceType>('incapacidad');
   const [note, setNote] = useState('');
   const [existing, setExisting] = useState<AbsenceDay | null>(null);
+  const [showSensitiveConsent, setShowSensitiveConsent] = useState(false);
 
   useEffect(() => {
     if (visible) {
@@ -66,7 +69,21 @@ export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete 
 
   const rangeValid = mode === 'single' || rangeEnd >= rangeStart;
 
+  // "incapacidad" es dato sensible de salud — con sync activo, exige
+  // un consentimiento aparte del general (ver
+  // specs/cumplimiento-datos-personales/ en task-manager). Sin sync
+  // (100% local) el dato nunca sale del dispositivo, no aplica.
+  const needsSensitiveConsent = type === 'incapacidad' && syncConfig.enabled && !sensitiveDataAccepted;
+
   async function handleSave() {
+    if (needsSensitiveConsent) {
+      setShowSensitiveConsent(true);
+      return;
+    }
+    await doSave();
+  }
+
+  async function doSave() {
     if (mode === 'single') {
       await saveAbsenceDay(date, type, note.trim() || null);
     } else {
@@ -149,6 +166,35 @@ export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete 
               placeholderTextColor={theme.textFaint}
             />
           </View>
+
+          {showSensitiveConsent && (
+            <View style={[styles.sensitiveBox, { borderColor: '#f59e0b4d', backgroundColor: '#f59e0b0d' }]}>
+              <View style={styles.sensitiveHeader}>
+                <ShieldAlert size={14} color="#f59e0b" />
+                <Text style={{ color: '#f59e0b', fontSize: 12, fontWeight: '700' }}>
+                  {t('absence.sensitiveConsentTitle')}
+                </Text>
+              </View>
+              <Text style={{ color: theme.textSecondary, fontSize: 11, lineHeight: 16, marginBottom: 10 }}>
+                {t('absence.sensitiveConsentBody')}
+              </Text>
+              <View style={styles.footerButtons}>
+                <Pressable style={styles.cancelButton} onPress={() => setShowSensitiveConsent(false)}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 13, fontWeight: '600' }}>{t('absence.cancel')}</Text>
+                </Pressable>
+                <Pressable
+                  style={[styles.saveButton, { backgroundColor: theme.accentStrong }]}
+                  onPress={async () => {
+                    await acceptSensitiveDataConsent();
+                    setShowSensitiveConsent(false);
+                    await doSave();
+                  }}
+                >
+                  <Text style={styles.saveButtonText}>{t('absence.sensitiveConsentAccept')}</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
 
           <View style={styles.footer}>
             {mode === 'single' && existing ? (
@@ -272,5 +318,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 13,
     fontWeight: '700',
+  },
+  sensitiveBox: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+  },
+  sensitiveHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
   },
 });

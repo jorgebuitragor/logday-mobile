@@ -225,7 +225,10 @@
     "notePlaceholder": "Additional details…",
     "save": "Save",
     "cancel": "Cancel",
-    "delete": "Delete"
+    "delete": "Delete",
+    "sensitiveConsentTitle": "Sensitive health data",
+    "sensitiveConsentBody": "\"Sick leave\" is sensitive health data. You are not required to record it — if you continue, it syncs to the server under the current data-processing policy. This notice only appears once.",
+    "sensitiveConsentAccept": "I understand, continue"
   },
   "overtimeList": {
     "empty": "No overtime entries yet.",
@@ -311,6 +314,18 @@
     "minutesAgo_other": "{{count}} min ago",
     "hoursAgo_one": "{{count}} h ago",
     "hoursAgo_other": "{{count}} h ago",
-    "sessionExpiredMsg": "The sync session expired — connect again."
+    "sessionExpiredMsg": "The sync session expired — connect again.",
+    "policyGateTitle": "Data processing policy update",
+    "policyGateScrollHint": "Scroll to the end to accept.",
+    "policyGateReject": "Reject and disconnect",
+    "policyGateAccept": "I accept",
+    "privacyTitle": "Privacy and data",
+    "privacyViewPolicy": "View data processing policy",
+    "exportDataButton": "Export my data",
+    "deleteAccountButton": "Delete my account",
+    "deleteAccountConfirmTitle": "Delete your account",
+    "deleteAccountConfirmMessage": "This permanently deletes your account and all your data from the server — it cannot be undone. Enter your password to confirm.",
+    "deleteAccountPasswordPlaceholder": "Password",
+    "deleteAccountError": "Incorrect password"
   }
 }

@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import '../src/i18n';
 import { initDb } from '../src/db';
+import { PolicyGateModal } from '../src/components/PolicyGateModal';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { SyncProvider } from '../src/settings/SyncContext';
 import { ThemeProvider, useTheme, useThemeScheme } from '../src/theme/ThemeContext';
@@ -104,6 +105,7 @@ function RootLayoutInner() {
         <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="search" options={{ title: t('search.placeholder'), presentation: 'modal' }} />
       </Stack>
+      <PolicyGateModal />
     </>
   );
 }

@@ -4,9 +4,14 @@ import { Platform } from 'react-native';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
-import { SyncApiError, listDevicesRemote, login as loginRemote, refreshToken as refreshTokenRemote } from '../lib/syncApi';
+import {
+  SyncApiError, listDevicesRemote, login as loginRemote, refreshToken as refreshTokenRemote,
+  TokenResponse, getPolicyRemote, acceptPolicyRemote, acceptSensitiveDataRemote,
+  exportAccountRemote, deleteAccountRemote,
+} from '../lib/syncApi';
 import { drainSyncQueue, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
 import { setSyncRuntime } from '../lib/syncRuntime';
+import { shareTextFile } from '../lib/exportFile';
 import type { SyncConfig, SyncConnectionStatus } from '../types/sync';
 
 const CONFIG_STORAGE_KEY = 'syncConfig'; // enabled/serverUrl/email/deviceId — no sensible
@@ -23,6 +28,15 @@ interface SyncContextValue {
   syncConnect: (serverUrl: string, email: string, password: string) => Promise<void>;
   syncDisconnect: () => Promise<void>;
   checkConnection: () => Promise<void>;
+  // Política de tratamiento de datos + derechos del titular — ver
+  // specs/cumplimiento-datos-personales/ (task-manager).
+  policyGate: { text: string; version: number } | null;
+  sensitiveDataAccepted: boolean;
+  acceptPolicyGate: () => Promise<void>;
+  rejectPolicyGate: () => Promise<void>;
+  acceptSensitiveDataConsent: () => Promise<void>;
+  exportMyData: () => Promise<void>;
+  deleteMyAccount: (password: string) => Promise<void>;
 }
 
 const SyncCtx = createContext<SyncContextValue>({
@@ -33,6 +47,13 @@ const SyncCtx = createContext<SyncContextValue>({
   syncConnect: async () => {},
   syncDisconnect: async () => {},
   checkConnection: async () => {},
+  policyGate: null,
+  sensitiveDataAccepted: true,
+  acceptPolicyGate: async () => {},
+  rejectPolicyGate: async () => {},
+  acceptSensitiveDataConsent: async () => {},
+  exportMyData: async () => {},
+  deleteMyAccount: async () => {},
 });
 
 // Guard de refresh en vuelo compartido a nivel de módulo (no de
@@ -44,7 +65,7 @@ const SyncCtx = createContext<SyncContextValue>({
 // dispositivo entero. Con esto, la primera 401 dispara el refresh
 // real y guarda la promesa; cualquier otra 401 que llegue mientras
 // tanto espera esa misma promesa en vez de disparar la suya.
-let inFlightRefresh: Promise<{ access_token: string; refresh_token: string }> | null = null;
+let inFlightRefresh: Promise<TokenResponse> | null = null;
 
 function refreshOnce(baseUrl: string, refreshTokenValue: string) {
   if (!inFlightRefresh) {
@@ -61,6 +82,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [syncConnectionStatus, setSyncConnectionStatus] = useState<SyncConnectionStatus>('disconnected');
   const [syncErrorMsg, setSyncErrorMsg] = useState<string | null>(null);
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
+  const [policyGate, setPolicyGate] = useState<{ text: string; version: number } | null>(null);
+  const [sensitiveDataAccepted, setSensitiveDataAccepted] = useState(true);
 
   // Espejo síncrono de `syncConfig` para leer el valor más reciente
   // dentro de `withSyncAuth` sin depender de una closure de React que
@@ -120,6 +143,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       await persistConfig(next);
       setSyncConfig(next);
       setSyncConnectionStatus('connected');
+      void evaluatePolicyGate(serverUrl, tokens);
     } catch (e) {
       setSyncConnectionStatus('error');
       setSyncErrorMsg(e instanceof SyncApiError ? e.message : e instanceof Error ? e.message : String(e));
@@ -133,6 +157,29 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setSyncConnectionStatus('disconnected');
     setSyncErrorMsg(null);
     setLastCheckedAt(null);
+    setPolicyGate(null);
+    setSensitiveDataAccepted(true);
+  }
+
+  // Evalúa si hay que mostrar el gate de consentimiento (política
+  // nueva sin aceptar) a partir de una respuesta de login/refresh —
+  // ver specs/cumplimiento-datos-personales/ (task-manager).
+  // login/refresh solo traen el número de versión vigente, no el
+  // texto — se trae aparte vía GET /policy, y solo cuando de verdad
+  // hace falta mostrarlo.
+  async function evaluatePolicyGate(baseUrl: string, tokens: TokenResponse): Promise<void> {
+    setSensitiveDataAccepted(tokens.sensitive_data_accepted);
+    if (tokens.policy_accepted_version === tokens.policy_version) {
+      setPolicyGate(null);
+      return;
+    }
+    try {
+      const policy = await getPolicyRemote(baseUrl);
+      setPolicyGate({ text: policy.text, version: policy.version });
+    } catch {
+      // Sin red justo en este momento — se reintenta en el próximo
+      // login/refresh, no hay nada más que hacer acá.
+    }
   }
 
   /** Envoltorio de cualquier llamada autenticada a logday-server —
@@ -165,7 +212,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       const beforeRefresh = configRef.current;
       if (!beforeRefresh.refreshToken) throw e;
 
-      let tokens: { access_token: string; refresh_token: string };
+      let tokens: TokenResponse;
       try {
         tokens = await refreshOnce(beforeRefresh.serverUrl, beforeRefresh.refreshToken);
       } catch (refreshErr) {
@@ -179,6 +226,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       const nextCfg: SyncConfig = { ...configRef.current, accessToken: tokens.access_token, refreshToken: tokens.refresh_token };
       await persistConfig(nextCfg);
       setSyncConfig(nextCfg);
+      void evaluatePolicyGate(beforeRefresh.serverUrl, tokens);
       return await fn(tokens.access_token);
     }
   }
@@ -200,6 +248,35 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setSyncConnectionStatus('error');
       setSyncErrorMsg(e instanceof SyncApiError ? e.message : e instanceof Error ? e.message : String(e));
     }
+  }
+
+  // "Rechazar" en el gate de consentimiento — sin aceptar la política
+  // no hay forma de seguir usando el sync, así que esto es un logout.
+  async function rejectPolicyGate(): Promise<void> {
+    await syncDisconnect();
+  }
+
+  async function acceptPolicyGate(): Promise<void> {
+    const gate = policyGate;
+    if (!gate) return;
+    await withSyncAuth((token) => acceptPolicyRemote(configRef.current.serverUrl, token, gate.version));
+    setPolicyGate(null);
+  }
+
+  async function acceptSensitiveDataConsent(): Promise<void> {
+    await withSyncAuth((token) => acceptSensitiveDataRemote(configRef.current.serverUrl, token));
+    setSensitiveDataAccepted(true);
+  }
+
+  async function exportMyData(): Promise<void> {
+    const data = await withSyncAuth((token) => exportAccountRemote(configRef.current.serverUrl, token));
+    const filename = `logday-datos-${new Date().toISOString().slice(0, 10)}.json`;
+    await shareTextFile(filename, JSON.stringify(data, null, 2), 'application/json');
+  }
+
+  async function deleteMyAccount(password: string): Promise<void> {
+    await withSyncAuth((token) => deleteAccountRemote(configRef.current.serverUrl, token, password));
+    await syncDisconnect();
   }
 
   // Empuja el estado más reciente al puente imperativo que usa el
@@ -233,8 +310,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }, [syncConnectionStatus]);
 
   const value = useMemo(
-    () => ({ syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, syncConnect, syncDisconnect, checkConnection }),
-    [syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt]
+    () => ({
+      syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, syncConnect, syncDisconnect, checkConnection,
+      policyGate, sensitiveDataAccepted, acceptPolicyGate, rejectPolicyGate, acceptSensitiveDataConsent,
+      exportMyData, deleteMyAccount,
+    }),
+    [syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, policyGate, sensitiveDataAccepted]
   );
 
   return <SyncCtx.Provider value={value}>{children}</SyncCtx.Provider>;

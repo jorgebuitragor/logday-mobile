@@ -326,6 +326,16 @@
     "deleteAccountConfirmTitle": "Delete your account",
     "deleteAccountConfirmMessage": "This permanently deletes your account and all your data from the server — it cannot be undone. Enter your password to confirm.",
     "deleteAccountPasswordPlaceholder": "Password",
-    "deleteAccountError": "Incorrect password"
+    "deleteAccountError": "Incorrect password",
+    "devicesTitle": "Active sessions",
+    "devicesLoading": "Loading sessions…",
+    "devicesErrorExpired": "Your session expired — disconnect and reconnect.",
+    "devicesErrorGeneric": "Couldn't load sessions.",
+    "devicesRetry": "Retry",
+    "devicesThisDevice": "this device",
+    "devicesLastUsedPrefix": "Active",
+    "devicesRevoke": "Log out",
+    "devicesRevokeTitle": "Log out session",
+    "devicesRevokeConfirmPrefix": "Log out the session for"
   }
 }

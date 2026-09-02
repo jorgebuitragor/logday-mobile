@@ -316,7 +316,7 @@
     "hoursAgo_other": "hace {{count}} h",
     "sessionExpiredMsg": "La sesión de sincronización expiró — conecta de nuevo.",
     "policyGateTitle": "Actualización de la política de tratamiento de datos",
-    "policyGateScrollHint": "Desplazate hasta el final para poder aceptar.",
+    "policyGateScrollHint": "Desplázate hasta el final para poder aceptar.",
     "policyGateReject": "Rechazar y desconectar",
     "policyGateAccept": "Acepto",
     "privacyTitle": "Privacidad y datos",
@@ -326,6 +326,16 @@
     "deleteAccountConfirmTitle": "Eliminar tu cuenta",
     "deleteAccountConfirmMessage": "Esto borra tu cuenta y todos tus datos del servidor de forma permanente — no se puede deshacer. Ingresa tu contraseña para confirmar.",
     "deleteAccountPasswordPlaceholder": "Contraseña",
-    "deleteAccountError": "Contraseña incorrecta"
+    "deleteAccountError": "Contraseña incorrecta",
+    "devicesTitle": "Sesiones activas",
+    "devicesLoading": "Cargando sesiones…",
+    "devicesErrorExpired": "Tu sesión expiró — desconecta y vuelve a conectar.",
+    "devicesErrorGeneric": "No se pudieron cargar las sesiones.",
+    "devicesRetry": "Reintentar",
+    "devicesThisDevice": "este dispositivo",
+    "devicesLastUsedPrefix": "Activo",
+    "devicesRevoke": "Cerrar sesión",
+    "devicesRevokeTitle": "Cerrar sesión",
+    "devicesRevokeConfirmPrefix": "¿Cerrar la sesión de"
   }
 }

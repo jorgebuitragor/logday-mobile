@@ -87,6 +87,10 @@ export function listDevicesRemote(baseUrl: string, token: string): Promise<Devic
   return request(baseUrl, 'GET', '/devices', { token });
 }
 
+export function revokeDeviceRemote(baseUrl: string, token: string, id: string): Promise<void> {
+  return request(baseUrl, 'DELETE', `/devices/${id}`, { token });
+}
+
 // ── Política de tratamiento de datos + derechos del titular ─────────
 // Ver specs/cumplimiento-datos-personales/ (task-manager). getPolicyRemote
 // es pública (sin token) a propósito.

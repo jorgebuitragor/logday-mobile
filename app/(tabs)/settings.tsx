@@ -1,15 +1,31 @@
-import { BookOpen, Clock, Cloud, CloudOff, Download, Eye, EyeOff, Languages, Monitor, Moon, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, TriangleAlert, UserX } from 'lucide-react-native';
+import { AlertCircle, BookOpen, Clock, Cloud, CloudOff, Download, Eye, EyeOff, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, TriangleAlert, UserX } from 'lucide-react-native';
 import type { ComponentType } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
+import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
+import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
-import { getPolicyRemote } from '../../src/lib/syncApi';
+import { DeviceResponse, getPolicyRemote } from '../../src/lib/syncApi';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useSync } from '../../src/settings/SyncContext';
 import { useTheme, useThemePreference, type ThemePreference } from '../../src/theme/ThemeContext';
+
+// El server no manda un "tipo" de dispositivo explícito, solo el
+// device_name libre que cada cliente elige al loguearse ("Logday
+// Desktop", "Logday Mobile (android)", etc.) — se infiere el ícono de
+// ahí, mismo criterio que el DevicesPanel de Desktop. Sin match
+// conocido, HelpCircle en vez de asumir.
+function deviceIcon(deviceName: string): ComponentType<{ size?: number; color?: string }> {
+  const n = deviceName.toLowerCase();
+  if (n.includes('desktop')) return Monitor;
+  if (n.includes('extension') || n.includes('plugin')) return Puzzle;
+  if (n.includes('mobile') || n.includes('android') || n.includes('ios') || n.includes('iphone')) return Smartphone;
+  if (n.includes('web') || n.includes('browser')) return Globe;
+  return HelpCircle;
+}
 
 const CONNECTED_COLOR = '#4ade80';
 const ERROR_COLOR = '#dc2626';
@@ -181,6 +197,7 @@ export default function SettingsScreen() {
       </Section>
 
       <SyncSection scrollInputIntoView={scrollInputIntoView} />
+      <DevicesSection />
       <PrivacySection />
       <Animated.View style={keyboardSpacer} />
     </ScrollView>
@@ -324,6 +341,105 @@ function SyncSection({ scrollInputIntoView }: { scrollInputIntoView: (node: Text
           </>
         )}
       </View>
+    </Section>
+  );
+}
+
+// Lista de sesiones/dispositivos activos — mismo GET/DELETE /devices
+// que ya consumen Desktop y Web. Solo tiene sentido con sync activo.
+function DevicesSection() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { syncConfig, devices, devicesError, loadDevices, revokeDeviceAction, syncDisconnect } = useSync();
+
+  useEffect(() => {
+    if (syncConfig.enabled) void loadDevices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncConfig.enabled]);
+
+  // Siempre confirma, sin depender del switch general "Confirmar antes
+  // de eliminar" — cerrar la sesión de otro dispositivo lo desconecta
+  // a la fuerza, mismo criterio que "Eliminar mi cuenta" en
+  // PrivacySection (que tampoco respeta esa preferencia).
+  const confirmRevoke = useConfirmDelete<DeviceResponse>(true);
+
+  if (!syncConfig.enabled) return null;
+
+  return (
+    <Section title={t('sync.devicesTitle')} icon={Monitor}>
+      {devices.length === 0 && devicesError ? (
+        <View style={[styles.privacyRow, { justifyContent: 'space-between' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+            <AlertCircle size={12} color={ERROR_COLOR} />
+            <Text style={{ color: ERROR_COLOR, fontSize: 11, flexShrink: 1 }}>{devicesError.message}</Text>
+          </View>
+          <Pressable
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            onPress={() => void (devicesError.kind === 'expired' ? syncDisconnect() : loadDevices())}
+          >
+            {devicesError.kind === 'expired' ? (
+              <LogOut size={12} color={theme.textHint} />
+            ) : (
+              <RefreshCw size={12} color={theme.textHint} />
+            )}
+            <Text style={{ color: theme.textHint, fontSize: 11 }}>
+              {devicesError.kind === 'expired' ? t('sync.disconnect') : t('sync.devicesRetry')}
+            </Text>
+          </Pressable>
+        </View>
+      ) : devices.length === 0 ? (
+        <Text style={[styles.privacyRow, { color: theme.textHint, fontSize: 11 }]}>{t('sync.devicesLoading')}</Text>
+      ) : (
+        devices.map((d, i) => {
+          const isSelf = d.id === syncConfig.deviceId;
+          const Icon = deviceIcon(d.device_name);
+          return (
+            <View
+              key={d.id}
+              style={[
+                styles.row,
+                { borderColor: theme.border, borderBottomWidth: i === devices.length - 1 ? 0 : StyleSheet.hairlineWidth },
+              ]}
+            >
+              <View style={styles.rowLabel}>
+                <Icon size={14} color={theme.textHint} />
+                <View style={{ flexShrink: 1 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                    {d.device_name}
+                    {isSelf ? (
+                      <Text style={{ color: theme.accent, fontSize: 10 }}> · {t('sync.devicesThisDevice')}</Text>
+                    ) : null}
+                  </Text>
+                  <Text style={{ color: theme.textHint, fontSize: 10, marginTop: 1 }}>
+                    {t('sync.devicesLastUsedPrefix')} {relativeTime(t, d.last_used_at)}
+                  </Text>
+                </View>
+              </View>
+              {/* La sesión propia no se cierra desde acá — siempre pasa
+                  por el botón "Desconectar" de arriba, no por un click
+                  suelto en esta lista. */}
+              {!isSelf && (
+                <Pressable onPress={() => confirmRevoke.request(d, (device) => void revokeDeviceAction(device.id))}>
+                  <Text style={{ color: ERROR_COLOR, fontSize: 11 }}>{t('sync.devicesRevoke')}</Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        })
+      )}
+
+      <ConfirmDeleteModal
+        visible={confirmRevoke.isOpen}
+        title={t('sync.devicesRevokeTitle')}
+        message={confirmRevoke.pending ? `${t('sync.devicesRevokeConfirmPrefix')} ${confirmRevoke.pending.device_name}?` : undefined}
+        cancelLabel={t('absence.cancel')}
+        confirmLabel={t('sync.devicesRevoke')}
+        onCancel={confirmRevoke.cancel}
+        onConfirm={() => {
+          if (confirmRevoke.pending) void revokeDeviceAction(confirmRevoke.pending.id);
+          confirmRevoke.cancel();
+        }}
+      />
     </Section>
   );
 }

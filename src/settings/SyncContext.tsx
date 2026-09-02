@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { useTranslation } from 'react-i18next';
 
 import {
-  SyncApiError, listDevicesRemote, login as loginRemote, refreshToken as refreshTokenRemote,
+  SyncApiError, DeviceResponse, listDevicesRemote, revokeDeviceRemote, login as loginRemote, refreshToken as refreshTokenRemote,
   TokenResponse, getPolicyRemote, acceptPolicyRemote, acceptSensitiveDataRemote,
   exportAccountRemote, deleteAccountRemote,
 } from '../lib/syncApi';
@@ -37,6 +37,12 @@ interface SyncContextValue {
   acceptSensitiveDataConsent: () => Promise<void>;
   exportMyData: () => Promise<void>;
   deleteMyAccount: (password: string) => Promise<void>;
+  // Sesiones/dispositivos activos — mismo GET/DELETE /devices que ya
+  // consumen Desktop y Web.
+  devices: DeviceResponse[];
+  devicesError: { kind: 'expired' | 'generic'; message: string } | null;
+  loadDevices: () => Promise<void>;
+  revokeDeviceAction: (id: string) => Promise<void>;
 }
 
 const SyncCtx = createContext<SyncContextValue>({
@@ -54,6 +60,10 @@ const SyncCtx = createContext<SyncContextValue>({
   acceptSensitiveDataConsent: async () => {},
   exportMyData: async () => {},
   deleteMyAccount: async () => {},
+  devices: [],
+  devicesError: null,
+  loadDevices: async () => {},
+  revokeDeviceAction: async () => {},
 });
 
 // Guard de refresh en vuelo compartido a nivel de módulo (no de
@@ -84,6 +94,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
   const [policyGate, setPolicyGate] = useState<{ text: string; version: number } | null>(null);
   const [sensitiveDataAccepted, setSensitiveDataAccepted] = useState(true);
+  const [devices, setDevices] = useState<DeviceResponse[]>([]);
+  const [devicesError, setDevicesError] = useState<{ kind: 'expired' | 'generic'; message: string } | null>(null);
 
   // Espejo síncrono de `syncConfig` para leer el valor más reciente
   // dentro de `withSyncAuth` sin depender de una closure de React que
@@ -159,6 +171,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setLastCheckedAt(null);
     setPolicyGate(null);
     setSensitiveDataAccepted(true);
+    setDevices([]);
+    setDevicesError(null);
   }
 
   // Evalúa si hay que mostrar el gate de consentimiento (política
@@ -250,6 +264,44 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  // Falla ⇒ mensaje legible en devicesError en vez de dejar `devices`
+  // vacío para siempre sin distinguir "todavía cargando" de "falló y
+  // se rindió" — mismo criterio que `loadDevices` en Desktop.
+  async function loadDevices(): Promise<void> {
+    if (!syncConfig.enabled || !syncConfig.accessToken) return;
+    setDevicesError(null);
+    try {
+      const list = await withSyncAuth((token) => listDevicesRemote(configRef.current.serverUrl, token));
+      setDevices(list);
+    } catch (e) {
+      const expired = e instanceof SyncApiError && e.status === 401;
+      setDevices([]);
+      setDevicesError({
+        kind: expired ? 'expired' : 'generic',
+        message: t(expired ? 'sync.devicesErrorExpired' : 'sync.devicesErrorGeneric'),
+      });
+    }
+  }
+
+  // Revocar el propio dispositivo invalida ya mismo el access/refresh
+  // token que se usaron para pedirlo — desconectar el sync local de
+  // inmediato en vez de esperar a que el próximo write falle solo,
+  // mismo criterio que Desktop/Web.
+  async function revokeDeviceAction(id: string): Promise<void> {
+    if (!syncConfig.enabled || !syncConfig.accessToken) return;
+    const isSelf = id === configRef.current.deviceId;
+    try {
+      await withSyncAuth((token) => revokeDeviceRemote(configRef.current.serverUrl, token, id));
+      if (isSelf) {
+        await syncDisconnect();
+        return;
+      }
+      setDevices((prev) => prev.filter((d) => d.id !== id));
+    } catch {
+      // deja la lista como estaba, el usuario puede reintentar
+    }
+  }
+
   // "Rechazar" en el gate de consentimiento — sin aceptar la política
   // no hay forma de seguir usando el sync, así que esto es un logout.
   async function rejectPolicyGate(): Promise<void> {
@@ -313,9 +365,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     () => ({
       syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, syncConnect, syncDisconnect, checkConnection,
       policyGate, sensitiveDataAccepted, acceptPolicyGate, rejectPolicyGate, acceptSensitiveDataConsent,
-      exportMyData, deleteMyAccount,
+      exportMyData, deleteMyAccount, devices, devicesError, loadDevices, revokeDeviceAction,
     }),
-    [syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, policyGate, sensitiveDataAccepted]
+    [syncConfig, syncConnectionStatus, syncErrorMsg, lastCheckedAt, policyGate, sensitiveDataAccepted, devices, devicesError]
   );
 
   return <SyncCtx.Provider value={value}>{children}</SyncCtx.Provider>;

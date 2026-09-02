@@ -29,6 +29,16 @@ export type TasksViewMode = 'list' | 'calendar' | 'kanban';
 const TASKS_VIEW_STORAGE_KEY = 'tasksViewMode';
 const TASKS_VIEW_DEFAULT: TasksViewMode = 'list';
 
+// Mismos 3 criterios que el dropdown de ordenar de NoteList.tsx en
+// desktop (sortBy, sin sortDir — desktop también expone dirección
+// asc/desc, pero acá se deja fuera a propósito: alcance reducido
+// pedido explícito por el usuario, "solo el selector de ordenes").
+// pinned siempre flota primero sin importar el criterio, igual que
+// desktop — ver el sort en `app/(tabs)/notes.tsx`.
+export type NotesSortBy = 'updated' | 'created' | 'title';
+const NOTES_SORT_STORAGE_KEY = 'notesSortBy';
+const NOTES_SORT_DEFAULT: NotesSortBy = 'updated';
+
 interface PreferencesContextValue {
   confirmDestructiveActions: boolean;
   setConfirmDestructiveActions: (value: boolean) => void;
@@ -38,6 +48,8 @@ interface PreferencesContextValue {
   setNotesViewMode: (value: NotesViewMode) => void;
   tasksViewMode: TasksViewMode;
   setTasksViewMode: (value: TasksViewMode) => void;
+  notesSortBy: NotesSortBy;
+  setNotesSortBy: (value: NotesSortBy) => void;
 }
 
 const PreferencesCtx = createContext<PreferencesContextValue>({
@@ -49,6 +61,8 @@ const PreferencesCtx = createContext<PreferencesContextValue>({
   setNotesViewMode: () => {},
   tasksViewMode: TASKS_VIEW_DEFAULT,
   setTasksViewMode: () => {},
+  notesSortBy: NOTES_SORT_DEFAULT,
+  setNotesSortBy: () => {},
 });
 
 export function PreferencesProvider({ children }: { children: ReactNode }) {
@@ -56,6 +70,7 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
   const [timeFormat, setTimeFormatState] = useState<TimeFormat>(TIME_FORMAT_DEFAULT);
   const [notesViewMode, setNotesViewModeState] = useState<NotesViewMode>(NOTES_VIEW_DEFAULT);
   const [tasksViewMode, setTasksViewModeState] = useState<TasksViewMode>(TASKS_VIEW_DEFAULT);
+  const [notesSortBy, setNotesSortByState] = useState<NotesSortBy>(NOTES_SORT_DEFAULT);
 
   useEffect(() => {
     AsyncStorage.getItem(CONFIRM_STORAGE_KEY).then((stored) => {
@@ -76,6 +91,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     AsyncStorage.getItem(TASKS_VIEW_STORAGE_KEY).then((stored) => {
       if (stored === 'list' || stored === 'calendar' || stored === 'kanban') {
         setTasksViewModeState(stored);
+      }
+    });
+    AsyncStorage.getItem(NOTES_SORT_STORAGE_KEY).then((stored) => {
+      if (stored === 'updated' || stored === 'created' || stored === 'title') {
+        setNotesSortByState(stored);
       }
     });
   }, []);
@@ -100,6 +120,11 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
     AsyncStorage.setItem(TASKS_VIEW_STORAGE_KEY, value);
   }
 
+  function setNotesSortBy(value: NotesSortBy) {
+    setNotesSortByState(value);
+    AsyncStorage.setItem(NOTES_SORT_STORAGE_KEY, value);
+  }
+
   const value = useMemo(
     () => ({
       confirmDestructiveActions,
@@ -110,8 +135,10 @@ export function PreferencesProvider({ children }: { children: ReactNode }) {
       setNotesViewMode,
       tasksViewMode,
       setTasksViewMode,
+      notesSortBy,
+      setNotesSortBy,
     }),
-    [confirmDestructiveActions, timeFormat, notesViewMode, tasksViewMode]
+    [confirmDestructiveActions, timeFormat, notesViewMode, tasksViewMode, notesSortBy]
   );
 
   return <PreferencesCtx.Provider value={value}>{children}</PreferencesCtx.Provider>;

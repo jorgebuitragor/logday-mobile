@@ -148,6 +148,13 @@
     "folderButton": "Folder",
     "tagsButton": "Tags"
   },
+  "noteSort": {
+    "trigger": "Sort",
+    "label": "Sort by",
+    "sortUpdated": "Last modified",
+    "sortCreated": "Date created",
+    "sortTitle": "Title"
+  },
   "noteActions": {
     "menuLabel": "More actions",
     "copy": "Copy",

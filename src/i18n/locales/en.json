@@ -327,6 +327,8 @@
     "deleteAccountConfirmMessage": "This permanently deletes your account and all your data from the server — it cannot be undone. Enter your password to confirm.",
     "deleteAccountPasswordPlaceholder": "Password",
     "deleteAccountError": "Incorrect password",
+    "deleteAccountLastAdminError": "You can't delete your account while you're the only admin on this instance.",
+    "deleteAccountGenericError": "Couldn't delete the account. Try again.",
     "devicesTitle": "Active sessions",
     "devicesLoading": "Loading sessions…",
     "devicesErrorExpired": "Your session expired — disconnect and reconnect.",

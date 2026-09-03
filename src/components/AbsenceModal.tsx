@@ -50,6 +50,12 @@ export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete 
       setDate(start);
       setRangeStart(start);
       setRangeEnd(start);
+      // Bug real encontrado en review: faltaba acá — si se cerraba el
+      // modal tocando el backdrop mientras el panel de consentimiento
+      // sensible estaba abierto (en vez de su botón Cancelar), quedaba
+      // en true y aparecía de entrada la próxima vez que se abriera el
+      // modal, aunque fuera para un tipo de ausencia no sensible.
+      setShowSensitiveConsent(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);

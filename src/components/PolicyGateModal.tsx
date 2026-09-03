@@ -1,7 +1,7 @@
 import { ScrollText } from 'lucide-react-native';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent, type NativeScrollEvent } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View, type NativeSyntheticEvent, type NativeScrollEvent, type LayoutChangeEvent } from 'react-native';
 
 import { useSync } from '../settings/SyncContext';
 import { useTheme } from '../theme/ThemeContext';
@@ -19,8 +19,24 @@ export function PolicyGateModal() {
   const { policyGate, acceptPolicyGate, rejectPolicyGate } = useSync();
   const [scrolledToEnd, setScrolledToEnd] = useState(false);
   const [accepting, setAccepting] = useState(false);
+  // Si el texto entra entero sin necesitar scroll (política corta),
+  // onScroll nunca dispara y "Acepto" quedaba deshabilitado para
+  // siempre — bug real encontrado en review. onContentSizeChange +
+  // onLayout dan el alto real del contenido y del contenedor sin
+  // depender de que un scroll llegue a ocurrir.
+  const layoutHeightRef = useRef(0);
 
   if (!policyGate) return null;
+
+  function checkFitsWithoutScroll(contentHeight: number) {
+    if (layoutHeightRef.current > 0 && contentHeight <= layoutHeightRef.current + 8) {
+      setScrolledToEnd(true);
+    }
+  }
+
+  function handleLayout(e: LayoutChangeEvent) {
+    layoutHeightRef.current = e.nativeEvent.layout.height;
+  }
 
   function handleScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
@@ -47,6 +63,8 @@ export function PolicyGateModal() {
 
           <ScrollView
             style={styles.textScroll}
+            onLayout={handleLayout}
+            onContentSizeChange={(_width, height) => checkFitsWithoutScroll(height)}
             onScroll={handleScroll}
             scrollEventThrottle={100}
           >

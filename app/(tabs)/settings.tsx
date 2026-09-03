@@ -8,7 +8,7 @@ import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-re
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
-import { DeviceResponse, getPolicyRemote } from '../../src/lib/syncApi';
+import { DeviceResponse, getPolicyRemote, SyncApiError } from '../../src/lib/syncApi';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useSync } from '../../src/settings/SyncContext';
 import { useTheme, useThemePreference, type ThemePreference } from '../../src/theme/ThemeContext';
@@ -482,8 +482,14 @@ function PrivacySection() {
       await deleteMyAccount(deletePassword);
       setShowDeleteModal(false);
       setDeletePassword('');
-    } catch {
-      setDeleteError(t('sync.deleteAccountError'));
+    } catch (e) {
+      if (e instanceof SyncApiError && e.status === 401) {
+        setDeleteError(t('sync.deleteAccountError'));
+      } else if (e instanceof SyncApiError && e.status === 409) {
+        setDeleteError(t('sync.deleteAccountLastAdminError'));
+      } else {
+        setDeleteError(t('sync.deleteAccountGenericError'));
+      }
     } finally {
       setDeleting(false);
     }

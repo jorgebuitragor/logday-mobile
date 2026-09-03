@@ -22,3 +22,7 @@ Mismo principio local-first que el resto del ecosistema (ver
 `logday-server/specs/arquitectura-inicial/requirements.md`): la app debe
 ser 100% funcional sin servidor de sync configurado nunca. El servidor es
 un nodo de sincronización opcional, no la autoridad de los datos.
+
+## Licencia
+
+[AGPL-3.0-or-later](./LICENSE).

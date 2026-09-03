@@ -225,7 +225,10 @@
     "notePlaceholder": "Detalles adicionales…",
     "save": "Guardar",
     "cancel": "Cancelar",
-    "delete": "Eliminar"
+    "delete": "Eliminar",
+    "sensitiveConsentTitle": "Dato sensible de salud",
+    "sensitiveConsentBody": "El motivo \"Incapacidad\" es un dato sensible de salud. No estás obligado a registrarlo — si continúas, se sincroniza con el servidor bajo la política de tratamiento de datos vigente. Este aviso solo aparece una vez.",
+    "sensitiveConsentAccept": "Entiendo, continuar"
   },
   "overtimeList": {
     "empty": "Sin registros de horas extra todavía.",
@@ -311,6 +314,30 @@
     "minutesAgo_other": "hace {{count}} min",
     "hoursAgo_one": "hace {{count}} h",
     "hoursAgo_other": "hace {{count}} h",
-    "sessionExpiredMsg": "La sesión de sincronización expiró — conecta de nuevo."
+    "sessionExpiredMsg": "La sesión de sincronización expiró — conecta de nuevo.",
+    "policyGateTitle": "Actualización de la política de tratamiento de datos",
+    "policyGateScrollHint": "Desplázate hasta el final para poder aceptar.",
+    "policyGateReject": "Rechazar y desconectar",
+    "policyGateAccept": "Acepto",
+    "privacyTitle": "Privacidad y datos",
+    "privacyViewPolicy": "Ver política de tratamiento de datos",
+    "exportDataButton": "Exportar mis datos",
+    "deleteAccountButton": "Eliminar mi cuenta",
+    "deleteAccountConfirmTitle": "Eliminar tu cuenta",
+    "deleteAccountConfirmMessage": "Esto borra tu cuenta y todos tus datos del servidor de forma permanente — no se puede deshacer. Ingresa tu contraseña para confirmar.",
+    "deleteAccountPasswordPlaceholder": "Contraseña",
+    "deleteAccountError": "Contraseña incorrecta",
+    "deleteAccountLastAdminError": "No podés eliminar tu cuenta siendo el único admin de la instancia.",
+    "deleteAccountGenericError": "No se pudo eliminar la cuenta. Probá de nuevo.",
+    "devicesTitle": "Sesiones activas",
+    "devicesLoading": "Cargando sesiones…",
+    "devicesErrorExpired": "Tu sesión expiró — desconecta y vuelve a conectar.",
+    "devicesErrorGeneric": "No se pudieron cargar las sesiones.",
+    "devicesRetry": "Reintentar",
+    "devicesThisDevice": "este dispositivo",
+    "devicesLastUsedPrefix": "Activo",
+    "devicesRevoke": "Cerrar sesión",
+    "devicesRevokeTitle": "Cerrar sesión",
+    "devicesRevokeConfirmPrefix": "¿Cerrar la sesión de"
   }
 }

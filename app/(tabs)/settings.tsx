@@ -1,14 +1,31 @@
-import { BookOpen, Clock, Cloud, CloudOff, Eye, EyeOff, Languages, Monitor, Moon, RefreshCw, ShieldAlert, Smartphone, Snowflake, Sun, TriangleAlert } from 'lucide-react-native';
+import { AlertCircle, BookOpen, Clock, Cloud, CloudOff, Download, Eye, EyeOff, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, TriangleAlert, UserX } from 'lucide-react-native';
 import type { ComponentType } from 'react';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
+import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
+import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
+import { DeviceResponse, getPolicyRemote, SyncApiError } from '../../src/lib/syncApi';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useSync } from '../../src/settings/SyncContext';
 import { useTheme, useThemePreference, type ThemePreference } from '../../src/theme/ThemeContext';
+
+// El server no manda un "tipo" de dispositivo explícito, solo el
+// device_name libre que cada cliente elige al loguearse ("Logday
+// Desktop", "Logday Mobile (android)", etc.) — se infiere el ícono de
+// ahí, mismo criterio que el DevicesPanel de Desktop. Sin match
+// conocido, HelpCircle en vez de asumir.
+function deviceIcon(deviceName: string): ComponentType<{ size?: number; color?: string }> {
+  const n = deviceName.toLowerCase();
+  if (n.includes('desktop')) return Monitor;
+  if (n.includes('extension') || n.includes('plugin')) return Puzzle;
+  if (n.includes('mobile') || n.includes('android') || n.includes('ios') || n.includes('iphone')) return Smartphone;
+  if (n.includes('web') || n.includes('browser')) return Globe;
+  return HelpCircle;
+}
 
 const CONNECTED_COLOR = '#4ade80';
 const ERROR_COLOR = '#dc2626';
@@ -180,6 +197,8 @@ export default function SettingsScreen() {
       </Section>
 
       <SyncSection scrollInputIntoView={scrollInputIntoView} />
+      <DevicesSection />
+      <PrivacySection />
       <Animated.View style={keyboardSpacer} />
     </ScrollView>
   );
@@ -326,6 +345,263 @@ function SyncSection({ scrollInputIntoView }: { scrollInputIntoView: (node: Text
   );
 }
 
+// Lista de sesiones/dispositivos activos — mismo GET/DELETE /devices
+// que ya consumen Desktop y Web. Solo tiene sentido con sync activo.
+function DevicesSection() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { syncConfig, devices, devicesError, loadDevices, revokeDeviceAction, syncDisconnect } = useSync();
+
+  useEffect(() => {
+    if (syncConfig.enabled) void loadDevices();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncConfig.enabled]);
+
+  // Siempre confirma, sin depender del switch general "Confirmar antes
+  // de eliminar" — cerrar la sesión de otro dispositivo lo desconecta
+  // a la fuerza, mismo criterio que "Eliminar mi cuenta" en
+  // PrivacySection (que tampoco respeta esa preferencia).
+  const confirmRevoke = useConfirmDelete<DeviceResponse>(true);
+
+  if (!syncConfig.enabled) return null;
+
+  return (
+    <Section title={t('sync.devicesTitle')} icon={Monitor}>
+      {devices.length === 0 && devicesError ? (
+        <View style={[styles.privacyRow, { justifyContent: 'space-between' }]}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexShrink: 1 }}>
+            <AlertCircle size={12} color={ERROR_COLOR} />
+            <Text style={{ color: ERROR_COLOR, fontSize: 11, flexShrink: 1 }}>{devicesError.message}</Text>
+          </View>
+          <Pressable
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            onPress={() => void (devicesError.kind === 'expired' ? syncDisconnect() : loadDevices())}
+          >
+            {devicesError.kind === 'expired' ? (
+              <LogOut size={12} color={theme.textHint} />
+            ) : (
+              <RefreshCw size={12} color={theme.textHint} />
+            )}
+            <Text style={{ color: theme.textHint, fontSize: 11 }}>
+              {devicesError.kind === 'expired' ? t('sync.disconnect') : t('sync.devicesRetry')}
+            </Text>
+          </Pressable>
+        </View>
+      ) : devices.length === 0 ? (
+        <Text style={[styles.privacyRow, { color: theme.textHint, fontSize: 11 }]}>{t('sync.devicesLoading')}</Text>
+      ) : (
+        devices.map((d, i) => {
+          const isSelf = d.id === syncConfig.deviceId;
+          const Icon = deviceIcon(d.device_name);
+          return (
+            <View
+              key={d.id}
+              style={[
+                styles.row,
+                { borderColor: theme.border, borderBottomWidth: i === devices.length - 1 ? 0 : StyleSheet.hairlineWidth },
+              ]}
+            >
+              <View style={styles.rowLabel}>
+                <Icon size={14} color={theme.textHint} />
+                <View style={{ flexShrink: 1 }}>
+                  <Text style={{ color: theme.textSecondary, fontSize: 12 }}>
+                    {d.device_name}
+                    {isSelf ? (
+                      <Text style={{ color: theme.accent, fontSize: 10 }}> · {t('sync.devicesThisDevice')}</Text>
+                    ) : null}
+                  </Text>
+                  <Text style={{ color: theme.textHint, fontSize: 10, marginTop: 1 }}>
+                    {t('sync.devicesLastUsedPrefix')} {relativeTime(t, d.last_used_at)}
+                  </Text>
+                </View>
+              </View>
+              {/* La sesión propia no se cierra desde acá — siempre pasa
+                  por el botón "Desconectar" de arriba, no por un click
+                  suelto en esta lista. */}
+              {!isSelf && (
+                <Pressable onPress={() => confirmRevoke.request(d, (device) => void revokeDeviceAction(device.id))}>
+                  <Text style={{ color: ERROR_COLOR, fontSize: 11 }}>{t('sync.devicesRevoke')}</Text>
+                </Pressable>
+              )}
+            </View>
+          );
+        })
+      )}
+
+      <ConfirmDeleteModal
+        visible={confirmRevoke.isOpen}
+        title={t('sync.devicesRevokeTitle')}
+        message={confirmRevoke.pending ? `${t('sync.devicesRevokeConfirmPrefix')} ${confirmRevoke.pending.device_name}?` : undefined}
+        cancelLabel={t('absence.cancel')}
+        confirmLabel={t('sync.devicesRevoke')}
+        onCancel={confirmRevoke.cancel}
+        onConfirm={() => {
+          if (confirmRevoke.pending) void revokeDeviceAction(confirmRevoke.pending.id);
+          confirmRevoke.cancel();
+        }}
+      />
+    </Section>
+  );
+}
+
+// Solo tiene sentido con sync activo (ver
+// specs/cumplimiento-datos-personales/ en task-manager) — sin
+// servidor no hay ningún tratamiento de terceros de qué hablar.
+function PrivacySection() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const { syncConfig, exportMyData, deleteMyAccount } = useSync();
+
+  const [policyText, setPolicyText] = useState<string | null>(null);
+  const [loadingPolicy, setLoadingPolicy] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deletePassword, setDeletePassword] = useState('');
+  const [deleteError, setDeleteError] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  if (!syncConfig.enabled) return null;
+
+  async function handleViewPolicy() {
+    if (policyText !== null) {
+      setPolicyText(null);
+      return;
+    }
+    setLoadingPolicy(true);
+    try {
+      const policy = await getPolicyRemote(syncConfig.serverUrl);
+      setPolicyText(policy.text);
+    } finally {
+      setLoadingPolicy(false);
+    }
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await deleteMyAccount(deletePassword);
+      setShowDeleteModal(false);
+      setDeletePassword('');
+    } catch (e) {
+      if (e instanceof SyncApiError && e.status === 401) {
+        setDeleteError(t('sync.deleteAccountError'));
+      } else if (e instanceof SyncApiError && e.status === 409) {
+        setDeleteError(t('sync.deleteAccountLastAdminError'));
+      } else {
+        setDeleteError(t('sync.deleteAccountGenericError'));
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
+  return (
+    <Section title={t('sync.privacyTitle')} icon={ShieldCheck}>
+      <Pressable
+        style={[styles.privacyRow, { borderColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
+        onPress={() => void handleViewPolicy()}
+        disabled={loadingPolicy}
+      >
+        <ShieldCheck size={14} color={theme.textSecondary} />
+        <Text style={{ color: theme.textSecondary, fontSize: 13 }}>{t('sync.privacyViewPolicy')}</Text>
+      </Pressable>
+      {policyText !== null && (
+        <ScrollView style={[styles.policyTextBox, { borderColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth }]}>
+          <Text style={{ color: theme.textHint, fontSize: 11, lineHeight: 16 }}>{policyText}</Text>
+        </ScrollView>
+      )}
+      <Pressable
+        style={[styles.privacyRow, { borderColor: theme.border, borderBottomWidth: StyleSheet.hairlineWidth }]}
+        onPress={() => void exportMyData()}
+      >
+        <Download size={14} color={theme.textSecondary} />
+        <Text style={{ color: theme.textSecondary, fontSize: 13 }}>{t('sync.exportDataButton')}</Text>
+      </Pressable>
+      <Pressable style={styles.privacyRow} onPress={() => setShowDeleteModal(true)}>
+        <UserX size={14} color={ERROR_COLOR} />
+        <Text style={{ color: ERROR_COLOR, fontSize: 13, fontWeight: '600' }}>{t('sync.deleteAccountButton')}</Text>
+      </Pressable>
+
+      <Modal visible={showDeleteModal} transparent animationType="fade" onRequestClose={() => setShowDeleteModal(false)}>
+        <Pressable style={modalStyles.backdrop} onPress={() => setShowDeleteModal(false)}>
+          <Pressable
+            style={[modalStyles.panel, { backgroundColor: theme.bgElevated, borderColor: theme.borderCard }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <Text style={[modalStyles.title, { color: theme.textPrimary }]}>{t('sync.deleteAccountConfirmTitle')}</Text>
+            <Text style={{ color: theme.textSecondary, fontSize: 12, lineHeight: 17, marginBottom: 10 }}>
+              {t('sync.deleteAccountConfirmMessage')}
+            </Text>
+            <TextInput
+              style={[styles.syncInput, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
+              value={deletePassword}
+              onChangeText={setDeletePassword}
+              placeholder={t('sync.deleteAccountPasswordPlaceholder')}
+              placeholderTextColor={theme.textFaint}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+            {deleteError ? <Text style={{ color: ERROR_COLOR, fontSize: 12, marginTop: 6 }}>{deleteError}</Text> : null}
+            <View style={modalStyles.buttonRow}>
+              <Pressable style={modalStyles.cancelButton} onPress={() => setShowDeleteModal(false)}>
+                <Text style={{ color: theme.textSecondary }}>{t('absence.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                style={[modalStyles.confirmButton, { backgroundColor: ERROR_COLOR, opacity: deleting ? 0.6 : 1 }]}
+                onPress={() => void handleDeleteAccount()}
+                disabled={deleting}
+              >
+                <Text style={modalStyles.confirmText}>{t('sync.deleteAccountButton')}</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+    </Section>
+  );
+}
+
+const modalStyles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  panel: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: 20,
+  },
+  title: {
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 8,
+    marginTop: 12,
+  },
+  cancelButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  confirmButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  confirmText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+});
+
 function Section({
   title,
   icon: Icon,
@@ -387,6 +663,18 @@ function OptionRow({
 const styles = StyleSheet.create({
   content: {
     padding: 16,
+  },
+  privacyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  policyTextBox: {
+    maxHeight: 140,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   section: {
     marginBottom: 24,

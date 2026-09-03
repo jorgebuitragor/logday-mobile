@@ -54,6 +54,9 @@ export interface TokenResponse {
   access_token: string;
   refresh_token: string;
   device_id: string;
+  policy_version: number;
+  policy_accepted_version: number | null;
+  sensitive_data_accepted: boolean;
 }
 
 export function login(
@@ -82,6 +85,39 @@ export interface DeviceResponse {
 
 export function listDevicesRemote(baseUrl: string, token: string): Promise<DeviceResponse[]> {
   return request(baseUrl, 'GET', '/devices', { token });
+}
+
+export function revokeDeviceRemote(baseUrl: string, token: string, id: string): Promise<void> {
+  return request(baseUrl, 'DELETE', `/devices/${id}`, { token });
+}
+
+// ── Política de tratamiento de datos + derechos del titular ─────────
+// Ver specs/cumplimiento-datos-personales/ (task-manager). getPolicyRemote
+// es pública (sin token) a propósito.
+
+export interface PolicyResponse {
+  text: string;
+  version: number;
+}
+
+export function getPolicyRemote(baseUrl: string): Promise<PolicyResponse> {
+  return request(baseUrl, 'GET', '/policy');
+}
+
+export function acceptPolicyRemote(baseUrl: string, token: string, version: number): Promise<void> {
+  return request(baseUrl, 'POST', '/policy/accept', { token, body: { version } });
+}
+
+export function acceptSensitiveDataRemote(baseUrl: string, token: string): Promise<void> {
+  return request(baseUrl, 'POST', '/policy/accept-sensitive', { token });
+}
+
+export function exportAccountRemote(baseUrl: string, token: string): Promise<unknown> {
+  return request(baseUrl, 'GET', '/account/export', { token });
+}
+
+export function deleteAccountRemote(baseUrl: string, token: string, password: string): Promise<void> {
+  return request(baseUrl, 'DELETE', '/account', { token, body: { password } });
 }
 
 // ─── Delta de cambios ───

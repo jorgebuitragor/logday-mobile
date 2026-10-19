@@ -1,6 +1,6 @@
 import * as Clipboard from 'expo-clipboard';
 import { useFocusEffect, useRouter } from 'expo-router';
-import { Grid2x2, List, MoreHorizontal, Notebook, Pin } from 'lucide-react-native';
+import { ArrowUpDown, Grid2x2, List, MoreHorizontal, Notebook, Pin } from 'lucide-react-native';
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
@@ -9,6 +9,7 @@ import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
 import { FilterChip } from '../../src/components/FilterChip';
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
+import { NoteSortSheet } from '../../src/components/NoteSortSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { createNote, listNotes, setNotePinned, softDeleteNote, updateNote } from '../../src/db/notes';
@@ -69,11 +70,18 @@ export default function NotesScreen() {
   const { t } = useTranslation();
   const theme = useTheme();
   const router = useRouter();
-  const { confirmDestructiveActions, notesViewMode: viewMode, setNotesViewMode: setViewMode } = usePreferences();
+  const {
+    confirmDestructiveActions,
+    notesViewMode: viewMode,
+    setNotesViewMode: setViewMode,
+    notesSortBy: sortBy,
+    setNotesSortBy: setSortBy,
+  } = usePreferences();
   const [notes, setNotes] = useState<Note[]>([]);
   const [filterFolder, setFilterFolder] = useState<string | null>(null);
   const [filterTag, setFilterTag] = useState<string | null>(null);
   const [actionsNote, setActionsNote] = useState<Note | null>(null);
+  const [sortSheetOpen, setSortSheetOpen] = useState(false);
   const confirmDelete = useConfirmDelete<Note>(confirmDestructiveActions);
 
   const reload = useCallback(() => {
@@ -169,12 +177,27 @@ export default function NotesScreen() {
     [notes, filterFolder, filterTag]
   );
 
+  // Mismo criterio que el dropdown de ordenar de NoteList.tsx en
+  // desktop: ancladas siempre primero sin importar el criterio, luego
+  // el campo elegido. `'es'` fijo en localeCompare (no el idioma de la
+  // UI) — mismo comportamiento que desktop, portado tal cual.
+  const sortedNotes = useMemo(
+    () =>
+      [...filteredNotes].sort((a, b) => {
+        if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+        if (sortBy === 'title') return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
+        if (sortBy === 'created') return b.created.localeCompare(a.created);
+        return b.updated.localeCompare(a.updated);
+      }),
+    [filteredNotes, sortBy]
+  );
+
   // Solo para la vista Cuadrícula (estilo Google Keep: sección
   // "Destacadas" separada arriba) — la vista Lista no cambia, ya
   // muestra el pin inline en cada fila sin necesitar una sección
   // aparte.
-  const pinnedNotes = useMemo(() => filteredNotes.filter((n) => n.pinned), [filteredNotes]);
-  const otherNotes = useMemo(() => filteredNotes.filter((n) => !n.pinned), [filteredNotes]);
+  const pinnedNotes = useMemo(() => sortedNotes.filter((n) => n.pinned), [sortedNotes]);
+  const otherNotes = useMemo(() => sortedNotes.filter((n) => !n.pinned), [sortedNotes]);
 
   const viewOptions: { mode: NotesViewMode; icon: typeof List; label: string }[] = [
     { mode: 'list', icon: List, label: t('noteList.viewList') },
@@ -183,7 +206,21 @@ export default function NotesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
-      <ViewSwitch value={viewMode} options={viewOptions} onChange={setViewMode} />
+      <View style={styles.viewRow}>
+        <View style={styles.viewSwitchWrap}>
+          <ViewSwitch value={viewMode} options={viewOptions} onChange={setViewMode} />
+        </View>
+        <Pressable
+          style={[styles.sortTrigger, { borderColor: theme.border, backgroundColor: theme.bgPanel }]}
+          onPress={() => setSortSheetOpen(true)}
+          accessibilityLabel={t('noteSort.trigger')}
+        >
+          <ArrowUpDown size={12} color={theme.textSecondary} />
+          <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: '600' }}>
+            {t('noteSort.trigger')}
+          </Text>
+        </Pressable>
+      </View>
       {(folders.length > 0 || tags.length > 0) && (
         <ScrollView
           horizontal
@@ -210,7 +247,7 @@ export default function NotesScreen() {
       )}
       {viewMode === 'grid' ? (
         <ScrollView contentContainerStyle={styles.gridScroll}>
-          {filteredNotes.length === 0 ? (
+          {sortedNotes.length === 0 ? (
             <EmptyState
               icon={Notebook}
               message={notes.length > 0 ? t('noteList.emptyFiltered') : t('noteList.empty')}
@@ -246,7 +283,7 @@ export default function NotesScreen() {
         </ScrollView>
       ) : (
       <FlatList
-        data={filteredNotes}
+        data={sortedNotes}
         keyExtractor={(note) => note.id}
         contentContainerStyle={styles.list}
         ListEmptyComponent={
@@ -341,6 +378,13 @@ export default function NotesScreen() {
         onAddTag={(tag) => actionsNote && handleAddTagNote(actionsNote, tag)}
         onRemoveTag={(tag) => actionsNote && handleRemoveTagNote(actionsNote, tag)}
         onDelete={() => actionsNote && confirmDelete.request(actionsNote, performDelete)}
+      />
+
+      <NoteSortSheet
+        visible={sortSheetOpen}
+        value={sortBy}
+        onSelect={setSortBy}
+        onClose={() => setSortSheetOpen(false)}
       />
     </View>
   );
@@ -445,6 +489,24 @@ function NoteCard({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  viewRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  viewSwitchWrap: {
+    flex: 1,
+  },
+  sortTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    marginTop: 16,
+    marginRight: 16,
   },
   filterRow: {
     paddingHorizontal: 16,

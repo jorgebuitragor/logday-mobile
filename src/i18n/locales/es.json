@@ -148,6 +148,13 @@
     "folderButton": "Carpeta",
     "tagsButton": "Tags"
   },
+  "noteSort": {
+    "trigger": "Ordenar",
+    "label": "Ordenar por",
+    "sortUpdated": "Última modificación",
+    "sortCreated": "Fecha de creación",
+    "sortTitle": "Título"
+  },
   "noteActions": {
     "menuLabel": "Más acciones",
     "copy": "Copiar",

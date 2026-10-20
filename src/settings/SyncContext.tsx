@@ -5,7 +5,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState, type R
 import { useTranslation } from 'react-i18next';
 
 import {
-  SyncApiError, DeviceResponse, listDevicesRemote, revokeDeviceRemote, login as loginRemote, refreshToken as refreshTokenRemote,
+  SyncApiError, DeviceResponse, listDevicesRemote, revokeDeviceRemote, logoutRemote, login as loginRemote, refreshToken as refreshTokenRemote,
   TokenResponse, getPolicyRemote, acceptPolicyRemote, acceptSensitiveDataRemote,
   exportAccountRemote, deleteAccountRemote,
 } from '../lib/syncApi';
@@ -178,6 +178,16 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   }
 
   async function syncDisconnect(): Promise<void> {
+    // Revocar el device en el servidor, no solo olvidar los tokens: si
+    // no, el refresh token (30 días) seguiría vivo allá. Sin esperar la
+    // respuesta, para que desconectar funcione offline o con el
+    // servidor caído (el device queda listado y se revoca desde otro
+    // cliente o el panel). Si la sesión ya murió, el servidor responde
+    // sin efecto.
+    const { serverUrl, refreshToken: currentRefreshToken } = configRef.current;
+    if (serverUrl && currentRefreshToken) {
+      logoutRemote(serverUrl, currentRefreshToken).catch(() => {});
+    }
     await persistConfig(EMPTY_CONFIG);
     setSyncConfig(EMPTY_CONFIG);
     setSyncConnectionStatus('disconnected');

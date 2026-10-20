@@ -19,6 +19,7 @@ import type {
   OvertimeEntryCreatePayload, OvertimeEntryPatchPayload, OvertimeMonthMetaPatchPayload,
   TaskCreatePayload, TaskPatchPayload,
 } from './syncMapping';
+import { emitRemoteChange } from './syncEvents';
 import * as syncQueue from './syncQueue';
 import { getSyncRuntime } from './syncRuntime';
 
@@ -54,7 +55,9 @@ const APPLY_BY_TYPE: Partial<Record<SyncEntityType, (change: SyncChange) => Prom
 async function applyRemoteChanges(changes: SyncChange[]): Promise<void> {
   for (const change of changes) {
     const apply = APPLY_BY_TYPE[change.type];
-    if (apply) await apply(change);
+    if (!apply) continue;
+    await apply(change);
+    emitRemoteChange(change.type, change.id);
   }
 }
 

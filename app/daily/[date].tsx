@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
@@ -10,8 +10,10 @@ import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { DailyActivityList, parseActivityItems, serializeActivityItems } from '../../src/components/DailyActivityList';
 import { getDailyEntry, softDeleteDailyEntry, upsertDailyEntry } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { syncEditorText, type EditorTextState } from '../../src/lib/crdtText';
 import { buildDailyCopyText } from '../../src/lib/dailyCopyText';
 import { addDaysISO, todayISO } from '../../src/lib/dates';
+import { onRemoteChange } from '../../src/lib/syncEvents';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 
@@ -54,13 +56,74 @@ export default function DailyEditorScreen() {
   // primera actividad (upsert), no hace falta que ya exista.
   const previousDate = addDaysISO(date, -1);
 
+  // Cada panel lleva la base (lo último que vino de SQLite: lo cargado,
+  // lo ya guardado o lo que llegó por sync) y lo que muestra. Al guardar
+  // se manda solo el delta base → texto (`upsertDailyEntry` con `base`), y
+  // lo que llega se lleva al panel rebasando lo escrito — mismo esquema
+  // que `syncPanel` en DailyEditor.tsx de desktop. Antes se cargaba una
+  // sola vez y cada guardado mandaba el texto completo: una actividad
+  // agregada desde otro cliente no aparecía, y el siguiente cambio la
+  // borraba.
+  const selectedPanel = useRef<EditorTextState & { date: string }>({ date, base: '', text: '' });
+  const previousPanel = useRef<EditorTextState & { date: string }>({ date: previousDate, base: '', text: '' });
+  // Guardados y recargas en fila (ver la misma fila en note/[id].tsx).
+  const queueRef = useRef<Promise<void>>(Promise.resolve());
+
+  function enqueue(task: () => Promise<void>): void {
+    queueRef.current = queueRef.current.then(task).catch(() => {});
+  }
+
   useEffect(() => {
-    Promise.all([getDailyEntry(date), getDailyEntry(previousDate)]).then(([entry, prev]) => {
-      setContent(entry?.content ?? '');
-      setPreviousContent(prev?.content ?? '');
+    enqueue(async () => {
+      const [entry, prev] = await Promise.all([getDailyEntry(date), getDailyEntry(previousDate)]);
+      const selected = entry?.content ?? '';
+      const previous = prev?.content ?? '';
+      selectedPanel.current = { date, base: selected, text: selected };
+      previousPanel.current = { date: previousDate, base: previous, text: previous };
+      setContent(selected);
+      setPreviousContent(previous);
       setLoaded(true);
     });
   }, [date, previousDate]);
+
+  function applyIncoming(panel: EditorTextState & { date: string }, panelDate: string, incoming: string) {
+    if (panel.date !== panelDate) return;
+    const rebased = syncEditorText(panel, incoming);
+    if (!rebased) return;
+    if (panel === selectedPanel.current) setContent(rebased.text);
+    else if (panel === previousPanel.current) setPreviousContent(rebased.text);
+  }
+
+  // Una actividad que llega por el pull mientras el día está abierto se
+  // lleva al panel sin perder lo escrito.
+  const handleRemoteChange = useEffectEvent((type: string, changedDate: string) => {
+    if (type !== 'daily_entry' || (changedDate !== date && changedDate !== previousDate)) return;
+    enqueue(async () => {
+      const entry = await getDailyEntry(changedDate);
+      const panel = changedDate === date ? selectedPanel.current : previousPanel.current;
+      applyIncoming(panel, changedDate, entry?.content ?? '');
+    });
+  });
+  useEffect(() => onRemoteChange((type, changedDate) => handleRemoteChange(type, changedDate)), []);
+
+  /** Guarda lo que tenga el panel al momento de correr (no al encolarse). */
+  function savePanel(panel: EditorTextState & { date: string }) {
+    enqueue(async () => {
+      const { date: panelDate, base, text } = panel;
+      if (text === base) return;
+      // La base pasa a ser lo enviado: el texto mezclado que devuelve
+      // `upsertDailyEntry` ya trae esta edición, así que solo se lleva al
+      // panel la parte remota.
+      panel.base = text;
+      try {
+        const merged = await upsertDailyEntry(panelDate, text, base);
+        applyIncoming(panel, panelDate, merged);
+      } catch (e) {
+        if (panel.base === text) panel.base = base;
+        throw e;
+      }
+    });
+  }
 
   // Autosave por operación (añadir/editar/reordenar/eliminar/mover
   // actividad), como el autosave con debounce de desktop pero sin
@@ -68,12 +131,14 @@ export default function DailyEditorScreen() {
   // tecla por tecla), así que se persiste directo.
   function handleContentChange(next: string) {
     setContent(next);
-    void upsertDailyEntry(date, next);
+    selectedPanel.current.text = next;
+    savePanel(selectedPanel.current);
   }
 
   function handlePreviousChange(next: string) {
     setPreviousContent(next);
-    void upsertDailyEntry(previousDate, next);
+    previousPanel.current.text = next;
+    savePanel(previousPanel.current);
   }
 
   // Mover una actividad entre paneles (swipe, ver DailyActivityList) —

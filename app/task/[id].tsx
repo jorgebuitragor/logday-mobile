@@ -4,12 +4,24 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
-import { TaskForm } from '../../src/components/TaskForm';
+import { normalizeTaskInput, TaskForm } from '../../src/components/TaskForm';
 import { getTask, softDeleteTask, updateTask, type TaskInput } from '../../src/db/tasks';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Task } from '../../src/types/task';
+
+function toTaskInput(task: Task): TaskInput {
+  return {
+    title: task.title,
+    taskCode: task.taskCode,
+    status: task.status,
+    tags: task.tags,
+    project: task.project,
+    due: task.due,
+    content: task.content,
+  };
+}
 
 export default function EditTaskScreen() {
   const { t } = useTranslation();
@@ -25,7 +37,9 @@ export default function EditTaskScreen() {
   }, [id]);
 
   async function handleSubmit(input: TaskInput) {
-    await updateTask(id, input);
+    // Base = lo que el formulario mostró al abrir: solo se guarda lo que
+    // el usuario cambió desde ahí (ver `updateTask`).
+    if (task) await updateTask(id, input, normalizeTaskInput(toTaskInput(task)));
     router.back();
   }
 
@@ -53,15 +67,7 @@ export default function EditTaskScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
       <TaskForm
-        initialValue={{
-          title: task.title,
-          taskCode: task.taskCode,
-          status: task.status,
-          tags: task.tags,
-          project: task.project,
-          due: task.due,
-          content: task.content,
-        }}
+        initialValue={toTaskInput(task)}
         currentId={task.id}
         onSubmit={handleSubmit}
         submitLabel={t('taskForm.editSubmit')}

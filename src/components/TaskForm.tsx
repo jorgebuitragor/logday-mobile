@@ -19,6 +19,21 @@ interface TaskFormProps {
   submitLabel: string;
 }
 
+/** Lo que manda el formulario al guardar. Las pantallas de edición la usan
+ *  también sobre el valor inicial para comparar contra lo mismo que se
+ *  manda (ver `updateTask`). */
+export function normalizeTaskInput(input: TaskInput): TaskInput {
+  return {
+    title: input.title.trim(),
+    taskCode: input.taskCode?.trim() || null,
+    status: input.status,
+    tags: input.tags,
+    project: input.project.trim(),
+    due: input.due?.trim() || null,
+    content: input.content,
+  };
+}
+
 export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: TaskFormProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -187,17 +202,7 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
           styles.submitButton,
           { backgroundColor: canSubmit ? theme.accentStrong : theme.accentSoft },
         ]}
-        onPress={() =>
-          onSubmit({
-            title: title.trim(),
-            taskCode: taskCode.trim() || null,
-            status,
-            tags,
-            project: project.trim(),
-            due: due.trim() || null,
-            content,
-          })
-        }
+        onPress={() => onSubmit(normalizeTaskInput({ title, taskCode, status, tags, project, due, content }))}
       >
         <Text style={styles.submitText}>{submitLabel}</Text>
       </Pressable>

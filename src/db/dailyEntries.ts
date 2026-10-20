@@ -1,7 +1,8 @@
 import {
-  applyIncomingUpdate, applyTextEdit, docFromStateB64, encodeDocStateB64, getContentText,
+  applyEditorEdit, applyIncomingUpdate, applyTextEdit, docFromStateB64, encodeDocStateB64, getContentText,
 } from '../lib/crdtText';
 import * as contentSyncQueue from '../lib/contentSyncQueue';
+import { withKeyLock } from '../lib/keyedLock';
 import { deleteDailyEntryRemote, putDailyEntryContentRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
 import type { DailyEntryApiResponse } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
@@ -40,21 +41,43 @@ export async function getDailyEntry(date: string): Promise<DailyEntry | null> {
   return row ? rowToDailyEntry(row) : null;
 }
 
-/** Upsert — mismo patrón que el servidor (`PUT /daily-entries/:date`, sin POST separado). */
-export async function upsertDailyEntry(date: string, content: string): Promise<void> {
-  const now = new Date().toISOString();
-  const current = await getDailyEntry(date);
-  await getDb().runAsync(
-    `INSERT INTO daily_entries (date, content, updated_at, deleted_at)
-     VALUES (?, ?, ?, NULL)
-     ON CONFLICT(date) DO UPDATE SET content = excluded.content, updated_at = excluded.updated_at, deleted_at = NULL`,
-    date,
-    content,
-    now
-  );
-  if (!current || current.content !== content) {
-    void pushDailyContent(date, content);
-  }
+const dailyLock = (date: string) => `daily_entry:${date}`;
+
+/** Upsert — mismo patrón que el servidor (`PUT /daily-entries/:date`, sin
+ * POST separado). Solo se aplica lo que el usuario cambió desde `base` (lo
+ * que el editor mostraba al cargar o al último guardado), mezclado sobre lo
+ * que tenga SQLite ahora — puede traer actividades de otro cliente que el
+ * editor todavía no tiene. Antes se diffeaba el texto completo del editor
+ * contra el `Y.Text` y eso borraba lo remoto. Mismo arreglo que
+ * `saveDailyEntry`/`applyDailyEditorEdit` en desktop. Devuelve el texto ya
+ * mezclado. */
+export function upsertDailyEntry(date: string, content: string, base: string): Promise<string> {
+  return withKeyLock(dailyLock(date), async () => {
+    const current = await getDailyEntry(date);
+    const currentContent = current?.content ?? '';
+    if (content === base) return currentContent;
+    const stateB64 = await getDailyContentStateB64(date);
+    const doc = docFromStateB64(stateB64);
+    // Día sin estado CRDT todavía (anterior al sync, o nuevo): se siembra
+    // con lo que tenga SQLite, como hace desktop.
+    if (!stateB64 && currentContent) applyTextEdit(doc, currentContent);
+    applyEditorEdit(doc, base, content);
+    const merged = getContentText(doc);
+    const nextStateB64 = encodeDocStateB64(doc);
+    doc.destroy();
+    const now = new Date().toISOString();
+    await getDb().runAsync(
+      `INSERT INTO daily_entries (date, content, content_state, updated_at, deleted_at)
+       VALUES (?, ?, ?, ?, NULL)
+       ON CONFLICT(date) DO UPDATE SET content = excluded.content, content_state = excluded.content_state, updated_at = excluded.updated_at, deleted_at = NULL`,
+      date,
+      merged,
+      nextStateB64,
+      now
+    );
+    if (merged !== currentContent || !stateB64) void pushDailyContent(date, nextStateB64);
+    return merged;
+  });
 }
 
 export async function softDeleteDailyEntry(date: string): Promise<void> {
@@ -90,36 +113,21 @@ async function getDailyContentStateB64(date: string): Promise<string | null> {
   return row?.content_state ?? null;
 }
 
-async function setDailyContentStateB64(date: string, stateB64: string): Promise<void> {
-  await getDb().runAsync(
-    `INSERT INTO daily_entries (date, content, content_state, updated_at, deleted_at)
-     VALUES (?, '', ?, ?, NULL)
-     ON CONFLICT(date) DO UPDATE SET content_state = excluded.content_state`,
-    date,
-    stateB64,
-    new Date().toISOString()
-  );
-}
-
-async function pushDailyContent(date: string, newContent: string): Promise<void> {
-  const stateB64 = await getDailyContentStateB64(date);
-  const doc = docFromStateB64(stateB64);
-  applyTextEdit(doc, newContent);
-  const nextStateB64 = encodeDocStateB64(doc);
-  doc.destroy();
-  await setDailyContentStateB64(date, nextStateB64);
-
+async function pushDailyContent(date: string, stateB64: string): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled) return;
   if (!runtime.connected) {
-    await contentSyncQueue.enqueue('daily_entry', date, nextStateB64);
+    await contentSyncQueue.enqueue('daily_entry', date, stateB64);
     return;
   }
   try {
-    const response = await runtime.withSyncAuth((token) => putDailyEntryContentRemote(runtime.serverUrl, token, date, nextStateB64));
-    if (response.content_state) await applyRemoteDailyContentState(date, response.content_state);
+    const response = await runtime.withSyncAuth((token) => putDailyEntryContentRemote(runtime.serverUrl, token, date, stateB64));
+    if (response.content_state) {
+      const contentState = response.content_state;
+      await withKeyLock(dailyLock(date), () => applyRemoteDailyContentState(date, contentState));
+    }
   } catch {
-    await contentSyncQueue.enqueue('daily_entry', date, nextStateB64);
+    await contentSyncQueue.enqueue('daily_entry', date, stateB64);
   }
 }
 
@@ -160,7 +168,11 @@ async function applyRemoteDailyContentState(date: string, contentStateB64: strin
 
 // ── Pull (/sync/changes) ──────────────────────────────────────────
 
-export async function applyRemoteDailyEntryChange(change: SyncChange): Promise<void> {
+export function applyRemoteDailyEntryChange(change: SyncChange): Promise<void> {
+  return withKeyLock(dailyLock(change.id), () => applyRemoteDailyEntryChangeLocked(change));
+}
+
+async function applyRemoteDailyEntryChangeLocked(change: SyncChange): Promise<void> {
   if (change.deleted) {
     await getDb().runAsync('UPDATE daily_entries SET deleted_at = ? WHERE date = ?', change.updated_at, change.id);
     return;

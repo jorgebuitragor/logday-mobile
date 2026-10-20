@@ -4,12 +4,23 @@ import { useTranslation } from 'react-i18next';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
-import { OvertimeForm } from '../../src/components/OvertimeForm';
+import { normalizeOvertimeInput, OvertimeForm } from '../../src/components/OvertimeForm';
 import { getOvertimeEntry, softDeleteOvertimeEntry, updateOvertimeEntry, type OvertimeInput } from '../../src/db/overtime';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { OvertimeEntry } from '../../src/types/overtime';
+
+function toOvertimeInput(entry: OvertimeEntry): OvertimeInput {
+  return {
+    fecha: entry.fecha,
+    horaInicio: entry.horaInicio,
+    horaFinal: entry.horaFinal,
+    solicitadaPor: entry.solicitadaPor,
+    actividad: entry.actividad,
+    observaciones: entry.observaciones,
+  };
+}
 
 export default function EditOvertimeScreen() {
   const { t } = useTranslation();
@@ -25,7 +36,9 @@ export default function EditOvertimeScreen() {
   }, [id]);
 
   async function handleSubmit(input: OvertimeInput) {
-    await updateOvertimeEntry(id, input);
+    // Base = lo que el formulario mostró al abrir: solo se guarda lo que
+    // el usuario cambió desde ahí (ver `updateOvertimeEntry`).
+    if (entry) await updateOvertimeEntry(id, input, normalizeOvertimeInput(toOvertimeInput(entry)));
     router.back();
   }
 
@@ -53,14 +66,7 @@ export default function EditOvertimeScreen() {
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
       <OvertimeForm
-        initialValue={{
-          fecha: entry.fecha,
-          horaInicio: entry.horaInicio,
-          horaFinal: entry.horaFinal,
-          solicitadaPor: entry.solicitadaPor,
-          actividad: entry.actividad,
-          observaciones: entry.observaciones,
-        }}
+        initialValue={toOvertimeInput(entry)}
         onSubmit={handleSubmit}
         submitLabel={t('overtimeForm.editSubmit')}
         entryId={id}

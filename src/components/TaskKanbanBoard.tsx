@@ -167,13 +167,13 @@ function KanbanCard({
   const panGesture = Gesture.Pan()
     .activateAfterLongPress(250)
     .onStart((e) => {
-      dragX.value = e.absoluteX;
-      dragY.value = e.absoluteY;
+      dragX.set(e.absoluteX);
+      dragY.set(e.absoluteY);
       runOnJS(onDragStart)(task);
     })
     .onUpdate((e) => {
-      dragX.value = e.absoluteX;
-      dragY.value = e.absoluteY;
+      dragX.set(e.absoluteX);
+      dragY.set(e.absoluteY);
     })
     .onEnd((e) => {
       runOnJS(onDragEnd)(task, e.absoluteX, e.absoluteY);

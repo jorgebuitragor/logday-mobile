@@ -1,3 +1,4 @@
+import type { WorkSheet } from 'xlsx-js-style';
 import { OvertimeEntry, OvertimeMonthMeta } from '../types/overtime';
 
 // Puerto directo de `overtimeExcel.ts` de desktop (misma librería,
@@ -18,8 +19,7 @@ type CellStyle = {
   border?: { top?: BorderSide; bottom?: BorderSide; left?: BorderSide; right?: BorderSide };
   numFmt?: string;
 };
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type Ws = Record<string, any>;
+type Ws = WorkSheet;
 
 // ── Constantes de estilo ──────────────────────────────────────────────────────
 
@@ -107,8 +107,7 @@ export async function generateOvertimeXlsx(
   meta: OvertimeMonthMeta,
   mesLabel: string
 ): Promise<Uint8Array> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const XLSX = (await import('xlsx-js-style')) as any;
+  const XLSX = await import('xlsx-js-style');
 
   const ws: Ws = {};
 

@@ -199,7 +199,7 @@ export default function SearchScreen() {
         <Text style={[styles.hint, { color: theme.textFaint }]}>{t('search.typeHint')}</Text>
       ) : !hasResults ? (
         <Text style={[styles.hint, { color: theme.textFaint }]}>
-          {t('search.noResultsFor')} "{query}"
+          {t('search.noResultsFor')} &quot;{query}&quot;
         </Text>
       ) : (
         <FlatList

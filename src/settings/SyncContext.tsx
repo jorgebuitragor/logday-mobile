@@ -75,13 +75,27 @@ const SyncCtx = createContext<SyncContextValue>({
 // dispositivo entero. Con esto, la primera 401 dispara el refresh
 // real y guarda la promesa; cualquier otra 401 que llegue mientras
 // tanto espera esa misma promesa en vez de disparar la suya.
+//
+// `onTokens` corre dentro de la misma promesa compartida, antes de
+// liberarla: así el token nuevo ya está en `configRef` cuando otra
+// llamada llega a leerlo. Antes se escribía recién en el useEffect que
+// sigue al render, y en ese hueco otra 401 leía el refresh token viejo
+// (ya rotado) y pedía otro refresh con él: una rotación de más que el
+// servidor solo tolera dentro de su margen de reuso de 20 s
+// (logday-server, specs/sesion-cookie/design.md) y que fuera de él
+// revoca el dispositivo.
 let inFlightRefresh: Promise<TokenResponse> | null = null;
 
-function refreshOnce(baseUrl: string, refreshTokenValue: string) {
+function refreshOnce(baseUrl: string, refreshTokenValue: string, onTokens: (tokens: TokenResponse) => void) {
   if (!inFlightRefresh) {
-    inFlightRefresh = refreshTokenRemote(baseUrl, refreshTokenValue).finally(() => {
-      inFlightRefresh = null;
-    });
+    inFlightRefresh = refreshTokenRemote(baseUrl, refreshTokenValue)
+      .then((tokens) => {
+        onTokens(tokens);
+        return tokens;
+      })
+      .finally(() => {
+        inFlightRefresh = null;
+      });
   }
   return inFlightRefresh;
 }
@@ -228,7 +242,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
       let tokens: TokenResponse;
       try {
-        tokens = await refreshOnce(beforeRefresh.serverUrl, beforeRefresh.refreshToken);
+        tokens = await refreshOnce(beforeRefresh.serverUrl, beforeRefresh.refreshToken, (fresh) => {
+          configRef.current = { ...configRef.current, accessToken: fresh.access_token, refreshToken: fresh.refresh_token };
+        });
       } catch (refreshErr) {
         if (refreshErr instanceof SyncApiError && refreshErr.status === 401) {
           await syncDisconnect();
@@ -238,6 +254,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       }
 
       const nextCfg: SyncConfig = { ...configRef.current, accessToken: tokens.access_token, refreshToken: tokens.refresh_token };
+      configRef.current = nextCfg;
       await persistConfig(nextCfg);
       setSyncConfig(nextCfg);
       void evaluatePolicyGate(beforeRefresh.serverUrl, tokens);

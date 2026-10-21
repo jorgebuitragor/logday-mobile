@@ -208,6 +208,6 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
         campos (colaborador, carpeta y tags de una nota); los chips de
         carpeta del listado de notas salían cortados o gigantes; la
         confirmación de borrar una ausencia no tenía mensaje.
-- [ ] **Pendiente**: las notas creadas en Mobile antes de este arreglo
-      quedaron solo en el teléfono (el servidor nunca las recibió). La
-      migración de la Fase 4 tiene que cubrirlas.
+- [x] Las notas creadas en Mobile antes de este arreglo no llegaban al
+      servidor, pero no hay nada que recuperar: la app sigue en
+      desarrollo y no hay datos reales en ningún teléfono (21 oct 2026).

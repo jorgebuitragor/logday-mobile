@@ -1,5 +1,6 @@
 import { randomUUID } from 'expo-crypto';
 
+import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import { createTaskRemote, deleteTaskRemote, patchTaskRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
 import { taskFieldsToPatchPayload, taskFromApiResponse, taskToCreatePayload, TASK_FIELD_MAP, type TaskApiResponse } from '../lib/syncMapping';
@@ -91,29 +92,44 @@ export async function createTask(input: TaskInput): Promise<string> {
   return id;
 }
 
-export async function updateTask(id: string, input: TaskInput): Promise<void> {
-  const now = new Date().toISOString();
-  const current = await getTask(id);
-  // Mismo criterio que appStore.updateTask en desktop: sella completed_at
-  // en la primera transición a 'done' (conserva la fecha si ya estaba
-  // sellada) y la limpia si la task vuelve a un estado no-done.
-  const completedAt = input.status === 'done' ? (current?.completedAt ?? now) : null;
-  await getDb().runAsync(
-    `UPDATE tasks SET title = ?, task_code = ?, status = ?, tags = ?, project = ?, due = ?, content = ?, completed_at = ?, updated_at = ? WHERE id = ?`,
-    input.title,
-    input.taskCode,
-    input.status,
-    JSON.stringify(input.tags),
-    input.project,
-    input.due,
-    input.content,
-    completedAt,
-    now,
-    id
-  );
-  const next: Task = { id, ...input, completedAt, created: current?.created ?? now, updatedAt: now, deletedAt: null };
-  const changed = diffChangedFields(current, next, ['title', 'taskCode', 'status', 'tags', 'project', 'due', 'content', 'completedAt']);
-  void syncPatchTask(id, changed);
+const TASK_INPUT_KEYS: (keyof TaskInput)[] = ['title', 'taskCode', 'status', 'tags', 'project', 'due', 'content'];
+const taskLock = (id: string) => `task:${id}`;
+
+/** Guarda solo los campos que el usuario cambió respecto de `base` (lo que
+ * mostraba el formulario al abrir), mezclados sobre la task actual de
+ * SQLite. La pantalla carga la task una vez; si mientras tanto llegó por
+ * sync un cambio de otro cliente, escribir el formulario completo y
+ * compararlo contra SQLite contaba ese campo como "cambiado" y el PATCH
+ * revertía la edición remota (LWW por campo). */
+export async function updateTask(id: string, input: TaskInput, base: TaskInput): Promise<void> {
+  const edited = diffChangedFields(base, input, TASK_INPUT_KEYS);
+  if (Object.keys(edited).length === 0) return;
+  await withKeyLock(taskLock(id), async () => {
+    const now = new Date().toISOString();
+    const current = await getTask(id);
+    if (!current) return;
+    // Mismo criterio que appStore.updateTask en desktop: sella completed_at
+    // en la primera transición a 'done' (conserva la fecha si ya estaba
+    // sellada) y la limpia si la task vuelve a un estado no-done.
+    const status = edited.status ?? current.status;
+    const completedAt = status === 'done' ? (current.completedAt ?? now) : null;
+    const next: Task = { ...current, ...edited, completedAt, updatedAt: now, deletedAt: null };
+    await getDb().runAsync(
+      `UPDATE tasks SET title = ?, task_code = ?, status = ?, tags = ?, project = ?, due = ?, content = ?, completed_at = ?, updated_at = ? WHERE id = ?`,
+      next.title,
+      next.taskCode,
+      next.status,
+      JSON.stringify(next.tags),
+      next.project,
+      next.due,
+      next.content,
+      completedAt,
+      now,
+      id
+    );
+    const changed = diffChangedFields(current, next, [...TASK_INPUT_KEYS, 'completedAt']);
+    void syncPatchTask(id, changed);
+  });
 }
 
 /** Cambio rápido de estado desde el listado (ciclo todo -> in-progress ->
@@ -209,7 +225,11 @@ async function syncDeleteTask(id: string): Promise<void> {
  * real; pisarlo ahora con una respuesta vieja perdería la edición
  * todavía no enviada. Escribe directo por SQL, no via `updateTask`
  * (evita volver a disparar un push de vuelta). */
-export async function applyTaskResponse(id: string, sinceIso: string, response: TaskApiResponse): Promise<void> {
+export function applyTaskResponse(id: string, sinceIso: string, response: TaskApiResponse): Promise<void> {
+  return withKeyLock(taskLock(id), () => applyTaskResponseLocked(id, sinceIso, response));
+}
+
+async function applyTaskResponseLocked(id: string, sinceIso: string, response: TaskApiResponse): Promise<void> {
   const current = await getTask(id);
   if (!current) return; // se borró localmente mientras tanto
   const mapped = taskFromApiResponse(response);
@@ -252,7 +272,11 @@ async function writeTaskRow(task: Task, updatedAt: string): Promise<void> {
  * `applyRemoteTaskChange` en `appStore.ts` de desktop). */
 const EPOCH = '0000-01-01T00:00:00.000Z';
 
-export async function applyRemoteTaskChange(change: SyncChange): Promise<void> {
+export function applyRemoteTaskChange(change: SyncChange): Promise<void> {
+  return withKeyLock(taskLock(change.id), () => applyRemoteTaskChangeLocked(change));
+}
+
+async function applyRemoteTaskChangeLocked(change: SyncChange): Promise<void> {
   if (change.deleted) {
     await getDb().runAsync('UPDATE tasks SET deleted_at = ? WHERE id = ?', change.updated_at, change.id);
     return;

@@ -1,6 +1,7 @@
 import { randomUUID } from 'expo-crypto';
 
 import { calcOvertimeBreakdown } from '../lib/overtimeCalc';
+import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import {
   createOvertimeEntryRemote, deleteOvertimeEntryRemote, patchOvertimeEntryRemote, patchOvertimeMonthMetaRemote,
@@ -106,41 +107,55 @@ export async function createOvertimeEntry(input: OvertimeInput): Promise<string>
   return id;
 }
 
-export async function updateOvertimeEntry(id: string, input: OvertimeInput): Promise<void> {
-  const now = new Date().toISOString();
-  const current = await getOvertimeEntry(id);
-  const b = calcOvertimeBreakdown(input.fecha, input.horaInicio, input.horaFinal);
-  await getDb().runAsync(
-    `UPDATE overtime_entries SET
-       fecha = ?, solicitada_por = ?, actividad = ?, observaciones = ?, hora_inicio = ?, hora_final = ?,
-       total_horas = ?, extras_diurnas = ?, extras_nocturnas = ?, extras_diurnas_festivas = ?, extras_nocturnas_festivas = ?,
-       updated_at = ?
-     WHERE id = ?`,
-    input.fecha,
-    input.solicitadaPor,
-    input.actividad,
-    input.observaciones,
-    input.horaInicio,
-    input.horaFinal,
-    b.totalHoras,
-    b.extrasDiurnas,
-    b.extrasNocturnas,
-    b.extrasDiurnasFestivas,
-    b.extrasNocturnasFestivas,
-    now,
-    id
-  );
-  const next: OvertimeEntry = {
-    id, ...input,
-    totalHoras: b.totalHoras, extrasDiurnas: b.extrasDiurnas, extrasNocturnas: b.extrasNocturnas,
-    extrasDiurnasFestivas: b.extrasDiurnasFestivas, extrasNocturnasFestivas: b.extrasNocturnasFestivas,
-    updatedAt: now, deletedAt: null,
-  };
-  const changed = diffChangedFields(current, next, [
-    'fecha', 'solicitadaPor', 'actividad', 'observaciones', 'horaInicio', 'horaFinal',
-    'totalHoras', 'extrasDiurnas', 'extrasNocturnas', 'extrasDiurnasFestivas', 'extrasNocturnasFestivas',
-  ]);
-  void syncPatchOvertimeEntry(id, changed);
+const OVERTIME_INPUT_KEYS: (keyof OvertimeInput)[] = ['fecha', 'solicitadaPor', 'actividad', 'observaciones', 'horaInicio', 'horaFinal'];
+const overtimeLock = (id: string) => `overtime_entry:${id}`;
+
+/** Guarda solo los campos que el usuario cambió respecto de `base` (lo que
+ * mostraba el formulario al abrir), mezclados sobre el registro actual de
+ * SQLite — mismo motivo que `updateTask` en db/tasks.ts. Los totales se
+ * recalculan con la fecha y las horas ya mezcladas y solo se mandan si
+ * cambiaron. */
+export async function updateOvertimeEntry(id: string, input: OvertimeInput, base: OvertimeInput): Promise<void> {
+  const edited = diffChangedFields(base, input, OVERTIME_INPUT_KEYS);
+  if (Object.keys(edited).length === 0) return;
+  await withKeyLock(overtimeLock(id), async () => {
+    const now = new Date().toISOString();
+    const current = await getOvertimeEntry(id);
+    if (!current) return;
+    const merged = { ...current, ...edited };
+    const b = calcOvertimeBreakdown(merged.fecha, merged.horaInicio, merged.horaFinal);
+    const next: OvertimeEntry = {
+      ...merged,
+      totalHoras: b.totalHoras, extrasDiurnas: b.extrasDiurnas, extrasNocturnas: b.extrasNocturnas,
+      extrasDiurnasFestivas: b.extrasDiurnasFestivas, extrasNocturnasFestivas: b.extrasNocturnasFestivas,
+      updatedAt: now, deletedAt: null,
+    };
+    await getDb().runAsync(
+      `UPDATE overtime_entries SET
+         fecha = ?, solicitada_por = ?, actividad = ?, observaciones = ?, hora_inicio = ?, hora_final = ?,
+         total_horas = ?, extras_diurnas = ?, extras_nocturnas = ?, extras_diurnas_festivas = ?, extras_nocturnas_festivas = ?,
+         updated_at = ?
+       WHERE id = ?`,
+      next.fecha,
+      next.solicitadaPor,
+      next.actividad,
+      next.observaciones,
+      next.horaInicio,
+      next.horaFinal,
+      next.totalHoras,
+      next.extrasDiurnas,
+      next.extrasNocturnas,
+      next.extrasDiurnasFestivas,
+      next.extrasNocturnasFestivas,
+      now,
+      id
+    );
+    const changed = diffChangedFields(current, next, [
+      ...OVERTIME_INPUT_KEYS,
+      'totalHoras', 'extrasDiurnas', 'extrasNocturnas', 'extrasDiurnasFestivas', 'extrasNocturnasFestivas',
+    ]);
+    void syncPatchOvertimeEntry(id, changed);
+  });
 }
 
 export async function softDeleteOvertimeEntry(id: string): Promise<void> {
@@ -296,7 +311,11 @@ async function writeOvertimeEntryRow(entry: OvertimeEntry, updatedAt: string): P
   );
 }
 
-export async function applyOvertimeEntryResponse(id: string, sinceIso: string, response: OvertimeEntryApiResponse): Promise<void> {
+export function applyOvertimeEntryResponse(id: string, sinceIso: string, response: OvertimeEntryApiResponse): Promise<void> {
+  return withKeyLock(overtimeLock(id), () => applyOvertimeEntryResponseLocked(id, sinceIso, response));
+}
+
+async function applyOvertimeEntryResponseLocked(id: string, sinceIso: string, response: OvertimeEntryApiResponse): Promise<void> {
   const current = await getOvertimeEntry(id);
   if (!current) return;
   const mapped = overtimeEntryFromApiResponse(response);
@@ -329,7 +348,11 @@ export async function applyOvertimeMonthMetaResponse(yearMonth: string, sinceIso
   );
 }
 
-export async function applyRemoteOvertimeEntryChange(change: SyncChange): Promise<void> {
+export function applyRemoteOvertimeEntryChange(change: SyncChange): Promise<void> {
+  return withKeyLock(overtimeLock(change.id), () => applyRemoteOvertimeEntryChangeLocked(change));
+}
+
+async function applyRemoteOvertimeEntryChangeLocked(change: SyncChange): Promise<void> {
   if (change.deleted) {
     await getDb().runAsync('UPDATE overtime_entries SET deleted_at = ? WHERE id = ?', change.updated_at, change.id);
     return;

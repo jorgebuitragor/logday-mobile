@@ -1,9 +1,10 @@
 import { randomUUID } from 'expo-crypto';
 
 import {
-  applyIncomingUpdate, applyTextEdit, docFromStateB64, encodeDocStateB64, getContentText,
+  applyEditorEdit, applyIncomingUpdate, applyTextEdit, docFromStateB64, encodeDocStateB64, getContentText,
 } from '../lib/crdtText';
 import * as contentSyncQueue from '../lib/contentSyncQueue';
+import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import {
   createNoteRemote, deleteNoteRemote, patchNoteRemote, pushNoteContentRemote,
@@ -92,25 +93,55 @@ export async function createNote(input: NoteInput): Promise<string> {
   return id;
 }
 
-export async function updateNote(id: string, input: NoteInput): Promise<void> {
-  const now = new Date().toISOString();
-  const current = await getNote(id);
-  await getDb().runAsync(
-    `UPDATE notes SET title = ?, content = ?, folder = ?, tags = ?, updated = ?, updated_at = ? WHERE id = ?`,
-    input.title,
-    input.content,
-    input.folder,
-    JSON.stringify(input.tags),
-    now,
-    now,
-    id
-  );
-  const next: Note = { id, ...input, updated: now, created: current?.created ?? now, pinned: current?.pinned ?? false, updatedAt: now, deletedAt: null };
-  const changedMeta = diffChangedFields(current, next, ['title', 'folder', 'tags', 'updated']);
-  void syncPatchNote(id, changedMeta);
-  if (!current || current.content !== input.content) {
-    void pushNoteContent(id, input.content);
-  }
+/** Lo que un editor (o el listado) muestra de una nota — base para
+ *  `updateNote`. */
+export function toNoteInput(note: Note): NoteInput {
+  return { title: note.title, content: note.content, folder: note.folder, tags: note.tags };
+}
+
+const noteLock = (id: string) => `note:${id}`;
+
+/**
+ * Guarda lo que el usuario cambió respecto de `base` (lo que la pantalla
+ * mostraba cuando cargó la nota o guardó por última vez) y lo mezcla
+ * sobre la nota actual de SQLite, que puede traer cambios de otro cliente
+ * que la pantalla todavía no tiene. Un campo igual a `base` no se toca:
+ * antes se escribían y comparaban todos los campos contra SQLite, así que
+ * un título o un texto que cambió en otro cliente contaba como cambiado
+ * y el guardado lo revertía. El contenido va al `Y.Text` como el delta
+ * `base.content` → `input.content` (`applyEditorEdit`), sin borrar lo
+ * remoto; mover de carpeta o cambiar tags no toca el contenido.
+ *
+ * Devuelve la nota ya mezclada (`null` si no existe), para que el editor
+ * rebase sobre ella lo que se escribió mientras tanto.
+ */
+export async function updateNote(id: string, input: NoteInput, base: NoteInput): Promise<Note | null> {
+  const edited = diffChangedFields(base, input, ['title', 'folder', 'tags']);
+  const contentEdited = input.content !== base.content;
+  if (Object.keys(edited).length === 0 && !contentEdited) return getNote(id);
+  return withKeyLock(noteLock(id), async () => {
+    const current = await getNote(id);
+    if (!current) return null;
+    const now = new Date().toISOString();
+    const content = contentEdited
+      ? await applyNoteContentEdit(id, current.content, base.content, input.content)
+      : null;
+    const next: Note = { ...current, ...edited, content: content?.text ?? current.content, updated: now, updatedAt: now };
+    await getDb().runAsync(
+      `UPDATE notes SET title = ?, content = ?, folder = ?, tags = ?, updated = ?, updated_at = ? WHERE id = ?`,
+      next.title,
+      next.content,
+      next.folder,
+      JSON.stringify(next.tags),
+      now,
+      now,
+      id
+    );
+    const changedMeta = diffChangedFields(current, next, ['title', 'folder', 'tags', 'updated']);
+    void syncPatchNote(id, changedMeta);
+    if (content?.stateB64) void pushNoteContent(id, content.stateB64);
+    return next;
+  });
 }
 
 export async function softDeleteNote(id: string): Promise<void> {
@@ -215,7 +246,11 @@ async function writeNoteRow(note: Note, updatedAt: string): Promise<void> {
  * NUNCA se pisa acá con `response.content` directo (a propósito,
  * mismo motivo que desktop): solo cambia vía el merge CRDT de abajo,
  * si la respuesta trae `content_state`. */
-export async function applyNoteResponse(id: string, sinceIso: string, response: NoteApiResponse): Promise<void> {
+export function applyNoteResponse(id: string, sinceIso: string, response: NoteApiResponse): Promise<void> {
+  return withKeyLock(noteLock(id), () => applyNoteResponseLocked(id, sinceIso, response));
+}
+
+async function applyNoteResponseLocked(id: string, sinceIso: string, response: NoteApiResponse): Promise<void> {
   const current = await getNote(id);
   if (!current) return;
   const mapped = noteFromApiResponse(response);
@@ -243,37 +278,51 @@ async function setNoteContentStateB64(id: string, stateB64: string): Promise<voi
   await getDb().runAsync('UPDATE notes SET content_state = ? WHERE id = ?', stateB64, id);
 }
 
-/** Push del estado Yjs completo de una nota — canal separado de
- * `syncPatchNote` (metadata/LWW). Persiste el snapshot local primero
- * (offline-safe, igual que `content` en texto plano); si hay conexión
- * intenta mandarlo ya, si no (o falla) lo encola en
- * `contentSyncQueue` — llamado desde `updateNote` en cada guardado
- * donde el contenido cambió. El diff se calcula contra el texto que
- * el `Y.Doc` persistido tiene ahora, no contra un valor capturado
- * aparte (ver `crdtText.applyTextEdit`). */
-async function pushNoteContent(id: string, newContent: string): Promise<void> {
+/** Aplica al `Y.Doc` persistido de la nota el delta que escribió el
+ *  usuario (`baseContent` → `newContent`) y guarda el estado. Devuelve el
+ *  texto ya mezclado con lo remoto y el estado a mandar (`null` si el doc
+ *  no cambió). Una nota sin estado CRDT todavía (anterior al sync, o
+ *  recién creada) se siembra con su texto de SQLite antes del delta.
+ *  Corre dentro del lock de la nota (ver `updateNote`). */
+async function applyNoteContentEdit(
+  id: string,
+  currentContent: string,
+  baseContent: string,
+  newContent: string
+): Promise<{ text: string; stateB64: string | null }> {
   const stateB64 = await getNoteContentStateB64(id);
   const doc = docFromStateB64(stateB64);
-  applyTextEdit(doc, newContent);
+  if (!stateB64 && currentContent) applyTextEdit(doc, currentContent);
+  const before = encodeDocStateB64(doc);
+  applyEditorEdit(doc, baseContent, newContent);
+  const text = getContentText(doc);
   const nextStateB64 = encodeDocStateB64(doc);
   doc.destroy();
+  if (nextStateB64 === before && stateB64) return { text, stateB64: null };
   await setNoteContentStateB64(id, nextStateB64);
+  return { text, stateB64: nextStateB64 };
+}
 
+/** Push del estado Yjs completo de una nota — canal separado de
+ * `syncPatchNote` (metadata/LWW). El estado ya quedó persistido en
+ * `applyNoteContentEdit` (offline-safe); si hay conexión intenta
+ * mandarlo ya, si no (o falla) lo encola en `contentSyncQueue`. */
+async function pushNoteContent(id: string, stateB64: string): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled) return;
   if (!runtime.connected) {
-    await contentSyncQueue.enqueue('note', id, nextStateB64);
+    await contentSyncQueue.enqueue('note', id, stateB64);
     return;
   }
   try {
-    const response = await runtime.withSyncAuth((token) => pushNoteContentRemote(runtime.serverUrl, token, id, nextStateB64));
+    const response = await runtime.withSyncAuth((token) => pushNoteContentRemote(runtime.serverUrl, token, id, stateB64));
     // Respuesta completa (metadata + content_state), mismo camino que
     // create/patch — mismo criterio que `syncNoteContent` en desktop:
     // aplica todo por el mismo merge guardado-por-cola, no solo el
     // contenido, aunque este push haya sido solo de contenido.
     await applyNoteResponse(id, new Date().toISOString(), response);
   } catch {
-    await contentSyncQueue.enqueue('note', id, nextStateB64);
+    await contentSyncQueue.enqueue('note', id, stateB64);
   }
 }
 
@@ -301,7 +350,11 @@ async function applyRemoteNoteContentState(id: string, contentStateB64: string):
 
 const EPOCH = '0000-01-01T00:00:00.000Z';
 
-export async function applyRemoteNoteChange(change: SyncChange): Promise<void> {
+export function applyRemoteNoteChange(change: SyncChange): Promise<void> {
+  return withKeyLock(noteLock(change.id), () => applyRemoteNoteChangeLocked(change));
+}
+
+async function applyRemoteNoteChangeLocked(change: SyncChange): Promise<void> {
   if (change.deleted) {
     await getDb().runAsync('UPDATE notes SET deleted_at = ? WHERE id = ?', change.updated_at, change.id);
     return;

@@ -54,6 +54,20 @@ function findConflicts(
   });
 }
 
+/** Lo que manda el formulario al guardar. La pantalla de edición la usa
+ *  también sobre el valor inicial para comparar contra lo mismo que se
+ *  manda (ver `updateOvertimeEntry`). */
+export function normalizeOvertimeInput(input: OvertimeInput): OvertimeInput {
+  return {
+    fecha: input.fecha.trim(),
+    horaInicio: input.horaInicio.trim(),
+    horaFinal: input.horaFinal.trim(),
+    solicitadaPor: input.solicitadaPor.trim(),
+    actividad: input.actividad.trim(),
+    observaciones: input.observaciones,
+  };
+}
+
 export function OvertimeForm({ initialValue, onSubmit, submitLabel, entryId }: OvertimeFormProps) {
   const { t } = useTranslation();
   const theme = useTheme();
@@ -82,14 +96,7 @@ export function OvertimeForm({ initialValue, onSubmit, submitLabel, entryId }: O
   const canSubmit = fecha.trim().length > 0 && horaInicio.trim().length > 0 && horaFinal.trim().length > 0 && actividad.trim().length > 0;
 
   function buildInput(): OvertimeInput {
-    return {
-      fecha: fecha.trim(),
-      horaInicio: horaInicio.trim(),
-      horaFinal: horaFinal.trim(),
-      solicitadaPor: solicitadaPor.trim(),
-      actividad: actividad.trim(),
-      observaciones,
-    };
+    return normalizeOvertimeInput({ fecha, horaInicio, horaFinal, solicitadaPor, actividad, observaciones });
   }
 
   function handleSubmitPress() {

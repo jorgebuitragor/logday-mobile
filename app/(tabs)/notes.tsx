@@ -12,7 +12,7 @@ import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { NoteSortSheet } from '../../src/components/NoteSortSheet';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
-import { createNote, listNotes, setNotePinned, softDeleteNote, updateNote } from '../../src/db/notes';
+import { createNote, listNotes, setNotePinned, softDeleteNote, toNoteInput, updateNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
@@ -132,8 +132,11 @@ export default function NotesScreen() {
     reload();
   }
 
+  // `note` es la fila de la lista, que puede estar vieja (pudo llegar algo
+  // por sync desde que se cargó): `updateNote` solo guarda lo que cambia
+  // respecto de ella, así que el contenido y el título no se tocan.
   async function handleSaveFolderNote(note: Note, folder: string) {
-    await updateNote(note.id, { title: note.title, content: note.content, folder, tags: note.tags });
+    await updateNote(note.id, { ...toNoteInput(note), folder }, toNoteInput(note));
     reload();
   }
 
@@ -145,14 +148,14 @@ export default function NotesScreen() {
     const value = normalizeTag(rawTag);
     if (!value || note.tags.includes(value)) return;
     const nextTags = [...note.tags, value];
-    await updateNote(note.id, { title: note.title, content: note.content, folder: note.folder, tags: nextTags });
+    await updateNote(note.id, { ...toNoteInput(note), tags: nextTags }, toNoteInput(note));
     reload();
     setActionsNote((prev) => (prev && prev.id === note.id ? { ...prev, tags: nextTags } : prev));
   }
 
   async function handleRemoveTagNote(note: Note, tag: string) {
     const nextTags = note.tags.filter((existing) => existing !== tag);
-    await updateNote(note.id, { title: note.title, content: note.content, folder: note.folder, tags: nextTags });
+    await updateNote(note.id, { ...toNoteInput(note), tags: nextTags }, toNoteInput(note));
     reload();
     setActionsNote((prev) => (prev && prev.id === note.id ? { ...prev, tags: nextTags } : prev));
   }

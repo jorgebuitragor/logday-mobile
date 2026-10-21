@@ -1,7 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Eye, EyeOff, Folder, MoreHorizontal, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -10,11 +10,13 @@ import Markdown from 'react-native-markdown-display';
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { MarkdownToolbar, type TextSelection } from '../../src/components/MarkdownToolbar';
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
-import { createNote, getNote, setNotePinned, softDeleteNote, updateNote, type NoteInput } from '../../src/db/notes';
+import { createNote, getNote, setNotePinned, softDeleteNote, toNoteInput, updateNote, type NoteInput } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { mapTextIndex, syncEditorText } from '../../src/lib/crdtText';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { normalizeTag } from '../../src/lib/noteTags';
+import { onRemoteChange } from '../../src/lib/syncEvents';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { ThemeTokens } from '../../src/theme/tokens';
@@ -131,10 +133,26 @@ export default function NoteEditorScreen() {
   const contentRef = useRef('');
   const folderRef = useRef('');
   const tagsRef = useRef<string[]>([]);
+  const selectionRef = useRef<TextSelection>({ start: 0, end: 0 });
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Lo último que vino de SQLite para esta nota (lo cargado, lo ya
+  // guardado o lo que llegó por sync). Al guardar se manda solo lo que
+  // cambió desde acá (`updateNote` con `base`), y lo que llega se lleva
+  // al editor rebasando lo escrito (`applyIncoming`). Antes se cargaba
+  // una sola vez y cada guardado mandaba título y contenido completos:
+  // una edición de otro cliente no aparecía y la siguiente tecla la
+  // borraba.
+  const baseRef = useRef<NoteInput>({ title: '', content: '', folder: '', tags: [] });
+  // Guardados y recargas en fila: cada uno parte de la base que dejó el
+  // anterior. Si dos corrieran a la vez, la respuesta del primero se
+  // rebasaría sobre la base del segundo.
+  const queueRef = useRef<Promise<void>>(Promise.resolve());
 
+  // En la misma fila que guardados y recargas: un cambio remoto que llegue
+  // antes de terminar de cargar se aplica después, sobre lo cargado.
   useEffect(() => {
-    getNote(id).then((loaded) => {
+    void enqueue(async () => {
+      const loaded = await getNote(id);
       setNote(loaded);
       if (loaded) {
         setTitle(loaded.title);
@@ -143,6 +161,7 @@ export default function NoteEditorScreen() {
         contentRef.current = loaded.content;
         folderRef.current = loaded.folder;
         tagsRef.current = loaded.tags;
+        baseRef.current = toNoteInput(loaded);
       }
     });
   }, [id]);
@@ -195,18 +214,82 @@ export default function NoteEditorScreen() {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
-      const pending = isEmpty
-        ? softDeleteNote(id)
-        : updateNote(id, {
-            title: titleRef.current.trim(),
-            content: contentRef.current,
-            folder: folderRef.current,
-            tags: tagsRef.current,
-          });
+      const pending = isEmpty ? softDeleteNote(id) : saveBeforeLeaving();
       pending.then(() => navigation.dispatch(e.data.action));
     });
     return unsubscribe;
   }, [navigation, id]);
+
+  // Una edición de otro cliente que llega por el pull mientras la nota
+  // está abierta se lleva al editor sin perder lo escrito.
+  const handleRemoteChange = useEffectEvent((type: string, changedId: string) => {
+    if (type !== 'note' || changedId !== id) return;
+    enqueue(async () => {
+      const fresh = await getNote(id);
+      if (fresh && !fresh.deletedAt) applyIncoming(fresh);
+    });
+  });
+  useEffect(() => onRemoteChange((type, changedId) => handleRemoteChange(type, changedId)), []);
+
+  function enqueue(task: () => Promise<void>): Promise<void> {
+    const run = queueRef.current.then(task);
+    queueRef.current = run.catch(() => {});
+    return run;
+  }
+
+  /** Lleva al editor la nota de SQLite. El contenido se rebasa sobre lo
+   *  escrito desde la base (`syncEditorText`); título, carpeta y tags se
+   *  adoptan solo si el usuario no los cambió desde la base (si los
+   *  cambió, su valor sale en el próximo guardado). */
+  function applyIncoming(incoming: Note) {
+    const base = baseRef.current;
+    const contentState = { base: base.content, text: contentRef.current };
+    const rebased = syncEditorText(contentState, incoming.content);
+    if (rebased) {
+      contentRef.current = rebased.text;
+      setContent(rebased.text);
+      const sel = selectionRef.current;
+      const nextSelection = { start: mapTextIndex(rebased.changes, sel.start), end: mapTextIndex(rebased.changes, sel.end) };
+      selectionRef.current = nextSelection;
+      setSelection(nextSelection);
+    }
+    if (titleRef.current.trim() === base.title && incoming.title !== base.title) {
+      titleRef.current = incoming.title;
+      setTitle(incoming.title);
+    }
+    if (folderRef.current === base.folder) folderRef.current = incoming.folder;
+    if (tagsRef.current === base.tags) tagsRef.current = incoming.tags;
+    baseRef.current = toNoteInput(incoming);
+    setNote({ ...incoming, folder: folderRef.current, tags: tagsRef.current });
+  }
+
+  /** Guarda lo que haya en el editor al momento de correr (no al
+   *  encolarse): si mientras esperaba llegó algo remoto, el texto ya está
+   *  rebasado sobre eso. */
+  function save(overrides?: Partial<NoteInput>): Promise<void> {
+    return enqueue(async () => {
+      const input: NoteInput = {
+        title: titleRef.current.trim(),
+        content: contentRef.current,
+        folder: folderRef.current,
+        tags: tagsRef.current,
+        ...overrides,
+      };
+      const base = baseRef.current;
+      // La base pasa a ser lo enviado: la nota que devuelve `updateNote`
+      // ya trae esta edición, así que `applyIncoming` solo lleva al
+      // editor la parte remota.
+      baseRef.current = input;
+      try {
+        const merged = await updateNote(id, input, base);
+        if (merged) applyIncoming(merged);
+      } catch (e) {
+        if (baseRef.current === input) baseRef.current = base;
+        throw e;
+      }
+    });
+  }
+  const saveBeforeLeaving = useEffectEvent(() => save());
 
   function scheduleSave() {
     setSaveState('pending');
@@ -216,12 +299,7 @@ export default function NoteEditorScreen() {
 
   async function flushSave() {
     saveTimeoutRef.current = null;
-    await updateNote(id, {
-      title: titleRef.current.trim(),
-      content: contentRef.current,
-      folder: folderRef.current,
-      tags: tagsRef.current,
-    });
+    await save();
     setSaveState('saved');
   }
 
@@ -233,14 +311,7 @@ export default function NoteEditorScreen() {
       clearTimeout(saveTimeoutRef.current);
       saveTimeoutRef.current = null;
     }
-    const input: NoteInput = {
-      title: titleRef.current.trim(),
-      content: contentRef.current,
-      folder: folderRef.current,
-      tags: tagsRef.current,
-      ...overrides,
-    };
-    await updateNote(id, input);
+    await save(overrides);
     setSaveState('saved');
   }
 
@@ -261,6 +332,7 @@ export default function NoteEditorScreen() {
   // mismo camino de guardado que tipear a mano.
   function handleToolbarChange(nextValue: string, nextSelection: TextSelection) {
     handleContentChange(nextValue);
+    selectionRef.current = nextSelection;
     setSelection(nextSelection);
   }
 
@@ -443,7 +515,10 @@ export default function NoteEditorScreen() {
               style={[styles.contentInput, { color: theme.textBody }]}
               value={content}
               onChangeText={handleContentChange}
-              onSelectionChange={(e) => setSelection(e.nativeEvent.selection)}
+              onSelectionChange={(e) => {
+                selectionRef.current = e.nativeEvent.selection;
+                setSelection(e.nativeEvent.selection);
+              }}
               selection={selection}
               placeholder={t('noteForm.contentPlaceholder')}
               placeholderTextColor={theme.textFaint}

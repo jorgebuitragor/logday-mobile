@@ -16,6 +16,7 @@ import {
   upsertOvertimeMonthMeta,
 } from '../../src/db/overtime';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
 import { exportOvertimeMonth } from '../../src/lib/overtimeExport';
 import { observacionesLabel } from '../../src/lib/overtimeLabels';
 import { usePreferences } from '../../src/settings/PreferencesContext';
@@ -94,6 +95,7 @@ export default function OvertimeScreen() {
   }, []);
 
   useFocusEffect(reload);
+  useReloadOnRemoteChange(['overtime_entry', 'overtime_month_meta'], reload);
 
   async function performDelete(entry: OvertimeEntry) {
     await softDeleteOvertimeEntry(entry.id);
@@ -121,9 +123,9 @@ export default function OvertimeScreen() {
     await exportOvertimeMonth(section.title, monthLabel(section.title), section.data, meta);
   }
 
-  async function handleSaveMeta(colaborador: string, cedula: string) {
+  async function handleSaveMeta(colaborador: string, cedula: string, base: { colaborador: string; cedula: string }) {
     if (!actionsMonth) return;
-    await upsertOvertimeMonthMeta(actionsMonth.title, colaborador, cedula);
+    await upsertOvertimeMonthMeta(actionsMonth.title, colaborador, cedula, base);
   }
 
   function handleOpenPreview() {

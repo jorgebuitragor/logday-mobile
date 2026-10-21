@@ -3,7 +3,7 @@ import {
 } from '../lib/crdtText';
 import * as contentSyncQueue from '../lib/contentSyncQueue';
 import { withKeyLock } from '../lib/keyedLock';
-import { deleteDailyEntryRemote, putDailyEntryContentRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
+import { deleteDailyEntryRemote, isPermanentSyncError, putDailyEntryContentRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
 import type { DailyEntryApiResponse } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
 import { getSyncRuntime } from '../lib/syncRuntime';
@@ -126,7 +126,13 @@ async function pushDailyContent(date: string, stateB64: string): Promise<void> {
       const contentState = response.content_state;
       await withKeyLock(dailyLock(date), () => applyRemoteDailyContentState(date, contentState));
     }
-  } catch {
+  } catch (e) {
+    // Un 4xx no se arregla reintentando: en la cola quedaba trabado para
+    // siempre y frenaba el drenado del resto del contenido.
+    if (isPermanentSyncError(e)) {
+      console.warn('[sync] contenido descartado', 'daily_entry', date, (e as SyncApiError).status);
+      return;
+    }
     await contentSyncQueue.enqueue('daily_entry', date, stateB64);
   }
 }

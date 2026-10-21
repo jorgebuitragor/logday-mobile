@@ -191,20 +191,38 @@ export async function getOvertimeMonthMeta(yearMonth: string): Promise<OvertimeM
 
 // UI propia en `OvertimeMonthActionsSheet` para editar colaborador/
 // cédula por mes. Upsert: la fila puede no existir todavía para un
-// mes sin exportar antes.
-export async function upsertOvertimeMonthMeta(yearMonth: string, colaborador: string, cedula: string): Promise<void> {
+// mes sin exportar antes. `base` es lo que mostraba el formulario al
+// abrir: se guarda solo lo que el usuario cambió desde ahí, mezclado
+// sobre lo que tenga SQLite (mismo motivo que `updateTask`). Sin `base`
+// se guardan los dos campos.
+export async function upsertOvertimeMonthMeta(
+  yearMonth: string,
+  colaborador: string,
+  cedula: string,
+  base?: { colaborador: string; cedula: string }
+): Promise<void> {
   const now = new Date().toISOString();
   const current = await getOvertimeMonthMeta(yearMonth);
+  const input = { colaborador, cedula };
+  const edited = base ? diffChangedFields(base, input, ['colaborador', 'cedula']) : input;
+  if (Object.keys(edited).length === 0) return;
+  const next: OvertimeMonthMeta = {
+    yearMonth,
+    colaborador: current?.colaborador ?? '',
+    cedula: current?.cedula ?? '',
+    ...edited,
+    updatedAt: now,
+    deletedAt: null,
+  };
   await getDb().runAsync(
     `INSERT INTO overtime_month_meta (year_month, colaborador, cedula, updated_at, deleted_at)
      VALUES (?, ?, ?, ?, NULL)
      ON CONFLICT(year_month) DO UPDATE SET colaborador = excluded.colaborador, cedula = excluded.cedula, updated_at = excluded.updated_at, deleted_at = NULL`,
     yearMonth,
-    colaborador,
-    cedula,
+    next.colaborador,
+    next.cedula,
     now
   );
-  const next: OvertimeMonthMeta = { yearMonth, colaborador, cedula, updatedAt: now, deletedAt: null };
   const changed = diffChangedFields(current, next, ['colaborador', 'cedula']);
   void syncPatchOvertimeMonthMeta(yearMonth, changed);
 }

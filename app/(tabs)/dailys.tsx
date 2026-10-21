@@ -15,6 +15,7 @@ import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { deleteAbsenceDay, listAbsenceDays } from '../../src/db/absences';
 import { listDailyEntries, softDeleteDailyEntry, softDeleteDailyMonth } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
 import { absenceTypeLabel } from '../../src/lib/absenceLabels';
 import { todayISO } from '../../src/lib/dates';
 import { buildDailyMonthDoc, exportDailyMonth, type DailyMonthExportFormat } from '../../src/lib/dailyMonthExport';
@@ -98,6 +99,8 @@ export default function DailysScreen() {
 
   useFocusEffect(reload);
   useFocusEffect(reloadAbsences);
+  useReloadOnRemoteChange(['daily_entry'], reload);
+  useReloadOnRemoteChange(['absence_day'], reloadAbsences);
 
   // Mismo `Map` que `absenceByDate` en `DailyList.tsx` de desktop —
   // una ausencia por fecha (ver `saveAbsenceDay`, upsert por fecha).
@@ -337,7 +340,8 @@ export default function DailysScreen() {
 
       <ConfirmDeleteModal
         visible={confirmDeleteAbsence.isOpen}
-        title={t('absence.delete')}
+        title={t('absence.confirmDeleteTitle')}
+        message={t('absence.confirmDeleteMessage')}
         cancelLabel={t('absence.cancel')}
         confirmLabel={t('absence.delete')}
         onCancel={confirmDeleteAbsence.cancel}

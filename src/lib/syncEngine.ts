@@ -11,7 +11,7 @@ import {
   deleteAbsenceDayRemote, deleteDailyEntryRemote, deleteNoteRemote, deleteOvertimeEntryRemote, deleteTaskRemote,
   patchAbsenceDayRemote, patchNoteRemote, patchOvertimeEntryRemote, patchOvertimeMonthMetaRemote, patchTaskRemote,
   putDailyEntryContentRemote, pushNoteContentRemote,
-  syncChangesRemote, SyncApiError, type SyncChange, type SyncEntityType,
+  isPermanentSyncError, syncChangesRemote, SyncApiError, type SyncChange, type SyncEntityType,
 } from './syncApi';
 import type {
   AbsenceDayCreatePayload, AbsenceDayPatchPayload,
@@ -220,11 +220,19 @@ export async function drainContentSyncQueue(): Promise<void> {
     // nueva hecha mientras este drenado estaba en curso, no la vieja
     // que se está drenando (que ya está reflejada en `updateB64`).
     const queuedAt = new Date().toISOString();
-    if (entity === 'note') {
-      const r = await withSyncAuth((token) => pushNoteContentRemote(serverUrl, token, key, updateB64));
-      await applyNoteResponse(key, queuedAt, r);
-    } else {
-      await withSyncAuth((token) => putDailyEntryContentRemote(serverUrl, token, key, updateB64));
+    try {
+      if (entity === 'note') {
+        const r = await withSyncAuth((token) => pushNoteContentRemote(serverUrl, token, key, updateB64));
+        await applyNoteResponse(key, queuedAt, r);
+      } else {
+        await withSyncAuth((token) => putDailyEntryContentRemote(serverUrl, token, key, updateB64));
+      }
+    } catch (e) {
+      // Mismo criterio que `sendQueuedWrite`: un 4xx se descarta. Si no,
+      // la entrada se reintentaba en cada ciclo y, como el drenado corta
+      // en el primer error, frenaba todo el contenido encolado después.
+      if (!isPermanentSyncError(e)) throw e;
+      console.warn('[sync] contenido descartado de la cola', entity, key, (e as SyncApiError).status);
     }
   });
 }

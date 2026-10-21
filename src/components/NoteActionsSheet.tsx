@@ -19,6 +19,7 @@ import {
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 import { useTheme } from '../theme/ThemeContext';
 import type { NoteExportFormat } from '../lib/noteExport';
@@ -69,6 +70,14 @@ export function NoteActionsSheet({
   onRemoveTag,
   onDelete,
 }: NoteActionsSheetProps) {
+  // Mismo patrón que Settings y el editor de notas: `KeyboardAvoidingView`
+  // no funciona con edge-to-edge en Android, así que se lee la altura real
+  // del teclado.
+  const keyboard = useAnimatedKeyboard({
+    isStatusBarTranslucentAndroid: true,
+    isNavigationBarTranslucentAndroid: true,
+  });
+  const keyboardSpacer = useAnimatedStyle(() => ({ height: keyboard.height.value }));
   const theme = useTheme();
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('actions');
@@ -215,6 +224,9 @@ export function NoteActionsSheet({
             </>
           )}
         </Pressable>
+        {/* Espacio del alto del teclado debajo de la hoja: sin esto el
+            teclado tapaba la hoja entera al editar un campo. */}
+        <Animated.View style={keyboardSpacer} />
       </Pressable>
     </Modal>
   );

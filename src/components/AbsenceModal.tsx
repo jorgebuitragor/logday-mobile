@@ -91,7 +91,10 @@ export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete 
 
   async function doSave() {
     if (mode === 'single') {
-      await saveAbsenceDay(date, type, note.trim() || null);
+      // Base = la ausencia que cargó el modal: se guarda solo lo que el
+      // usuario cambió desde ahí (ver `saveAbsenceDay`).
+      const base = existing && existing.date === date ? { type: existing.type, note: existing.note } : undefined;
+      await saveAbsenceDay(date, type, note.trim() || null, base);
     } else {
       await saveAbsenceDayRange(rangeStart, rangeEnd, type, note.trim() || null);
     }

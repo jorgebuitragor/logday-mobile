@@ -320,10 +320,30 @@ export interface NoteApiResponse extends NoteCreatePayload {
   deleted_at?: string;
 }
 
+// Mobile crea las notas vacías (ver `note/new.tsx`) y el usuario puede
+// dejar o borrar el título, pero logday-server exige un `title` no vacío
+// en el create y en el PATCH y responde 400 ("title is required"). Ese
+// 400 no se arregla reintentando: la cola lo descartaba, la nota nunca
+// llegaba al servidor y todo lo que venía después daba 404. Se manda el
+// mismo placeholder que usan Web y Desktop al crear. `fromServerNoteTitle`
+// lo deshace en el eco, para que el editor no muestre "Sin título" como
+// texto escrito.
+export const UNTITLED_NOTE_TITLE = 'Sin título';
+
+function serverNoteTitle(title: string | undefined): string {
+  return title && title.trim() ? title : UNTITLED_NOTE_TITLE;
+}
+
+/** Título que trae el servidor, llevado al estado local: si es el
+ *  placeholder y la nota local no tenía título, sigue sin título. */
+export function fromServerNoteTitle(serverTitle: string, localTitle: string | undefined): string {
+  return serverTitle === UNTITLED_NOTE_TITLE && !localTitle?.trim() ? (localTitle ?? '') : serverTitle;
+}
+
 export function noteToCreatePayload(note: Note): NoteCreatePayload {
   return {
     id: note.id,
-    title: note.title,
+    title: serverNoteTitle(note.title),
     folder: note.folder,
     tags: note.tags,
     created: note.created,
@@ -335,7 +355,7 @@ export function noteToCreatePayload(note: Note): NoteCreatePayload {
 
 export function noteFieldsToPatchPayload(fields: Partial<Note>): NotePatchPayload {
   const payload: NotePatchPayload = { updated_at: nowIso() };
-  if ('title' in fields) payload.title = fields.title;
+  if ('title' in fields) payload.title = serverNoteTitle(fields.title);
   if ('folder' in fields) payload.folder = fields.folder;
   if ('tags' in fields) payload.tags = fields.tags;
   if ('created' in fields) payload.created = fields.created;

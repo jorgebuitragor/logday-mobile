@@ -54,18 +54,28 @@ async function getAbsenceDay(id: string): Promise<AbsenceDay | null> {
 // fecha, pero esa regla vive en la capa de la app, no en el esquema
 // (igual que el resto de "enums" de este proyecto, ver
 // esquema-datos/design.md).
-export async function saveAbsenceDay(date: string, type: AbsenceType, note: string | null): Promise<void> {
+export async function saveAbsenceDay(
+  date: string,
+  type: AbsenceType,
+  note: string | null,
+  base?: { type: AbsenceType; note: string | null }
+): Promise<void> {
   const now = new Date().toISOString();
   const existing = await getAbsenceDayByDate(date);
   if (existing) {
+    // Con `base` (lo que mostraba el modal al abrir) se guarda solo lo que
+    // el usuario cambió desde ahí, mezclado sobre la fila actual: si otro
+    // cliente cambió la nota mientras el modal estaba abierto, cambiar
+    // solo el motivo no la revierte (mismo motivo que `updateTask`).
+    const edited = base ? diffChangedFields(base, { type, note }, ['type', 'note']) : { type, note };
+    const next: AbsenceDay = { ...existing, ...edited, updatedAt: now };
     await getDb().runAsync(
       'UPDATE absence_days SET type = ?, note = ?, updated_at = ? WHERE id = ?',
-      type,
-      note,
+      next.type,
+      next.note,
       now,
       existing.id
     );
-    const next: AbsenceDay = { ...existing, type, note, updatedAt: now };
     const changed = diffChangedFields(existing, next, ['type', 'note']);
     void syncPatchAbsenceDay(existing.id, changed);
     return;

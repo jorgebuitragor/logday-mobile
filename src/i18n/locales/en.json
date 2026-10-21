@@ -233,6 +233,8 @@
     "save": "Save",
     "cancel": "Cancel",
     "delete": "Delete",
+    "confirmDeleteTitle": "Delete absence",
+    "confirmDeleteMessage": "This action cannot be undone.",
     "sensitiveConsentTitle": "Sensitive health data",
     "sensitiveConsentBody": "\"Sick leave\" is sensitive health data. You are not required to record it — if you continue, it syncs to the server under the current data-processing policy. This notice only appears once.",
     "sensitiveConsentAccept": "I understand, continue"

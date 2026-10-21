@@ -1,7 +1,7 @@
 # Sync con logday-server — Tareas
 
-Estado: Fases 0, 1 y 2 confirmadas en vivo. Fase 3 implementada,
-pendiente de checkpoint en vivo.
+Estado: Fases 0, 1, 2 y 3 confirmadas en vivo (Fase 2 completa y Fase 3
+el 21 oct 2026). Falta la Fase 4.
 
 ## Plan completo (referencia)
 
@@ -126,12 +126,24 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       (mismo endpoint que consume el polling de mobile); (2) el
       usuario confirmó en la pantalla de mobile que el título
       cambió a "Prueba (editada desde servidor)" sin tocar nada.
-- [ ] **Pendiente de verificar en vivo, no cubierto todavía**: el
-      mismo push/pull para OvertimeMonthMeta (colaborador/cédula) y
-      AbsenceDay; el drenado de la cola offline tras reconectar wifi;
-      el caso de LWW por campo real (editar el mismo registro en dos
-      campos distintos desde mobile y desde otro cliente al mismo
-      tiempo, confirmar que ningún cambio se pierde).
+- [x] **Checkpoint en vivo (2026-10-21, confirmado) — resto de la
+      Fase 2**: iOS Simulator con Expo Go (manejado con Maestro) contra un
+      logday-server local, con logday-web como el otro cliente.
+      AbsenceDay creada, editada y borrada en los dos sentidos.
+      OvertimeMonthMeta (colaborador/cédula) en los dos sentidos. Cola
+      offline: con el servidor caído se editaron una task, el contenido
+      de una nota y un daily, y al volver el servidor el polling los
+      mandó todos. LWW por campo: Web cambia un campo y Mobile otro del
+      mismo registro, y se conservan los dos.
+- [x] **Bugs encontrados en ese checkpoint y corregidos**:
+      - "Datos del colaborador" abría vacío aunque el mes tuviera datos:
+        los borradores se cargaban al abrir la hoja, antes de que
+        terminara la consulta. Al guardar se borraba la cédula. Ahora se
+        cargan al entrar al formulario.
+      - OvertimeMonthMeta y AbsenceDay mandaban los dos campos al
+        guardar: si otro cliente había cambiado uno, se revertía. Ahora
+        reciben la base que mostró el formulario y guardan solo lo que
+        cambió el usuario (mismo arreglo que Task y OvertimeEntry).
 
 ## Fase 3 — Note y DailyEntry: metadatos (LWW) + contenido (Yjs CRDT)
 
@@ -172,10 +184,30 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       reales; `applyRemoteNoteChange`/`applyRemoteDailyEntryChange`/
       `pushNoteContentRemote`/`applyTextEdit`/`drainContentSyncQueue`
       aparecen resueltos.
-- [ ] **Checkpoint en vivo**: crear/editar/borrar una Note en mobile,
-      confirmar en desktop/web (metadata Y contenido); editar el
-      contenido de la misma nota desde mobile y desde desktop casi al
-      mismo tiempo, en partes DISTINTAS del texto — confirmar que el
-      merge conserva ambas ediciones; mismo par de pruebas para un
-      DailyEntry; modo avión, escribir en una nota, reconectar —
-      confirmar que el contenido llega completo.
+- [x] **Checkpoint en vivo (2026-10-21, confirmado)**: mismo entorno
+      que el de la Fase 2. Note creada, editada y borrada en Mobile y
+      confirmada en Web (metadata y contenido). Edición casi simultánea
+      del contenido desde Mobile y Web, en partes distintas: se conservan
+      las dos (la nota y un DailyEntry). Offline: contenido escrito con
+      el servidor caído llega completo al volver.
+- [x] **Bugs encontrados en ese checkpoint y corregidos**:
+      - Ninguna nota creada en Mobile con el sync activo llegaba al
+        servidor. Mobile la crea con título vacío y logday-server
+        responde 400 ("title is required"). La cola descartaba el create,
+        los PATCH daban 404 y se ignoraban, y el contenido quedaba
+        trabado en `contentSyncQueue` para siempre, frenando el drenado
+        del resto. Ahora se manda "Sin título" (como Web y Desktop) y se
+        deshace en el eco. Un 4xx de contenido ya no se encola ni frena
+        la cola.
+      - Las listas solo recargaban al recuperar el foco: lo que llegaba
+        por sync no aparecía hasta cambiar de pestaña. Ahora recargan
+        con cada cambio remoto de su entidad (`useReloadOnRemoteChange`).
+      - UI: el encabezado de los modales de pantalla completa (lista de
+        ausencias, vista previa de horas extra) quedaba bajo la barra de
+        estado y la X no se podía tocar; el teclado tapaba las hojas con
+        campos (colaborador, carpeta y tags de una nota); los chips de
+        carpeta del listado de notas salían cortados o gigantes; la
+        confirmación de borrar una ausencia no tenía mensaje.
+- [ ] **Pendiente**: las notas creadas en Mobile antes de este arreglo
+      quedaron solo en el teléfono (el servidor nunca las recibió). La
+      migración de la Fase 4 tiene que cubrirlas.

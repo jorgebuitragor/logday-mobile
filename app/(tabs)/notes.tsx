@@ -14,6 +14,7 @@ import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { createNote, listNotes, setNotePinned, softDeleteNote, toNoteInput, updateNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { normalizeTag } from '../../src/lib/noteTags';
@@ -89,6 +90,7 @@ export default function NotesScreen() {
   }, []);
 
   useFocusEffect(reload);
+  useReloadOnRemoteChange(['note'], reload);
 
   async function performDelete(note: Note) {
     await softDeleteNote(note.id);
@@ -228,6 +230,7 @@ export default function NotesScreen() {
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
+          style={styles.filterScroll}
           contentContainerStyle={styles.filterRow}
         >
           {folders.map((folder) => (
@@ -510,6 +513,13 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     marginTop: 16,
     marginRight: 16,
+  },
+  // El estilo base de ScrollView trae flexGrow/flexShrink 1: la fila de chips
+  // se repartía la altura con la lista y con pocas notas salía gigante, con
+  // muchas, cortada. Así toma solo el alto de los chips.
+  filterScroll: {
+    flexGrow: 0,
+    flexShrink: 0,
   },
   filterRow: {
     paddingHorizontal: 16,

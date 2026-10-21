@@ -7,10 +7,12 @@ import * as contentSyncQueue from '../lib/contentSyncQueue';
 import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import {
-  createNoteRemote, deleteNoteRemote, patchNoteRemote, pushNoteContentRemote,
+  createNoteRemote, deleteNoteRemote, isPermanentSyncError, patchNoteRemote, pushNoteContentRemote,
   SyncApiError, type SyncChange,
 } from '../lib/syncApi';
-import { noteFieldsToPatchPayload, noteFromApiResponse, noteToCreatePayload, NOTE_FIELD_MAP, type NoteApiResponse } from '../lib/syncMapping';
+import {
+  fromServerNoteTitle, noteFieldsToPatchPayload, noteFromApiResponse, noteToCreatePayload, NOTE_FIELD_MAP, type NoteApiResponse,
+} from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import type { Note } from '../types/note';
@@ -254,6 +256,7 @@ async function applyNoteResponseLocked(id: string, sinceIso: string, response: N
   const current = await getNote(id);
   if (!current) return;
   const mapped = noteFromApiResponse(response);
+  mapped.title = fromServerNoteTitle(mapped.title, current.title);
   const merged = { ...current } as Record<string, unknown>;
   for (const [localKey, serverKey] of Object.entries(NOTE_FIELD_MAP)) {
     if (!(await syncQueue.hasNewerQueuedField('note', id, serverKey, sinceIso))) {
@@ -321,7 +324,13 @@ async function pushNoteContent(id: string, stateB64: string): Promise<void> {
     // aplica todo por el mismo merge guardado-por-cola, no solo el
     // contenido, aunque este push haya sido solo de contenido.
     await applyNoteResponse(id, new Date().toISOString(), response);
-  } catch {
+  } catch (e) {
+    // Un 4xx no se arregla reintentando: en la cola quedaba trabado para
+    // siempre y frenaba el drenado del resto del contenido.
+    if (isPermanentSyncError(e)) {
+      console.warn('[sync] contenido descartado', 'note', id, (e as SyncApiError).status);
+      return;
+    }
     await contentSyncQueue.enqueue('note', id, stateB64);
   }
 }
@@ -362,6 +371,7 @@ async function applyRemoteNoteChangeLocked(change: SyncChange): Promise<void> {
   const current = await getNote(change.id);
   const data = change.data as NoteApiResponse;
   const mapped = noteFromApiResponse(data);
+  if (current) mapped.title = fromServerNoteTitle(mapped.title, current.title);
   const merged = { ...current, ...mapped } as Record<string, unknown>;
   if (current) {
     for (const [localKey, serverKey] of Object.entries(NOTE_FIELD_MAP)) {

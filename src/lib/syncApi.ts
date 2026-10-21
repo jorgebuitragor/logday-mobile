@@ -21,6 +21,13 @@ export class SyncApiError extends Error {
   }
 }
 
+/** Error que no se arregla reintentando el mismo envío: un 4xx (payload
+ *  inválido, entidad que no existe en el servidor). Se excluyen 401
+ *  (sesión vencida: al reconectar el envío vuelve a servir), 408 y 429. */
+export function isPermanentSyncError(e: unknown): boolean {
+  return e instanceof SyncApiError && e.status >= 400 && e.status < 500 && ![401, 408, 429].includes(e.status);
+}
+
 /** Antepone http:// si el usuario no escribió un esquema — mismo
  *  criterio que desktop (`normalizeServerUrl`), la razón es la misma:
  *  tipear algo como "192.168.1.10:8080" sin esquema es lo natural. */

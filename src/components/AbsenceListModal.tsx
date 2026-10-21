@@ -2,6 +2,7 @@ import { CalendarOff, Pencil, Trash2, X } from 'lucide-react-native';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { deleteAbsenceDay } from '../db/absences';
 import { useConfirmDelete } from '../hooks/useConfirmDelete';
@@ -34,6 +35,7 @@ function formatAbsenceDate(iso: string, language: string): string {
 // lo apila con z-index por encima del listado) en vez de delegar la
 // edición a la pantalla que abrió este modal.
 export function AbsenceListModal({ visible, absences, onClose, onChanged }: AbsenceListModalProps) {
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
   const { t, i18n } = useTranslation();
   const { confirmDestructiveActions } = usePreferences();
@@ -50,7 +52,10 @@ export function AbsenceListModal({ visible, absences, onClose, onChanged }: Abse
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
-        <View style={[styles.header, { borderColor: theme.border }]}>
+        {/* Un `Modal` de pantalla completa no respeta el área segura: sin
+            esto el encabezado queda bajo la barra de estado y la X no se
+            puede tocar. */}
+        <View style={[styles.header, { borderColor: theme.border, paddingTop: 16 + insets.top }]}>
           <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('absence.listTitle')}</Text>
           <Pressable onPress={onClose} hitSlop={8} style={styles.closeButton}>
             <X size={18} color={theme.textSecondary} />
@@ -106,7 +111,8 @@ export function AbsenceListModal({ visible, absences, onClose, onChanged }: Abse
 
       <ConfirmDeleteModal
         visible={confirmDelete.isOpen}
-        title={t('absence.delete')}
+        title={t('absence.confirmDeleteTitle')}
+        message={t('absence.confirmDeleteMessage')}
         cancelLabel={t('absence.cancel')}
         confirmLabel={t('absence.delete')}
         onCancel={confirmDelete.cancel}

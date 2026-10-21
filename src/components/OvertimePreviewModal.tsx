@@ -1,6 +1,7 @@
 import { Download, X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { FlatList, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { observacionesLabel } from '../lib/overtimeLabels';
 import { useTheme } from '../theme/ThemeContext';
@@ -36,6 +37,7 @@ export function OvertimePreviewModal({
   entries,
 }: OvertimePreviewModalProps) {
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
   const theme = useTheme();
 
   const totHoras = entries.reduce((a, e) => a + e.totalHoras, 0);
@@ -47,7 +49,10 @@ export function OvertimePreviewModal({
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
-        <View style={[styles.header, { borderColor: theme.border }]}>
+        {/* Un `Modal` de pantalla completa no respeta el área segura: sin
+            esto el encabezado queda bajo la barra de estado y la X no se
+            puede tocar. */}
+        <View style={[styles.header, { borderColor: theme.border, paddingTop: 16 + insets.top }]}>
           <View style={{ flex: 1 }}>
             <Text style={[styles.headerTitle, { color: theme.textPrimary }]}>{t('overtimeActions.preview')}</Text>
             <Text style={[styles.headerSubtitle, { color: theme.textHint }]}>{monthLabel}</Text>

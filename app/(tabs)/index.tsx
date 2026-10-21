@@ -13,6 +13,7 @@ import { TaskStatusIcon } from '../../src/components/TaskStatusIcon';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { listTasks, softDeleteTask, updateTaskStatus } from '../../src/db/tasks';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
+import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
 import { usePreferences, type TasksViewMode } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Task, TaskStatus } from '../../src/types/task';
@@ -36,6 +37,7 @@ export default function TasksScreen() {
   }, []);
 
   useFocusEffect(reload);
+  useReloadOnRemoteChange(['task'], reload);
 
   async function performDelete(task: Task) {
     await softDeleteTask(task.id);

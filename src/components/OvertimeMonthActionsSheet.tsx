@@ -2,6 +2,7 @@ import { ChevronLeft, Eye, FileSpreadsheet, User } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 import { useTheme } from '../theme/ThemeContext';
 
@@ -12,7 +13,9 @@ interface OvertimeMonthActionsSheetProps {
   onPreview: () => void;
   colaborador: string;
   cedula: string;
-  onSaveMeta: (colaborador: string, cedula: string) => void;
+  /** `base` es lo que mostraba el formulario al abrir: `upsertOvertimeMonthMeta`
+   *  guarda solo lo que cambió desde ahí. */
+  onSaveMeta: (colaborador: string, cedula: string, base: { colaborador: string; cedula: string }) => void;
 }
 
 type Mode = 'actions' | 'meta';
@@ -33,30 +36,42 @@ export function OvertimeMonthActionsSheet({
   cedula,
   onSaveMeta,
 }: OvertimeMonthActionsSheetProps) {
+  // Mismo patrón que Settings y el editor de notas: `KeyboardAvoidingView`
+  // no funciona con edge-to-edge en Android, así que se lee la altura real
+  // del teclado.
+  const keyboard = useAnimatedKeyboard({
+    isStatusBarTranslucentAndroid: true,
+    isNavigationBarTranslucentAndroid: true,
+  });
+  const keyboardSpacer = useAnimatedStyle(() => ({ height: keyboard.height.value }));
   const theme = useTheme();
   const { t } = useTranslation();
   const [mode, setMode] = useState<Mode>('actions');
   const [colaboradorDraft, setColaboradorDraft] = useState('');
   const [cedulaDraft, setCedulaDraft] = useState('');
+  const [metaBase, setMetaBase] = useState({ colaborador: '', cedula: '' });
 
   useEffect(() => {
-    if (visible) {
-      setMode('actions');
-      setColaboradorDraft(colaborador);
-      setCedulaDraft(cedula);
-    }
-    // Solo al abrir (`visible`), no en cada cambio de `colaborador`/
-    // `cedula` mientras está abierta — mismo criterio que el draft de
-    // carpeta en `NoteActionsSheet`.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (visible) setMode('actions');
   }, [visible]);
+
+  // Los borradores se cargan al entrar al formulario y no al abrir la
+  // hoja: `colaborador`/`cedula` llegan de una consulta async que todavía
+  // no terminó cuando la hoja se abre, y el formulario quedaba vacío
+  // aunque el mes tuviera datos (al guardar, la cédula se borraba).
+  function openMeta() {
+    setColaboradorDraft(colaborador);
+    setCedulaDraft(cedula);
+    setMetaBase({ colaborador, cedula });
+    setMode('meta');
+  }
 
   function close() {
     onClose();
   }
 
   function saveMeta() {
-    onSaveMeta(colaboradorDraft.trim(), cedulaDraft.trim());
+    onSaveMeta(colaboradorDraft.trim(), cedulaDraft.trim(), metaBase);
     close();
   }
 
@@ -70,7 +85,7 @@ export function OvertimeMonthActionsSheet({
           {mode === 'actions' ? (
             <>
               <Row icon={Eye} label={t('overtimeActions.preview')} onPress={() => { onPreview(); close(); }} theme={theme} />
-              <Row icon={User} label={t('overtimeActions.collaboratorData')} onPress={() => setMode('meta')} theme={theme} />
+              <Row icon={User} label={t('overtimeActions.collaboratorData')} onPress={openMeta} theme={theme} />
               <Pressable style={styles.row} onPress={() => { onExport(); close(); }}>
                 <FileSpreadsheet size={18} color={theme.textSecondary} />
                 <View style={styles.rowTextWrap}>
@@ -115,6 +130,9 @@ export function OvertimeMonthActionsSheet({
             </>
           )}
         </Pressable>
+        {/* Espacio del alto del teclado debajo de la hoja: sin esto el
+            teclado tapaba la hoja entera al editar un campo. */}
+        <Animated.View style={keyboardSpacer} />
       </Pressable>
     </Modal>
   );

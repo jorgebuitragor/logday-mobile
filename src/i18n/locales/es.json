@@ -233,6 +233,8 @@
     "save": "Guardar",
     "cancel": "Cancelar",
     "delete": "Eliminar",
+    "confirmDeleteTitle": "Eliminar ausencia",
+    "confirmDeleteMessage": "Esta acción no se puede deshacer.",
     "sensitiveConsentTitle": "Dato sensible de salud",
     "sensitiveConsentBody": "El motivo \"Incapacidad\" es un dato sensible de salud. No estás obligado a registrarlo — si continúas, se sincroniza con el servidor bajo la política de tratamiento de datos vigente. Este aviso solo aparece una vez.",
     "sensitiveConsentAccept": "Entiendo, continuar"

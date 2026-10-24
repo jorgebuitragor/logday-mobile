@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +11,7 @@ import {
 } from '../lib/syncApi';
 import { drainSyncQueue, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
 import { setSyncRuntime } from '../lib/syncRuntime';
+import { startRealtime, stopRealtime } from '../lib/realtime';
 import { shareTextFile } from '../lib/exportFile';
 import type { SyncConfig, SyncConnectionStatus } from '../types/sync';
 
@@ -378,14 +379,41 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   // la app (el efecto de restauración de arriba también deja
   // `syncConnectionStatus` en 'connected'). Corre una vez de
   // inmediato al conectar, no espera los 30s del primer tick.
+  //
+  // Con la conexión también abre el tiempo real (`src/lib/realtime.ts`):
+  // cada aviso de `/ws` dispara el mismo pull que el polling. En segundo
+  // plano iOS suspende la app, así que el socket se cierra al irse y se
+  // reabre al volver, con un pull para ponerse al día.
   useEffect(() => {
     if (syncConnectionStatus !== 'connected') {
       stopPolling();
+      stopRealtime();
       return;
     }
-    void drainSyncQueue().then(() => reconcileSync());
+    const catchUp = () => drainSyncQueue().then(() => reconcileSync());
+    const openRealtime = () =>
+      startRealtime({
+        serverUrl: configRef.current.serverUrl,
+        getAccessToken: () => configRef.current.accessToken,
+        onNotice: () => void reconcileSync(),
+        onReconnecting: () => reconcileSync(),
+      });
+    void catchUp();
     startPolling();
-    return () => stopPolling();
+    openRealtime();
+    const appStateSub = AppState.addEventListener('change', (state) => {
+      if (state === 'active') {
+        void catchUp();
+        openRealtime();
+      } else if (state === 'background') {
+        stopRealtime();
+      }
+    });
+    return () => {
+      appStateSub.remove();
+      stopPolling();
+      stopRealtime();
+    };
   }, [syncConnectionStatus]);
 
   const value = useMemo(

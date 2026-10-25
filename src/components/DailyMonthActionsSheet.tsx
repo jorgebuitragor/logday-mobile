@@ -1,5 +1,5 @@
 import { ChevronLeft, Download, FileDown, FileText, FileType2, Share2, Trash2 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -25,9 +25,17 @@ export function DailyMonthActionsSheet({ visible, onClose, onShare, onExport, on
   const { t } = useTranslation();
   const [mode, setMode] = useState<'actions' | 'export'>('actions');
 
-  useEffect(() => {
-    if (visible) setMode('actions');
-  }, [visible]);
+  // Reinicia la hoja cada vez que se abre. Se ajusta durante el render al
+  // ver que `visible` cambió (el patrón que recomienda React para derivar
+  // estado de un prop) en vez de en un efecto, que pintaba primero el
+  // estado viejo.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) {
+      setMode('actions');
+    }
+  }
 
   function close() {
     onClose();

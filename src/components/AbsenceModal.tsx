@@ -43,7 +43,13 @@ export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete 
   const [existing, setExisting] = useState<AbsenceDay | null>(null);
   const [showSensitiveConsent, setShowSensitiveConsent] = useState(false);
 
-  useEffect(() => {
+  // Reinicia el modal cada vez que se abre. Se ajusta durante el render al
+  // ver que `visible` cambió (el patrón que recomienda React para derivar
+  // estado de un prop) en vez de en un efecto, que pintaba primero el
+  // estado viejo.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       const start = initialDate ?? todayISO();
       setMode('single');
@@ -57,8 +63,7 @@ export function AbsenceModal({ visible, initialDate, onClose, onSaved, onDelete 
       // modal, aunque fuera para un tipo de ausencia no sensible.
       setShowSensitiveConsent(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }
 
   // Mismo criterio que desktop: en modo "un día", si ya hay una
   // ausencia para esa fecha se carga para editarla en vez de crear

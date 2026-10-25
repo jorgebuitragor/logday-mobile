@@ -1,5 +1,5 @@
 import { ChevronLeft, Eye, FileSpreadsheet, User } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -51,9 +51,17 @@ export function OvertimeMonthActionsSheet({
   const [cedulaDraft, setCedulaDraft] = useState('');
   const [metaBase, setMetaBase] = useState({ colaborador: '', cedula: '' });
 
-  useEffect(() => {
-    if (visible) setMode('actions');
-  }, [visible]);
+  // Reinicia la hoja cada vez que se abre. Se ajusta durante el render al
+  // ver que `visible` cambió (el patrón que recomienda React para derivar
+  // estado de un prop) en vez de en un efecto, que pintaba primero el
+  // estado viejo.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) {
+      setMode('actions');
+    }
+  }
 
   // Los borradores se cargan al entrar al formulario y no al abrir la
   // hoja: `colaborador`/`cedula` llegan de una consulta async que todavía

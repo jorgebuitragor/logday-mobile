@@ -283,10 +283,18 @@ DailyEntry).
   `appStore.ts`), `drainSyncQueue()` (reenvía la cola offline, mismo
   despacho por entidad+operación que `dispatchQueuedWrite` de
   desktop), y el polling de 30s (`startPolling`/`stopPolling`, arranca
-  al conectar) que reemplaza el WebSocket en tiempo real que desktop
-  tampoco tiene todavía — cada tick drena la cola antes de reconciliar
+  al conectar) — cada tick drena la cola antes de reconciliar
   (mismo motivo que desktop: sin esto una entrada quedaría en cola
   para siempre aunque la app siga "Conectado").
+- `src/lib/realtime.ts` (23 oct 2026): tiempo real contra `GET /ws`,
+  igual que Desktop y Web. El primer mensaje es `{type: "auth", token}`;
+  cada aviso del servidor dispara, agrupado cada 250 ms, el mismo
+  `reconcileSync` del polling, que queda de respaldo. Al cerrarse la
+  conexión hace un pull antes de reconectar, para ponerse al día y para
+  renovar el access token si la auth falló (el servidor cierra con
+  1008). Reintenta con backoff de 3 a 60 s. `SyncContext` lo abre con la
+  conexión, lo cierra cuando la app pasa a segundo plano (iOS la
+  suspende) y al volver al frente lo reabre después de un pull.
 - `SyncContext.tsx`: 2 `useEffect` nuevos — uno empuja el runtime a
   `syncRuntime.ts` en cada cambio relevante de `syncConfig`/
   `syncConnectionStatus`; otro arranca `drainSyncQueue().then(reconcileSync)`

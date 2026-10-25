@@ -111,10 +111,10 @@ cada checkpoint en vivo confirme los supuestos de la fase anterior.
 
 ## Fuera de este spec
 
-- **WebSocket en tiempo real** — desktop tampoco lo tiene todavía
-  (usa un intervalo de polling de 30s, ver `appStore.ts` de
-  `task-manager`); mobile iguala esa paridad real, no construye algo
-  que ni siquiera desktop tiene.
+- ~~**WebSocket en tiempo real**~~ — quedó fuera al escribir este spec
+  porque Desktop tampoco lo tenía. Desktop y Web lo tienen desde
+  `feature/sync-servidor`, y Mobile lo agregó el 23 oct 2026 (ver
+  `design.md`, `src/lib/realtime.ts`).
 - **Panel de dispositivos/sesiones** (listar/revocar desde mobile) —
   no bloquea que sync funcione, posible fast-follow tras la Fase 1.
 - **CalendarEvent** — mobile no tiene tabla local para esa entidad

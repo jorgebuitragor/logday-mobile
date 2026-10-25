@@ -81,11 +81,18 @@ export function AppTimePicker({ value, onChange, placeholder }: AppTimePickerPro
   const hourScrollRef = useRef<ScrollView>(null);
   const minuteScrollRef = useRef<ScrollView>(null);
 
-  useEffect(() => {
-    if (!open) return;
+  // Al abrir: carga la hora actual en las ruedas (en el handler, no en un
+  // efecto) y el efecto de abajo las desplaza hasta ella.
+  function openPicker() {
     const parsed = parseTime(value || '00:00');
     setHour24(parsed.hour);
     setMinute(parsed.minute);
+    setOpen(true);
+  }
+
+  useEffect(() => {
+    if (!open) return;
+    const parsed = parseTime(value || '00:00');
     requestAnimationFrame(() => {
       const hourIndex = timeFormat === '12h' ? to12(parsed.hour).hour12 - 1 : parsed.hour;
       hourScrollRef.current?.scrollTo({ y: hourIndex * ROW_HEIGHT, animated: false });
@@ -103,7 +110,7 @@ export function AppTimePicker({ value, onChange, placeholder }: AppTimePickerPro
   return (
     <>
       <Pressable
-        onPress={() => setOpen(true)}
+        onPress={openPicker}
         style={[styles.trigger, { borderColor: theme.border, backgroundColor: theme.bgInput }]}
       >
         <Clock size={16} color={theme.textHint} />

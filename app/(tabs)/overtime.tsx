@@ -80,7 +80,11 @@ export default function OvertimeScreen() {
   const { confirmDestructiveActions } = usePreferences();
   const [entries, setEntries] = useState<OvertimeEntry[]>([]);
   const [actionsMonth, setActionsMonth] = useState<MonthSection | null>(null);
-  const [actionsMonthMeta, setActionsMonthMeta] = useState<OvertimeMonthMeta | null>(null);
+  const [loadedMonthMeta, setLoadedMonthMeta] = useState<{ month: string; meta: OvertimeMonthMeta | null } | null>(null);
+  // La meta se guarda junto con el mes al que pertenece: si la hoja se
+  // cierra o se abre otro mes, deja de valer sola, sin un efecto que la
+  // reinicie.
+  const actionsMonthMeta = actionsMonth && loadedMonthMeta?.month === actionsMonth.title ? loadedMonthMeta.meta : null;
   // Estado separado de `actionsMonth`: al tocar "Vista previa" la hoja
   // se cierra (limpia `actionsMonth`), así que hay que capturar la
   // sección/meta del momento antes de que se pierdan, no leerlas de
@@ -111,11 +115,9 @@ export default function OvertimeScreen() {
   // la hoja "⋮" — no en cada tecla, son valores de catálogo por mes,
   // no resultado de una búsqueda.
   useEffect(() => {
-    if (actionsMonth) {
-      getOvertimeMonthMeta(actionsMonth.title).then(setActionsMonthMeta);
-    } else {
-      setActionsMonthMeta(null);
-    }
+    if (!actionsMonth) return;
+    const month = actionsMonth.title;
+    getOvertimeMonthMeta(month).then((meta) => setLoadedMonthMeta({ month, meta }));
   }, [actionsMonth]);
 
   async function exportMonthSection(section: MonthSection) {

@@ -16,7 +16,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
@@ -84,17 +84,21 @@ export function NoteActionsSheet({
   const [folderDraft, setFolderDraft] = useState('');
   const [newTag, setNewTag] = useState('');
 
-  useEffect(() => {
+  // Reinicia la hoja cada vez que se abre. Se ajusta durante el render al
+  // ver que `visible` cambió (el patrón que recomienda React para derivar
+  // estado de un prop) en vez de en un efecto, que pintaba primero el
+  // estado viejo.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
     if (visible) {
       setMode('actions');
+      // Solo al abrir, no en cada cambio de `folder` mientras está
+      // abierta: eso impediría editar el borrador.
       setFolderDraft(folder ?? '');
       setNewTag('');
     }
-    // Solo debe re-sincronizar al abrir (`visible`), no en cada cambio
-    // de `folder` mientras está abierta — evitaría poder editar el
-    // draft.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visible]);
+  }
 
   function close() {
     onClose();

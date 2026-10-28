@@ -228,3 +228,21 @@ design.md, "Primera versión... y por qué se reemplazó".
       el contenido SÍ debe guardarse, no perderse; volver atrás desde
       una nota normal (ya guardada, con contenido) debe sentirse igual
       de instantáneo que antes, sin retraso agregado por el listener.
+
+## Sello de `updated` (agregado 2026-10-28)
+
+- [x] `src/lib/editStampThrottle.ts`: límite de 60 s por nota para las
+      ediciones de contenido, con sello final pendiente.
+- [x] `updateNote` sella al momento si cambian título, carpeta o tags, y
+      pasa por el límite si solo cambia el contenido; sin sello no manda
+      PATCH de metadata.
+- [x] `createNote` y `setNotePinned` sellan y cuentan para la ventana;
+      `softDeleteNote` olvida la nota.
+- [x] Sello final en `beforeRemove` de `app/note/[id].tsx`
+      (`stampPendingNoteEdit`).
+- [x] Lógica pura probada con un script de Node y reloj inyectado (fuera
+      del repo: no hay suite).
+- [ ] Verificar en vivo: escribir más de un minuto seguido en una nota y
+      confirmar en el listado (orden "Modificación") que `updated` avanza
+      como mucho una vez por minuto, y que al volver atrás queda en la
+      hora de la última edición.

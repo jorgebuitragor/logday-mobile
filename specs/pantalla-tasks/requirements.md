@@ -60,9 +60,11 @@ accesorios), así que se incorporan al formulario:
   táctil del menú contextual de estado de `TaskContextMenu.tsx` en
   desktop (que en mobile no tiene equivalente por gesto de clic
   derecho).
-- Al transicionar a `done`, el sistema DEBERÁ sellar `completed_at`
-  (si no estaba seteado ya); al salir de `done`, DEBERÁ limpiarlo —
-  mismo criterio que `appStore.updateTask` en desktop.
+- Al transicionar a `done`, el sistema DEBERÁ sellar `completed_at` con
+  el instante actual, aunque la tarea traiga un valor de otro cliente;
+  mientras siga en `done`, DEBERÁ conservarlo; al salir de `done`,
+  DEBERÁ limpiarlo. Es la regla de los 3 clientes (actualizada
+  2026-10-28, ver design.md, "`completed_at`").
 
 ### Contexto adicional en cada fila (agregado 2026-08-29)
 

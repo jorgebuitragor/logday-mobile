@@ -437,6 +437,37 @@ resuelve el "riesgo menor" ya documentado arriba en "Indicador de
 guardado" (el guardado con debounce que seguía corriendo después de
 abandonar la pantalla).
 
+## Sello de `updated` (agregado 2026-10-28)
+
+Antes cada autoguardado (600 ms después de cada pausa al escribir)
+sellaba `updated` y mandaba un PATCH de metadata solo por ese sello.
+Ahora sigue la regla de los 3 clientes (ver requirements.md):
+
+- `src/lib/editStampThrottle.ts`: lógica pura, por nota y en memoria,
+  con la hora inyectada en milisegundos. `onEdit(id, nowMs, immediate)`
+  dice si una edición sella ya; una de contenido dentro de los 60 s del
+  último sello queda pendiente. `takePending` consume lo pendiente para
+  el sello final.
+- `updateNote` decide el sello dentro del lock de la nota: cambio de
+  título, carpeta o tags sella al momento; uno solo de contenido pasa
+  por la ventana de 60 s. Sin sello, `updated` queda igual y no sale
+  PATCH de metadata, solo el push del contenido CRDT. `updated_at` sí
+  se actualiza en cada guardado (es el control de la fila, no la fecha
+  que se muestra).
+- `createNote` (crear y duplicar) y `setNotePinned` sellan al momento y
+  cuentan como sello para la ventana. `softDeleteNote` olvida la nota.
+- Sello final: `stampPendingNoteEdit(id)` en el listener `beforeRemove`
+  de `app/note/[id].tsx` (ver "Descarte de notas vacías al salir"). Si
+  hay algo pendiente (`hasPendingNoteStamp`) o un guardado con
+  debounce, bloquea la salida hasta sellar, para que el listado ordene
+  ya con el sello nuevo. Si no, lo encola sin bloquear, por si un
+  guardado en curso deja algo pendiente al terminar. Corre después de
+  los guardados en fila, y un error del sello no bloquea la salida.
+- Límite conocido: si la app se cierra o el sistema la mata con la nota
+  abierta, se pierde el sello final, y `updated` puede quedar hasta 60 s
+  atrás de la última edición. Pasar la app a segundo plano no cuenta
+  como salir.
+
 ## Explícitamente pendiente
 
 - Picker/autocompletado de `folder` a partir de carpetas existentes

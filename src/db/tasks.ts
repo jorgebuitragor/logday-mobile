@@ -1,12 +1,13 @@
 import { randomUUID } from 'expo-crypto';
 
-import { stampSortKey } from '../lib/dates';
+import { nowInstant, stampSortKey } from '../lib/dates';
 import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import { createTaskRemote, deleteTaskRemote, patchTaskRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
 import { taskFieldsToPatchPayload, taskFromApiResponse, taskToCreatePayload, TASK_FIELD_MAP, type TaskApiResponse } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
 import { getSyncRuntime } from '../lib/syncRuntime';
+import { nextCompletedAt } from '../lib/taskCompletion';
 import type { Task, TaskStatus } from '../types/task';
 import { getDb } from './index';
 
@@ -68,10 +69,10 @@ export interface TaskInput {
 
 export async function createTask(input: TaskInput): Promise<string> {
   const id = randomUUID();
-  const now = new Date().toISOString();
-  // Igual que TaskEditor.tsx de desktop: al crear ya en 'done' se sella
-  // completed_at de inmediato (caso raro pero posible).
-  const completedAt = input.status === 'done' ? now : null;
+  const now = nowInstant();
+  // Al crear ya en 'done' se sella completed_at de inmediato (caso raro
+  // pero posible), ver `nextCompletedAt`.
+  const completedAt = nextCompletedAt(null, null, input.status, now);
   await getDb().runAsync(
     `INSERT INTO tasks (id, title, task_code, status, tags, project, created, completed_at, due, content, updated_at, deleted_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
@@ -108,14 +109,11 @@ export async function updateTask(id: string, input: TaskInput, base: TaskInput):
   const edited = diffChangedFields(base, input, TASK_INPUT_KEYS);
   if (Object.keys(edited).length === 0) return;
   await withKeyLock(taskLock(id), async () => {
-    const now = new Date().toISOString();
+    const now = nowInstant();
     const current = await getTask(id);
     if (!current) return;
-    // Mismo criterio que appStore.updateTask en desktop: sella completed_at
-    // en la primera transición a 'done' (conserva la fecha si ya estaba
-    // sellada) y la limpia si la task vuelve a un estado no-done.
     const status = edited.status ?? current.status;
-    const completedAt = status === 'done' ? (current.completedAt ?? now) : null;
+    const completedAt = nextCompletedAt(current.status, current.completedAt, status, now);
     const next: Task = { ...current, ...edited, completedAt, updatedAt: now, deletedAt: null };
     await getDb().runAsync(
       `UPDATE tasks SET title = ?, task_code = ?, status = ?, tags = ?, project = ?, due = ?, content = ?, completed_at = ?, updated_at = ? WHERE id = ?`,
@@ -131,6 +129,10 @@ export async function updateTask(id: string, input: TaskInput, base: TaskInput):
       id
     );
     const changed = diffChangedFields(current, next, [...TASK_INPUT_KEYS, 'completedAt']);
+    // `completed_at` viaja en el mismo PATCH que `status` aunque aquí no
+    // haya cambiado: con LWW por campo, el servidor podría tener otro
+    // valor de otro cliente y quedaría un `done` con la fecha de otro.
+    if ('status' in changed) changed.completedAt = completedAt;
     void syncPatchTask(id, changed);
   });
 }
@@ -139,20 +141,26 @@ export async function updateTask(id: string, input: TaskInput, base: TaskInput):
  * done -> todo), sin pasar por el formulario completo. Ver `TaskRow` en
  * `TaskList.tsx` de desktop (ícono de estado clickeable en cada fila). */
 export async function updateTaskStatus(id: string, status: TaskStatus): Promise<void> {
-  const now = new Date().toISOString();
-  const current = await getDb().getFirstAsync<{ completed_at: string | null }>(
-    'SELECT completed_at FROM tasks WHERE id = ?',
-    id
-  );
-  const completedAt = status === 'done' ? (current?.completed_at ?? now) : null;
-  await getDb().runAsync(
-    'UPDATE tasks SET status = ?, completed_at = ?, updated_at = ? WHERE id = ?',
-    status,
-    completedAt,
-    now,
-    id
-  );
-  void syncPatchTask(id, { status, completedAt });
+  // Bajo el mismo lock que `updateTask` y el sync: la transición se
+  // decide con el `status` previo, que no debe cambiar entre leer y
+  // escribir.
+  await withKeyLock(taskLock(id), async () => {
+    const now = nowInstant();
+    const current = await getDb().getFirstAsync<{ status: TaskStatus; completed_at: string | null }>(
+      'SELECT status, completed_at FROM tasks WHERE id = ?',
+      id
+    );
+    if (!current) return;
+    const completedAt = nextCompletedAt(current.status, current.completed_at, status, now);
+    await getDb().runAsync(
+      'UPDATE tasks SET status = ?, completed_at = ?, updated_at = ? WHERE id = ?',
+      status,
+      completedAt,
+      now,
+      id
+    );
+    void syncPatchTask(id, { status, completedAt });
+  });
 }
 
 export async function softDeleteTask(id: string): Promise<void> {

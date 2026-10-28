@@ -69,12 +69,19 @@ Se porta ese mismo modelo, no el formulario anterior:
   estar disponible desde la fila de la lista (ver
   `acciones-lista/requirements.md`), solo desde esta barra.
 - Cada cambio (título, contenido, carpeta, tags, destacado) DEBERÁ
-  guardarse automáticamente — sin botón "Guardar" — actualizando
-  `updated`/`updated_at`. El contenido y el título usan un debounce de
-  600ms tras la última edición (mismo valor que `schedulesSave` en
-  `NoteEditor.tsx` de desktop); carpeta/tags/destacado se guardan de
-  inmediato al confirmarse (son ediciones discretas, no tecleo
-  continuo).
+  guardarse automáticamente — sin botón "Guardar". El contenido y el
+  título usan un debounce de 600ms tras la última edición (mismo valor
+  que `schedulesSave` en `NoteEditor.tsx` de desktop); carpeta/tags/
+  destacado se guardan de inmediato al confirmarse (son ediciones
+  discretas, no tecleo continuo).
+- El sello `updated` (regla de los 3 clientes, 2026-10-28):
+  - Mientras se edita el contenido, el sistema DEBERÁ sellarlo como
+    mucho una vez cada 60 s por nota, y una vez más al salir de la nota
+    si hubo ediciones sin sellar desde el último sello.
+  - Al cambiar título, tags, carpeta o destacado, DEBERÁ sellarlo al
+    momento de guardar.
+  - Al crear o duplicar una nota, DEBERÁ dejar `created = updated =`
+    el instante actual.
 - El sistema DEBERÁ permitir marcar una nota como eliminada
   (soft-delete), no borrarla físicamente.
 

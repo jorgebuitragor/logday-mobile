@@ -4,7 +4,8 @@ import {
   applyEditorEdit, applyIncomingUpdate, applyTextEdit, docFromStateB64, encodeDocStateB64, getContentText,
 } from '../lib/crdtText';
 import * as contentSyncQueue from '../lib/contentSyncQueue';
-import { stampSortKey } from '../lib/dates';
+import { nowInstant, stampSortKey } from '../lib/dates';
+import { createEditStampThrottle } from '../lib/editStampThrottle';
 import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import {
@@ -72,9 +73,14 @@ export interface NoteInput {
   tags: string[];
 }
 
+// Cuándo sella `updated` cada edición (ver src/lib/editStampThrottle.ts).
+const stampThrottle = createEditStampThrottle();
+
+/** Crear y duplicar dejan `created = updated = ahora`. */
 export async function createNote(input: NoteInput): Promise<string> {
   const id = randomUUID();
-  const now = new Date().toISOString();
+  const now = nowInstant();
+  stampThrottle.onEdit(id, Date.parse(now), true);
   await getDb().runAsync(
     `INSERT INTO notes (id, title, folder, tags, created, updated, pinned, content, updated_at, deleted_at)
      VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?, NULL)`,
@@ -118,6 +124,12 @@ const noteLock = (id: string) => `note:${id}`;
  * `base.content` → `input.content` (`applyEditorEdit`), sin borrar lo
  * remoto; mover de carpeta o cambiar tags no toca el contenido.
  *
+ * `updated`: un cambio de título, carpeta o tags lo sella al momento; uno
+ * solo de contenido, como mucho una vez por minuto por nota (el editor
+ * guarda 600 ms después de cada pausa al escribir). Lo que quede sin
+ * sellar lo sella `stampPendingNoteEdit` al salir de la nota. Sin sello no
+ * se manda PATCH de metadata, solo el contenido.
+ *
  * Devuelve la nota ya mezclada (`null` si no existe), para que el editor
  * rebase sobre ella lo que se escribió mientras tanto.
  */
@@ -128,18 +140,22 @@ export async function updateNote(id: string, input: NoteInput, base: NoteInput):
   return withKeyLock(noteLock(id), async () => {
     const current = await getNote(id);
     if (!current) return null;
-    const now = new Date().toISOString();
+    const now = nowInstant();
     const content = contentEdited
       ? await applyNoteContentEdit(id, current.content, base.content, input.content)
       : null;
-    const next: Note = { ...current, ...edited, content: content?.text ?? current.content, updated: now, updatedAt: now };
+    const stamp = stampThrottle.onEdit(id, Date.parse(now), Object.keys(edited).length > 0);
+    const next: Note = {
+      ...current, ...edited, content: content?.text ?? current.content,
+      updated: stamp ? now : current.updated, updatedAt: now,
+    };
     await getDb().runAsync(
       `UPDATE notes SET title = ?, content = ?, folder = ?, tags = ?, updated = ?, updated_at = ? WHERE id = ?`,
       next.title,
       next.content,
       next.folder,
       JSON.stringify(next.tags),
-      now,
+      next.updated,
       now,
       id
     );
@@ -150,8 +166,27 @@ export async function updateNote(id: string, input: NoteInput, base: NoteInput):
   });
 }
 
+/** `true` si la nota tiene una edición de contenido sin sellar en `updated`. */
+export function hasPendingNoteStamp(id: string): boolean {
+  return stampThrottle.hasPending(id);
+}
+
+/** Sello final al salir de la nota: si quedó una edición de contenido sin
+ *  sellar en `updated` (ver `updateNote`), lo sella ahora. */
+export function stampPendingNoteEdit(id: string): Promise<void> {
+  return withKeyLock(noteLock(id), async () => {
+    const now = nowInstant();
+    if (!stampThrottle.takePending(id, Date.parse(now))) return;
+    const current = await getNote(id);
+    if (!current || current.deletedAt) return;
+    await getDb().runAsync('UPDATE notes SET updated = ?, updated_at = ? WHERE id = ?', now, now, id);
+    void syncPatchNote(id, { updated: now });
+  });
+}
+
 export async function softDeleteNote(id: string): Promise<void> {
-  const now = new Date().toISOString();
+  stampThrottle.forget(id);
+  const now = nowInstant();
   await getDb().runAsync('UPDATE notes SET deleted_at = ? WHERE id = ?', now, id);
   void syncDeleteNote(id);
 }
@@ -162,7 +197,8 @@ export async function softDeleteNote(id: string): Promise<void> {
 // también la sube al tope del orden "Modificación". Se replica ese mismo
 // efecto acá a propósito, no es un descuido.
 export async function setNotePinned(id: string, pinned: boolean): Promise<void> {
-  const now = new Date().toISOString();
+  const now = nowInstant();
+  stampThrottle.onEdit(id, Date.parse(now), true);
   await getDb().runAsync(
     'UPDATE notes SET pinned = ?, updated = ?, updated_at = ? WHERE id = ?',
     pinned ? 1 : 0,

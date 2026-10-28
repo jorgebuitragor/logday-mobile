@@ -84,3 +84,16 @@ durante esta sesión mostró archivos modificados fuera de mi alcance
 `src/db/notes.ts`) que nunca toqué. El commit de esta ronda hace
 `git add` explícito solo de los archivos de Tasks (nunca `-A`) para no
 incluir ese trabajo ajeno todavía en curso.
+
+## `completed_at` según la regla de los 3 clientes (agregado 2026-10-28)
+
+- [x] `nextCompletedAt` en `src/lib/taskCompletion.ts`, usada por
+      `createTask`, `updateTask` y `updateTaskStatus`: pasar a `done`
+      siempre sella ahora, seguir en `done` conserva, salir limpia.
+- [x] `completedAt` va en el mismo PATCH que `status`.
+- [x] `updateTaskStatus` bajo el lock por tarea.
+- [x] Lógica pura probada con un script de Node (fuera del repo: no hay
+      suite).
+- [ ] Verificar en vivo con sync: completar en Mobile una tarea que otro
+      cliente reabrió sin limpiar `completed_at`, y confirmar que queda
+      con la fecha de hoy.

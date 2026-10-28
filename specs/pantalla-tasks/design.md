@@ -34,12 +34,30 @@ lectura) y `project` (texto plano) en vez de hardcodear
 ### `completed_at` (agregado 2026-08-29)
 
 Antes existía en el esquema y se leía en `rowToTask`, pero ninguna
-escritura lo tocaba. Ahora `createTask`/`updateTask`/`updateTaskStatus`
-replican el criterio de `appStore.updateTask` en desktop: sella
-`completed_at` a "ahora" (instante ISO 8601 completo, ver "Fechas de
-creación y edición" abajo) la primera vez que una task pasa a
-`status: 'done'` (conservando la fecha previa si ya estaba sellada), y
-lo limpia (`NULL`) si sale de `done`.
+escritura lo tocaba. Desde el 2026-08-29 `createTask`/`updateTask`/
+`updateTaskStatus` lo sellan con un instante ISO 8601 completo (ver
+"Fechas de creación y edición" abajo).
+
+Regla actual (actualizada 2026-10-28, la misma en los 3 clientes por
+decisión de Jorge), en `nextCompletedAt` (`src/lib/taskCompletion.ts`),
+que comparten las tres funciones:
+
+- Al pasar de no-`done` a `done`: siempre `nowInstant()`, aunque la
+  tarea traiga un `completed_at` viejo de otro cliente. Antes se
+  conservaba "la fecha previa si ya estaba sellada", y una tarea
+  reabierta en un cliente que no limpiaba el campo volvía a `done` con
+  la fecha vieja.
+- Si sigue en `done`: conserva el valor que tenía, aunque sea `NULL`
+  (editar el título de una tarea completada no la completa hoy).
+- Al salir de `done`: `NULL`.
+- Crear una tarea ya en `done` la sella.
+
+`completed_at` va en el mismo PATCH que `status`: `updateTaskStatus`
+manda siempre los dos, y `updateTask` agrega `completedAt` al PATCH
+cuando cambia `status`, aunque localmente no haya cambiado (con LWW por
+campo, el servidor podría tener el valor de otro cliente).
+`updateTaskStatus` corre bajo el mismo lock por tarea que `updateTask`,
+porque la transición depende del `status` previo.
 
 ### Fechas de creación y edición (actualizado 2026-10-28)
 

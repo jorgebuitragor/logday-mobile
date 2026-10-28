@@ -10,7 +10,10 @@ import Markdown from 'react-native-markdown-display';
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { MarkdownToolbar, type TextSelection } from '../../src/components/MarkdownToolbar';
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
-import { createNote, getNote, setNotePinned, softDeleteNote, toNoteInput, updateNote, type NoteInput } from '../../src/db/notes';
+import {
+  createNote, getNote, hasPendingNoteStamp, setNotePinned, softDeleteNote, stampPendingNoteEdit, toNoteInput, updateNote,
+  type NoteInput,
+} from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { mapTextIndex, syncEditorText } from '../../src/lib/crdtText';
 import { shareText } from '../../src/lib/exportFile';
@@ -203,18 +206,28 @@ export default function NoteEditorScreen() {
   // presente; ahora se cancela y, si la nota NO quedó vacía, se
   // vuelca de inmediato (flush síncrono, también bloqueando la salida
   // hasta que termine) en vez de perderse.
+  //
+  // Sello final de `updated` (2026-10-28): el contenido sella `updated`
+  // como mucho una vez por minuto (ver `updateNote`), así que al salir se
+  // sella lo que haya quedado pendiente. Si hay algo pendiente se bloquea
+  // la salida igual que con el flush, para que el listado ya ordene con
+  // el sello nuevo. Si no, se encola igual sin bloquear: un guardado que
+  // ya estaba corriendo puede dejar una edición pendiente al terminar.
   useEffect(() => {
     const unsubscribe = navigation.addListener('beforeRemove', (e) => {
       const isEmpty = !titleRef.current.trim() && !contentRef.current.trim();
       const hadPendingSave = saveTimeoutRef.current !== null;
-      if (!isEmpty && !hadPendingSave) return;
+      if (!isEmpty && !hadPendingSave && !hasPendingNoteStamp(id)) {
+        void stampBeforeLeaving();
+        return;
+      }
 
       e.preventDefault();
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
         saveTimeoutRef.current = null;
       }
-      const pending = isEmpty ? softDeleteNote(id) : saveBeforeLeaving();
+      const pending = isEmpty ? softDeleteNote(id) : saveBeforeLeaving(hadPendingSave);
       pending.then(() => navigation.dispatch(e.data.action));
     });
     return unsubscribe;
@@ -289,7 +302,13 @@ export default function NoteEditorScreen() {
       }
     });
   }
-  const saveBeforeLeaving = useEffectEvent(() => save());
+  // Después de cualquier guardado en fila, y sin que un error del sello
+  // deje bloqueada la salida.
+  const stampBeforeLeaving = useEffectEvent(() => enqueue(() => stampPendingNoteEdit(id)).catch(() => {}));
+  const saveBeforeLeaving = useEffectEvent(async (withSave: boolean) => {
+    if (withSave) await save();
+    await stampBeforeLeaving();
+  });
 
   function scheduleSave() {
     setSaveState('pending');

@@ -49,6 +49,17 @@ distinto:
   columna "fecha" única y consistente para armar un solo `WHERE`
   reusable).
 
+El rango de fecha compara días locales (actualizado 2026-10-28):
+`inDateRange` normaliza `date` con `stampToLocalDate` antes de
+compararlo con Desde/Hasta. El `updated` de una nota puede ser un
+instante ISO (`2026-10-28T23:10:00.000Z`), que comparado como string
+con `Hasta = 2026-10-28` dejaba fuera una nota editada ese mismo día,
+y de noche además caía en el día UTC siguiente. Los `YYYY-MM-DD`
+(`due`, `fecha`, `date` y los `updated` legados) quedan igual. Por la
+misma mezcla de formatos, el desempate por fecha de tasks (`created`) y
+notes (`updated`) se reordena en JS con `stampSortKey` antes de
+rankear; el `ORDER BY` de SQL solo elige las `FETCH_LIMIT` candidatas.
+
 `SearchResult` ahora carga `date`/`status`/`labels` además de lo que
 ya mostraba — metadata que antes no se conservaba porque nada la
 necesitaba, agregada específicamente para que estos dos filtros

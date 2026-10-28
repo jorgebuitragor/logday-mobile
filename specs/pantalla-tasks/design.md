@@ -8,7 +8,9 @@ Estado: implementado — ver `src/db/tasks.ts` y `app/(tabs)/index.tsx`,
 Funciones CRUD directas sobre `expo-sqlite` (sin ORM, coherente con
 `esquema-datos/design.md`):
 
-- `listTasks()` — `SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY created DESC`.
+- `listTasks()` — `SELECT * FROM tasks WHERE deleted_at IS NULL`, ordenado en JS
+  por `created` descendente con `stampSortKey` (ver "Fechas de creación y
+  edición" abajo; antes era `ORDER BY created DESC`).
 - `getTask(id)` — una fila o `null`.
 - `createTask(input)` — genera `id` con `expo-crypto` (`randomUUID()`,
   no `crypto.randomUUID()` global directo, para no depender de que el
@@ -34,11 +36,47 @@ lectura) y `project` (texto plano) en vez de hardcodear
 Antes existía en el esquema y se leía en `rowToTask`, pero ninguna
 escritura lo tocaba. Ahora `createTask`/`updateTask`/`updateTaskStatus`
 replican el criterio de `appStore.updateTask` en desktop: sella
-`completed_at` a "ahora" (ISO 8601 completo — a diferencia de desktop,
-que usa solo `YYYY-MM-DD`, para quedar consistente con el resto de
-timestamps de este esquema, que ya son ISO 8601 completos) la primera
-vez que una task pasa a `status: 'done'` (conservando la fecha previa
-si ya estaba sellada), y lo limpia (`NULL`) si sale de `done`.
+`completed_at` a "ahora" (instante ISO 8601 completo, ver "Fechas de
+creación y edición" abajo) la primera vez que una task pasa a
+`status: 'done'` (conservando la fecha previa si ya estaba sellada), y
+lo limpia (`NULL`) si sale de `done`.
+
+### Fechas de creación y edición (actualizado 2026-10-28)
+
+Lo que empezó como una decisión de este spec (sellar con instantes en
+vez del `YYYY-MM-DD` de desktop) ya es una decisión de todo el
+ecosistema (vault: `02 Decisiones/Fechas de creación y edición como
+instantes ISO.md`): `created` y `completed_at` de las tareas, y
+`created` y `updated` de las notas, son instantes UTC con el formato de
+`toISOString()` en los 4 repos. Mobile ya los escribía así y no cambia
+ningún escritor. Las fechas de calendario (`due`, `fecha` de horas
+extra, `date` de dailys y ausencias) siguen en `YYYY-MM-DD` local.
+
+Desktop y Web escribieron `YYYY-MM-DD` hasta ahora, y esos valores
+legados siguen llegando por sync y no se migran. Por eso la lectura
+acepta las dos formas, con los helpers de `src/lib/dates.ts` (mismos
+nombres en Desktop y Web):
+
+- `nowInstant()`: el instante actual para escribir un sello.
+- `isDateOnly(v)`: si `v` es un `YYYY-MM-DD`.
+- `parseStamp(v)`: un `YYYY-MM-DD` da la medianoche local de ese día
+  (nunca `new Date('YYYY-MM-DD')`, que lo lee como UTC y en Colombia da
+  el día anterior); un instante da su `Date`; vacío o inválido, `null`.
+- `stampToLocalDate(v)`: el `YYYY-MM-DD` local del sello, o `''`. Es lo
+  que se usa para mostrar, agrupar o comparar por día.
+- `stampSortKey(v)`: milisegundos de época, o `0`. Es lo que se usa
+  para ordenar: los formatos mezclados no se comparan como strings.
+- `localISODate(d)` / `todayISO()`: fechas de calendario locales. "Hoy"
+  nunca sale de `toISOString().slice(0, 10)`, que da el día siguiente
+  desde las 7 p. m. en Colombia (el indicador de vencida del listado y
+  del Kanban y el nombre del archivo de exportación de datos lo usaban).
+
+Consecuencias en este repo: `listTasks()` y `listNotes()` ordenan en JS
+con `stampSortKey` en vez de `ORDER BY created/updated DESC`, el orden
+elegido en el listado de notas también, y el filtro Desde/Hasta de la
+búsqueda compara el día local del `updated` de cada nota
+(`stampToLocalDate`), no el instante crudo. Ninguna pantalla muestra
+hoy estos sellos; si alguna lo hace, debe mostrar la fecha local.
 
 Mapeo fila↔`Task` (snake_case en SQL, camelCase en TS) vive en el
 mismo archivo (`rowToTask`), no se generaliza a un mapper genérico

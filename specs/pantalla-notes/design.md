@@ -7,8 +7,8 @@ Mismo patrón que `pantalla-tasks/design.md` — no se repite lo ya
 establecido ahí (rutas fuera de `(tabs)`, `presentation: 'modal'`,
 `useFocusEffect` para refrescar la lista). Diferencias puntuales:
 
-- `listNotes()` ordena por `pinned DESC, updated DESC` (ver
-  "Pinned" más abajo) — no solo `created` como `listTasks()`.
+- `listNotes()` ordena por `pinned` primero y `updated` descendente
+  (ver "Pinned" más abajo) — no solo `created` como `listTasks()`.
 - No hay un `NoteForm`/formulario — ver "Editor simplificado" abajo,
   reemplaza por completo lo que este documento describía antes como
   "NoteForm" (componente eliminado 2026-08-29).
@@ -28,10 +28,14 @@ retrofit acá.
   y `updated_at` a la vez (desktop llega a ese mismo efecto indirecto
   porque `toggleNotePin` reusa `updateNote`, que siempre refresca
   `updated`).
-- `listNotes()` ordena `ORDER BY pinned DESC, updated DESC` — resuelve
-  en SQL lo que desktop resuelve con un `.sort()` en memoria en
-  `NoteList.tsx` (mismo resultado: notas ancladas arriba, y dentro de
-  cada grupo la más reciente primero).
+- `listNotes()` ordena con un `.sort()` en memoria, como desktop en
+  `NoteList.tsx`: notas ancladas arriba, y dentro de cada grupo la más
+  reciente primero según `stampSortKey(updated)`. Antes lo resolvía
+  SQL con `ORDER BY pinned DESC, updated DESC`, pero `updated` mezcla
+  instantes ISO y `YYYY-MM-DD` legados de Desktop/Web y SQLite los
+  compara como strings (actualizado 2026-10-28, ver "Fechas de creación
+  y edición" en `pantalla-tasks/design.md`). El orden por `created` o
+  `updated` que se elige en el listado usa el mismo `stampSortKey`.
 - El toggle de pin vive en la barra de herramientas de
   `app/note/[id].tsx` (ver "Editor simplificado" abajo), no en la fila
   de la lista ni detrás de un swipe. Se decidió así porque

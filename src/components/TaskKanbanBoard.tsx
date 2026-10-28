@@ -6,6 +6,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
 
 import { TaskStatusIcon } from './TaskStatusIcon';
+import { todayISO } from '../lib/dates';
 import { useTheme } from '../theme/ThemeContext';
 import type { Task, TaskStatus } from '../types/task';
 
@@ -50,7 +51,7 @@ interface TaskKanbanBoardProps {
 export function TaskKanbanBoard({ tasks, onSelectTask, onStatusChange }: TaskKanbanBoardProps) {
   const { t } = useTranslation();
   const theme = useTheme();
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   const [dragTask, setDragTask] = useState<Task | null>(null);
   const dragX = useSharedValue(0);

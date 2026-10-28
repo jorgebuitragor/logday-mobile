@@ -1,5 +1,6 @@
 import { randomUUID } from 'expo-crypto';
 
+import { stampSortKey } from '../lib/dates';
 import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import { createTaskRemote, deleteTaskRemote, patchTaskRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
@@ -41,11 +42,13 @@ function rowToTask(row: TaskRow): Task {
   };
 }
 
+// Más recientes primero por `created`. Se ordena en JS y no con
+// `ORDER BY created DESC`: `created` mezcla instantes ISO (Mobile) y
+// `YYYY-MM-DD` legados (Desktop/Web), y SQLite los compara como strings
+// (ver `stampSortKey` en src/lib/dates.ts).
 export async function listTasks(): Promise<Task[]> {
-  const rows = await getDb().getAllAsync<TaskRow>(
-    'SELECT * FROM tasks WHERE deleted_at IS NULL ORDER BY created DESC'
-  );
-  return rows.map(rowToTask);
+  const rows = await getDb().getAllAsync<TaskRow>('SELECT * FROM tasks WHERE deleted_at IS NULL');
+  return rows.map(rowToTask).sort((a, b) => stampSortKey(b.created) - stampSortKey(a.created));
 }
 
 export async function getTask(id: string): Promise<Task | null> {

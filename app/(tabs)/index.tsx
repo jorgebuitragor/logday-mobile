@@ -14,6 +14,7 @@ import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { listTasks, softDeleteTask, updateTaskStatus } from '../../src/db/tasks';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
+import { todayISO } from '../../src/lib/dates';
 import { usePreferences, type TasksViewMode } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Task, TaskStatus } from '../../src/types/task';
@@ -30,7 +31,7 @@ export default function TasksScreen() {
   const { confirmDestructiveActions, tasksViewMode: viewMode, setTasksViewMode: setViewMode } = usePreferences();
   const [tasks, setTasks] = useState<Task[]>([]);
   const confirmDelete = useConfirmDelete<Task>(confirmDestructiveActions);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayISO();
 
   const reload = useCallback(() => {
     listTasks().then(setTasks);

@@ -18,7 +18,7 @@ App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo
 
 ## Convenciones
 
-- Fechas de calendario ("hoy", vencimientos) con `src/lib/dates.ts` (`todayISO`, `addDaysISO`), en hora local. `toISOString()` solo para instantes (`updated_at`, cola de sync): en Colombia da el día siguiente desde las 7 p. m. Ojo: `created`, `completed_at` y `updated` hoy se guardan como instantes ISO completos, mientras Desktop usa `YYYY-MM-DD` (pendiente de decidir el formato común).
+- Fechas (`src/lib/dates.ts`): las de calendario ("hoy", vencimientos, `fecha`, `date`) son `YYYY-MM-DD` en hora local; `created`, `completed_at`/`completedAt` y `updated` son instantes de `toISOString()`, pero los `YYYY-MM-DD` legados siguen siendo válidos: se leen con `parseStamp`, `stampToLocalDate` y `stampSortKey`, nunca con `new Date('YYYY-MM-DD')` ni comparando strings. Contrato en `../logday-server/specs/esquema-datos/requirements.md`.
 - Los patrones de Desktop y Web se adaptan a React Native, no se copian tal cual.
 - Sin store global reactivo para el sync, y SQLite embebido sin WatermelonDB: decisiones registradas en el vault.
 - i18n con i18next, español e inglés, nunca voseo.

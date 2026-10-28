@@ -12,6 +12,7 @@ import {
 import { drainSyncQueue, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
 import { setSyncRuntime } from '../lib/syncRuntime';
 import { startRealtime, stopRealtime } from '../lib/realtime';
+import { todayISO } from '../lib/dates';
 import { shareTextFile } from '../lib/exportFile';
 import type { SyncConfig, SyncConnectionStatus } from '../types/sync';
 
@@ -350,7 +351,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
   async function exportMyData(): Promise<void> {
     const data = await withSyncAuth((token) => exportAccountRemote(configRef.current.serverUrl, token));
-    const filename = `logday-datos-${new Date().toISOString().slice(0, 10)}.json`;
+    const filename = `logday-datos-${todayISO()}.json`;
     await shareTextFile(filename, JSON.stringify(data, null, 2), 'application/json');
   }
 

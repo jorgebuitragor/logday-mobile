@@ -1,3 +1,4 @@
+import { stampSortKey, stampToLocalDate } from '../lib/dates';
 import type { TaskStatus } from '../types/task';
 import { getDb } from './index';
 
@@ -11,7 +12,9 @@ export interface SearchResult {
   // Metadata usada solo para filtrar/rankear, no toda aplica a todos
   // los `kind` — `date` es la fecha relevante de cada entidad (due de
   // task, fecha de daily/overtime, `updated` de note) para el filtro
-  // de rango; `label` es lo que matchea contra el filtro de
+  // de rango. Las tres primeras son fechas de calendario `YYYY-MM-DD`;
+  // `updated` es un sello que puede ser un instante o un `YYYY-MM-DD`
+  // legado (ver `inDateRange`). `label` es lo que matchea contra el filtro de
   // proyecto/tag (project o cualquier tag de una task; tag o carpeta
   // de una nota).
   date: string | null;
@@ -71,12 +74,31 @@ function scoreMatch(query: string, title: string): number {
   return 1;
 }
 
+// Desde/Hasta son fechas de calendario locales, así que `date` se
+// normaliza a su día local antes de comparar: el `updated` de una nota
+// editada en Mobile es un instante (`2026-10-28T23:10:00.000Z`), que
+// comparado como string con `Hasta = 2026-10-28` quedaba fuera aunque
+// fuera de ese día, y en UTC además cae en otro día de noche. Un
+// `YYYY-MM-DD` (due, fecha, date, o un `updated` legado) se queda igual.
 function inDateRange(date: string | null, filters: SearchFilters): boolean {
   if (!filters.dateFrom && !filters.dateTo) return true;
-  if (!date) return false;
-  if (filters.dateFrom && date < filters.dateFrom) return false;
-  if (filters.dateTo && date > filters.dateTo) return false;
+  const day = stampToLocalDate(date);
+  if (!day) return false;
+  if (filters.dateFrom && day < filters.dateFrom) return false;
+  if (filters.dateTo && day > filters.dateTo) return false;
   return true;
+}
+
+// `created`/`updated` mezclan instantes y `YYYY-MM-DD` legados, y el
+// `ORDER BY` de SQLite los compara como strings (un `2026-10-28` queda
+// detrás de cualquier instante de ese día UTC, aunque en hora local sea
+// posterior). Se reordena en JS con `stampSortKey` antes de rankear; el
+// `sort` del ranking es estable, así que este orden queda de desempate.
+// El `ORDER BY` de SQL se conserva solo para elegir las `FETCH_LIMIT`
+// filas candidatas, donde el orden por string acierta salvo entre
+// sellos separados por menos que el desfase horario.
+function byStampDesc<T>(rows: T[], stamp: (row: T) => string): T[] {
+  return [...rows].sort((a, b) => stampSortKey(stamp(b)) - stampSortKey(stamp(a)));
 }
 
 function matchesLabel(result: SearchResult, filters: SearchFilters): boolean {
@@ -124,8 +146,9 @@ export async function searchAll(query: string, filters: SearchFilters = EMPTY_FI
       tags: string;
       status: TaskStatus;
       due: string | null;
+      created: string;
     }>(
-      `SELECT id, title, content, task_code, project, tags, status, due FROM tasks
+      `SELECT id, title, content, task_code, project, tags, status, due, created FROM tasks
        WHERE deleted_at IS NULL AND (title LIKE ? OR content LIKE ? OR task_code LIKE ? OR project LIKE ? OR tags LIKE ?)${statusClause}
        ORDER BY created DESC LIMIT ?`,
       like,
@@ -136,7 +159,7 @@ export async function searchAll(query: string, filters: SearchFilters = EMPTY_FI
       ...filters.statuses,
       FETCH_LIMIT
     );
-    taskResults = taskRows.map((r) => ({
+    taskResults = byStampDesc(taskRows, (r) => r.created).map((r) => ({
       kind: 'task' as const,
       id: r.id,
       title: r.title,
@@ -159,7 +182,7 @@ export async function searchAll(query: string, filters: SearchFilters = EMPTY_FI
       like,
       FETCH_LIMIT
     );
-    noteResults = noteRows.map((r) => ({
+    noteResults = byStampDesc(noteRows, (r) => r.updated).map((r) => ({
       kind: 'note' as const,
       id: r.id,
       title: r.title,

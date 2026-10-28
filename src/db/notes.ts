@@ -4,6 +4,7 @@ import {
   applyEditorEdit, applyIncomingUpdate, applyTextEdit, docFromStateB64, encodeDocStateB64, getContentText,
 } from '../lib/crdtText';
 import * as contentSyncQueue from '../lib/contentSyncQueue';
+import { stampSortKey } from '../lib/dates';
 import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import {
@@ -48,12 +49,15 @@ function rowToNote(row: NoteRow): Note {
 
 // pinned primero (igual que NoteList.tsx de desktop: `a.pinned !== b.pinned
 // ? (a.pinned ? -1 : 1) : ...`), luego por `updated` descendente dentro de
-// cada grupo — ver "Listado" en requirements.md.
+// cada grupo — ver "Listado" en requirements.md. El orden se hace en JS y
+// no con `ORDER BY updated DESC`: `updated` mezcla instantes ISO y
+// `YYYY-MM-DD` legados de Desktop/Web, y SQLite los compara como strings
+// (ver `stampSortKey` en src/lib/dates.ts).
 export async function listNotes(): Promise<Note[]> {
-  const rows = await getDb().getAllAsync<NoteRow>(
-    'SELECT * FROM notes WHERE deleted_at IS NULL ORDER BY pinned DESC, updated DESC'
-  );
-  return rows.map(rowToNote);
+  const rows = await getDb().getAllAsync<NoteRow>('SELECT * FROM notes WHERE deleted_at IS NULL');
+  return rows
+    .map(rowToNote)
+    .sort((a, b) => (a.pinned !== b.pinned ? (a.pinned ? -1 : 1) : stampSortKey(b.updated) - stampSortKey(a.updated)));
 }
 
 export async function getNote(id: string): Promise<Note | null> {

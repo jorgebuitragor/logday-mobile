@@ -15,6 +15,7 @@ import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { createNote, listNotes, setNotePinned, softDeleteNote, toNoteInput, updateNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
+import { stampSortKey } from '../../src/lib/dates';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { normalizeTag } from '../../src/lib/noteTags';
@@ -191,8 +192,10 @@ export default function NotesScreen() {
       [...filteredNotes].sort((a, b) => {
         if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
         if (sortBy === 'title') return a.title.localeCompare(b.title, 'es', { sensitivity: 'base' });
-        if (sortBy === 'created') return b.created.localeCompare(a.created);
-        return b.updated.localeCompare(a.updated);
+        // `created`/`updated` mezclan instantes ISO y `YYYY-MM-DD`
+        // legados: se comparan como milisegundos, no como strings.
+        if (sortBy === 'created') return stampSortKey(b.created) - stampSortKey(a.created);
+        return stampSortKey(b.updated) - stampSortKey(a.updated);
       }),
     [filteredNotes, sortBy]
   );

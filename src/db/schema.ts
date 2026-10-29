@@ -6,6 +6,9 @@
 // migrar el esquema cuando se implemente el sync real.
 
 export const SCHEMA_SQL = `
+-- 'progress' (INTEGER, nullable) no está en este CREATE: se agrega con
+-- 'ensureColumn' en db/index.ts, igual que 'content_state' de notes y
+-- daily_entries, para que llegue también a instalaciones previas.
 CREATE TABLE IF NOT EXISTS tasks (
   id TEXT PRIMARY KEY NOT NULL,
   title TEXT NOT NULL,

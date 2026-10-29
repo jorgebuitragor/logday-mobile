@@ -9,6 +9,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { TaskCalendarView } from '../../src/components/TaskCalendarView';
 import { TaskKanbanBoard } from '../../src/components/TaskKanbanBoard';
+import { TaskProgressBar } from '../../src/components/TaskProgressBar';
 import { TaskStatusIcon } from '../../src/components/TaskStatusIcon';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { listTasks, softDeleteTask, updateTaskStatus } from '../../src/db/tasks';
@@ -125,7 +126,11 @@ export default function TasksScreen() {
                   >
                     {item.title}
                   </Text>
-                  {(item.taskCode || (item.project && item.project !== 'inbox') || item.due || item.tags.length > 0) && (
+                  {(item.taskCode ||
+                    (item.project && item.project !== 'inbox') ||
+                    item.due ||
+                    item.progress !== null ||
+                    item.tags.length > 0) && (
                     <View style={styles.metaRow}>
                       {item.taskCode && (
                         <Text style={[styles.metaText, { color: theme.textHint }]}>#{item.taskCode}</Text>
@@ -141,6 +146,7 @@ export default function TasksScreen() {
                           </Text>
                         </View>
                       )}
+                      {item.progress !== null && <TaskProgressBar progress={item.progress} />}
                       {item.tags.slice(0, 3).map((tag) => (
                         <View key={tag} style={[styles.tagPill, { backgroundColor: theme.accentSoft }]}>
                           <Text style={[styles.tagText, { color: theme.accentInk }]}>{tag}</Text>

@@ -19,6 +19,7 @@ function toTaskInput(task: Task): TaskInput {
     tags: task.tags,
     project: task.project,
     due: task.due,
+    progress: task.progress,
     content: task.content,
   };
 }
@@ -66,18 +67,22 @@ export default function EditTaskScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
+      {/* "Eliminar" va como `footer` del formulario, dentro de su scroll:
+          con el formulario desplazable (teclado) ya no cabe fijo debajo. */}
       <TaskForm
         initialValue={toTaskInput(task)}
         currentId={task.id}
         onSubmit={handleSubmit}
         submitLabel={t('taskForm.editSubmit')}
+        footer={
+          <Pressable
+            style={[styles.deleteButton, { borderColor: '#dc2626' }]}
+            onPress={() => confirmDelete.request(true, performDelete)}
+          >
+            <Text style={styles.deleteText}>{t('taskForm.delete')}</Text>
+          </Pressable>
+        }
       />
-      <Pressable
-        style={[styles.deleteButton, { borderColor: '#dc2626' }]}
-        onPress={() => confirmDelete.request(true, performDelete)}
-      >
-        <Text style={styles.deleteText}>{t('taskForm.delete')}</Text>
-      </Pressable>
 
       <ConfirmDeleteModal
         visible={confirmDelete.isOpen}
@@ -105,7 +110,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   deleteButton: {
-    marginHorizontal: 16,
     marginTop: 8,
     paddingVertical: 12,
     alignItems: 'center',

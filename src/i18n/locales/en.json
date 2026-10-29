@@ -68,7 +68,8 @@
     "viewCalendar": "Calendar",
     "viewKanban": "Kanban",
     "noTasksDate": "No tasks for this day.",
-    "kanbanEmptyColumn": "No tasks here."
+    "kanbanEmptyColumn": "No tasks here.",
+    "progressLabel": "Progress: {{value}}%"
   },
   "taskForm": {
     "title": "Title",
@@ -98,7 +99,12 @@
     "tags": "Tags",
     "tagPlaceholder": "new tag…",
     "addTag": "tag",
-    "removeTag": "Remove tag"
+    "removeTag": "Remove tag",
+    "progress": "Progress (optional)",
+    "progressPlaceholder": "—",
+    "progressClear": "Remove progress",
+    "progressHint": "Leave it empty if the task has no progress.",
+    "progressInvalid": "Enter a whole number from 0 to 100"
   },
   "noteList": {
     "empty": "No notes yet. Create the first one!",

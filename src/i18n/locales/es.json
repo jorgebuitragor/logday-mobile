@@ -68,7 +68,8 @@
     "viewCalendar": "Calendario",
     "viewKanban": "Kanban",
     "noTasksDate": "Sin tareas para este día.",
-    "kanbanEmptyColumn": "Sin tareas aquí."
+    "kanbanEmptyColumn": "Sin tareas aquí.",
+    "progressLabel": "Progreso: {{value}} %"
   },
   "taskForm": {
     "title": "Título",
@@ -98,7 +99,12 @@
     "tags": "Tags",
     "tagPlaceholder": "nuevo tag…",
     "addTag": "tag",
-    "removeTag": "Quitar tag"
+    "removeTag": "Quitar tag",
+    "progress": "Progreso (opcional)",
+    "progressPlaceholder": "—",
+    "progressClear": "Quitar progreso",
+    "progressHint": "Déjalo vacío si la tarea no lleva progreso.",
+    "progressInvalid": "Escribe un número entero de 0 a 100"
   },
   "noteList": {
     "empty": "Sin notas. ¡Crea la primera!",

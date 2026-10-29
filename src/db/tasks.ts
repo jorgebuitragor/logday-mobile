@@ -8,6 +8,7 @@ import { taskFieldsToPatchPayload, taskFromApiResponse, taskToCreatePayload, TAS
 import * as syncQueue from '../lib/syncQueue';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import { nextCompletedAt } from '../lib/taskCompletion';
+import { isValidProgress } from '../lib/taskProgress';
 import type { Task, TaskStatus } from '../types/task';
 import { getDb } from './index';
 
@@ -21,6 +22,7 @@ interface TaskRow {
   created: string;
   completed_at: string | null;
   due: string | null;
+  progress: number | null;
   content: string;
   updated_at: string;
   deleted_at: string | null;
@@ -37,6 +39,7 @@ function rowToTask(row: TaskRow): Task {
     created: row.created,
     completedAt: row.completed_at,
     due: row.due,
+    progress: row.progress ?? null,
     content: row.content,
     updatedAt: row.updated_at,
     deletedAt: row.deleted_at,
@@ -64,18 +67,27 @@ export interface TaskInput {
   tags: string[];
   project: string;
   due: string | null;
+  progress: number | null;
   content: string;
 }
 
+// El formulario ya bloquea guardar con un valor inválido; esto es la
+// última barrera para que nada fuera de 0–100 entero llegue a SQLite ni
+// al servidor (que respondería 400, ver `isValidProgress`).
+function assertValidProgress(progress: unknown): void {
+  if (!isValidProgress(progress)) throw new Error('progress must be an integer between 0 and 100, or null');
+}
+
 export async function createTask(input: TaskInput): Promise<string> {
+  assertValidProgress(input.progress);
   const id = randomUUID();
   const now = nowInstant();
   // Al crear ya en 'done' se sella completed_at de inmediato (caso raro
   // pero posible), ver `nextCompletedAt`.
   const completedAt = nextCompletedAt(null, null, input.status, now);
   await getDb().runAsync(
-    `INSERT INTO tasks (id, title, task_code, status, tags, project, created, completed_at, due, content, updated_at, deleted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+    `INSERT INTO tasks (id, title, task_code, status, tags, project, created, completed_at, due, progress, content, updated_at, deleted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
     id,
     input.title,
     input.taskCode,
@@ -85,18 +97,19 @@ export async function createTask(input: TaskInput): Promise<string> {
     now,
     completedAt,
     input.due,
+    input.progress,
     input.content,
     now
   );
   void syncCreateTask({
     id, title: input.title, taskCode: input.taskCode, status: input.status, tags: input.tags,
-    project: input.project, created: now, completedAt, due: input.due, content: input.content,
+    project: input.project, created: now, completedAt, due: input.due, progress: input.progress, content: input.content,
     updatedAt: now, deletedAt: null,
   });
   return id;
 }
 
-const TASK_INPUT_KEYS: (keyof TaskInput)[] = ['title', 'taskCode', 'status', 'tags', 'project', 'due', 'content'];
+const TASK_INPUT_KEYS: (keyof TaskInput)[] = ['title', 'taskCode', 'status', 'tags', 'project', 'due', 'progress', 'content'];
 const taskLock = (id: string) => `task:${id}`;
 
 /** Guarda solo los campos que el usuario cambió respecto de `base` (lo que
@@ -106,6 +119,7 @@ const taskLock = (id: string) => `task:${id}`;
  * compararlo contra SQLite contaba ese campo como "cambiado" y el PATCH
  * revertía la edición remota (LWW por campo). */
 export async function updateTask(id: string, input: TaskInput, base: TaskInput): Promise<void> {
+  assertValidProgress(input.progress);
   const edited = diffChangedFields(base, input, TASK_INPUT_KEYS);
   if (Object.keys(edited).length === 0) return;
   await withKeyLock(taskLock(id), async () => {
@@ -116,13 +130,14 @@ export async function updateTask(id: string, input: TaskInput, base: TaskInput):
     const completedAt = nextCompletedAt(current.status, current.completedAt, status, now);
     const next: Task = { ...current, ...edited, completedAt, updatedAt: now, deletedAt: null };
     await getDb().runAsync(
-      `UPDATE tasks SET title = ?, task_code = ?, status = ?, tags = ?, project = ?, due = ?, content = ?, completed_at = ?, updated_at = ? WHERE id = ?`,
+      `UPDATE tasks SET title = ?, task_code = ?, status = ?, tags = ?, project = ?, due = ?, progress = ?, content = ?, completed_at = ?, updated_at = ? WHERE id = ?`,
       next.title,
       next.taskCode,
       next.status,
       JSON.stringify(next.tags),
       next.project,
       next.due,
+      next.progress,
       next.content,
       completedAt,
       now,
@@ -255,12 +270,13 @@ async function applyTaskResponseLocked(id: string, sinceIso: string, response: T
 
 async function writeTaskRow(task: Task, updatedAt: string): Promise<void> {
   await getDb().runAsync(
-    `INSERT INTO tasks (id, title, task_code, status, tags, project, created, completed_at, due, content, updated_at, deleted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
+    `INSERT INTO tasks (id, title, task_code, status, tags, project, created, completed_at, due, progress, content, updated_at, deleted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL)
      ON CONFLICT(id) DO UPDATE SET
        title = excluded.title, task_code = excluded.task_code, status = excluded.status, tags = excluded.tags,
        project = excluded.project, created = excluded.created, completed_at = excluded.completed_at,
-       due = excluded.due, content = excluded.content, updated_at = excluded.updated_at, deleted_at = NULL`,
+       due = excluded.due, progress = excluded.progress, content = excluded.content,
+       updated_at = excluded.updated_at, deleted_at = NULL`,
     task.id,
     task.title,
     task.taskCode,
@@ -270,6 +286,7 @@ async function writeTaskRow(task: Task, updatedAt: string): Promise<void> {
     task.created,
     task.completedAt,
     task.due,
+    task.progress ?? null,
     task.content,
     updatedAt
   );

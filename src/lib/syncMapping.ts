@@ -1,4 +1,5 @@
 import type { Task, TaskStatus } from '../types/task';
+import { progressFromServer } from './taskProgress';
 import type { Note } from '../types/note';
 import type { OvertimeEntry, OvertimeMonthMeta } from '../types/overtime';
 import type { AbsenceDay, AbsenceType } from '../types/absence';
@@ -27,6 +28,9 @@ export interface TaskCreatePayload {
   created: string;
   completed_at: string | null;
   due: string | null;
+  // Siempre presente en el create: `null` deja la tarea nueva sin
+  // progreso. Ver specs/progreso-tasks/.
+  progress: number | null;
   content: string;
   updated_at: string;
 }
@@ -40,11 +44,16 @@ export interface TaskPatchPayload {
   created?: string;
   completed_at?: string | null;
   due?: string | null;
+  // `null` lo borra; ausente no lo toca (LWW por campo en el servidor).
+  progress?: number | null;
   content?: string;
   updated_at: string;
 }
 
-export interface TaskApiResponse extends TaskCreatePayload {
+// `progress` opcional en la respuesta: un servidor anterior al campo no
+// manda la clave, y ausente cuenta como `null` (`progressFromServer`).
+export interface TaskApiResponse extends Omit<TaskCreatePayload, 'progress'> {
+  progress?: number | null;
   seq: number;
   deleted_at?: string;
 }
@@ -60,6 +69,7 @@ export function taskToCreatePayload(task: Task): TaskCreatePayload {
     created: task.created,
     completed_at: task.completedAt,
     due: task.due,
+    progress: task.progress,
     content: task.content,
     updated_at: nowIso(),
   };
@@ -75,6 +85,7 @@ export function taskFieldsToPatchPayload(fields: Partial<Task>): TaskPatchPayloa
   if ('created' in fields) payload.created = fields.created;
   if ('completedAt' in fields) payload.completed_at = fields.completedAt ?? null;
   if ('due' in fields) payload.due = fields.due ?? null;
+  if ('progress' in fields) payload.progress = fields.progress ?? null;
   if ('content' in fields) payload.content = fields.content;
   return payload;
 }
@@ -90,6 +101,7 @@ export function taskFromApiResponse(payload: TaskApiResponse): Omit<Task, 'updat
     created: payload.created,
     completedAt: payload.completed_at,
     due: payload.due,
+    progress: progressFromServer(payload.progress),
     content: payload.content,
   };
 }
@@ -98,7 +110,7 @@ export function taskFromApiResponse(payload: TaskApiResponse): Omit<Task, 'updat
 // "cola gana sobre respuesta/cambio tardío" (ver syncEngine.ts).
 export const TASK_FIELD_MAP: Record<string, string> = {
   title: 'title', taskCode: 'task_code', status: 'status', tags: 'tags', project: 'project',
-  created: 'created', completedAt: 'completed_at', due: 'due', content: 'content',
+  created: 'created', completedAt: 'completed_at', due: 'due', progress: 'progress', content: 'content',
 };
 
 // ─── OvertimeEntry ───

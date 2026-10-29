@@ -1,14 +1,19 @@
 import { AlertTriangle, Plus, X } from 'lucide-react-native';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
 import { AppDatePicker } from './AppDatePicker';
 import { listTasks, type TaskInput } from '../db/tasks';
+import { parseProgressText, progressToText } from '../lib/taskProgress';
 import { useTheme } from '../theme/ThemeContext';
 import type { TaskStatus } from '../types/task';
 
 const STATUSES: TaskStatus[] = ['todo', 'in-progress', 'done'];
+// Atajos de progreso: con un toque, sin abrir el teclado numérico.
+const PROGRESS_PRESETS = [0, 25, 50, 75, 100];
+const ERROR_COLOR = '#dc2626';
 
 interface TaskFormProps {
   initialValue?: TaskInput;
@@ -17,6 +22,9 @@ interface TaskFormProps {
   currentId?: string;
   onSubmit: (input: TaskInput) => void;
   submitLabel: string;
+  /** Se pinta debajo del botón de guardar, dentro del mismo scroll (la
+   *  pantalla de edición pone aquí "Eliminar"). */
+  footer?: ReactNode;
 }
 
 /** Lo que manda el formulario al guardar. Las pantallas de edición la usan
@@ -30,11 +38,12 @@ export function normalizeTaskInput(input: TaskInput): TaskInput {
     tags: input.tags,
     project: input.project.trim(),
     due: input.due?.trim() || null,
+    progress: input.progress,
     content: input.content,
   };
 }
 
-export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: TaskFormProps) {
+export function TaskForm({ initialValue, currentId, onSubmit, submitLabel, footer }: TaskFormProps) {
   const { t } = useTranslation();
   const theme = useTheme();
   const [title, setTitle] = useState(initialValue?.title ?? '');
@@ -45,6 +54,8 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
   const [project, setProject] = useState(initialValue?.project ?? '');
   const [tags, setTags] = useState<string[]>(initialValue?.tags ?? []);
   const [newTag, setNewTag] = useState('');
+  // Texto tal cual lo escribe el usuario; vacío = sin progreso.
+  const [progressText, setProgressText] = useState(progressToText(initialValue?.progress ?? null));
   const [existingCodes, setExistingCodes] = useState<{ id: string; taskCode: string | null }[]>([]);
 
   // Cargado una vez para el chequeo de taskCode duplicado (mismo criterio
@@ -68,7 +79,39 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
         ? t('taskForm.statusInProgress')
         : t('taskForm.statusDone');
 
-  const canSubmit = title.trim().length > 0 && !isDuplicateCode;
+  const parsedProgress = parseProgressText(progressText);
+  const canSubmit = title.trim().length > 0 && !isDuplicateCode && parsedProgress.ok;
+
+  // Teclado: mismo patrón que Ajustes y el editor de notas
+  // (`KeyboardAvoidingView` no funciona con edge-to-edge en Android).
+  // Se suma la altura real del teclado como espacio al final del
+  // `ScrollView` y, al enfocar un campo que quedaría tapado, se desplaza
+  // lo justo para destaparlo. `setTimeout` porque `onFocus` llega antes
+  // de que el teclado termine de abrirse.
+  const keyboard = useAnimatedKeyboard({
+    isStatusBarTranslucentAndroid: true,
+    isNavigationBarTranslucentAndroid: true,
+  });
+  const keyboardSpacer = useAnimatedStyle(() => ({ height: keyboard.height.value }));
+  const scrollRef = useRef<ScrollView>(null);
+  const scrollYRef = useRef(0);
+  const progressInputRef = useRef<TextInput>(null);
+  const contentInputRef = useRef<TextInput>(null);
+  const windowHeight = useWindowDimensions().height;
+
+  function scrollInputIntoView(node: TextInput | null) {
+    if (!node) return;
+    setTimeout(() => {
+      node.measureInWindow((_x, y, _width, height) => {
+        const keyboardTop = windowHeight - keyboard.height.value;
+        const margin = 16;
+        const overlap = y + height - (keyboardTop - margin);
+        if (overlap > 0) {
+          scrollRef.current?.scrollTo({ y: scrollYRef.current + overlap, animated: true });
+        }
+      });
+    }, 300);
+  }
 
   const inputStyle = [
     styles.input,
@@ -91,7 +134,17 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.bgBase }]}>
+    <ScrollView
+      ref={scrollRef}
+      style={[styles.scroll, { backgroundColor: theme.bgBase }]}
+      contentContainerStyle={styles.container}
+      keyboardShouldPersistTaps="handled"
+      keyboardDismissMode="on-drag"
+      onScroll={(e) => {
+        scrollYRef.current = e.nativeEvent.contentOffset.y;
+      }}
+      scrollEventThrottle={16}
+    >
       <Text style={[styles.label, { color: theme.textSecondary }]}>{t('taskForm.title')}</Text>
       <TextInput
         style={inputStyle}
@@ -122,6 +175,69 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
           );
         })}
       </View>
+
+      <Text style={[styles.label, { color: theme.textSecondary }]}>{t('taskForm.progress')}</Text>
+      <View style={styles.progressRow}>
+        <TextInput
+          ref={progressInputRef}
+          style={[inputStyle, styles.progressInput, !parsedProgress.ok && { borderColor: ERROR_COLOR }]}
+          value={progressText}
+          onChangeText={setProgressText}
+          onFocus={() => scrollInputIntoView(progressInputRef.current)}
+          placeholder={t('taskForm.progressPlaceholder')}
+          placeholderTextColor={theme.textFaint}
+          keyboardType="number-pad"
+          maxLength={3}
+          accessibilityLabel={t('taskForm.progress')}
+        />
+        <Text style={[styles.progressUnit, { color: theme.textSecondary }]}>%</Text>
+        <View style={[styles.progressTrack, { backgroundColor: theme.borderCard }]}>
+          {parsedProgress.ok && parsedProgress.value !== null ? (
+            <View style={[styles.progressFill, { width: `${parsedProgress.value}%`, backgroundColor: theme.accent }]} />
+          ) : null}
+        </View>
+        {progressText !== '' ? (
+          <Pressable
+            onPress={() => setProgressText('')}
+            hitSlop={8}
+            style={[styles.progressClear, { borderColor: theme.border }]}
+            accessibilityRole="button"
+            accessibilityLabel={t('taskForm.progressClear')}
+          >
+            <X size={14} color={theme.textSecondary} />
+          </Pressable>
+        ) : null}
+      </View>
+      <View style={styles.progressPresets}>
+        {PROGRESS_PRESETS.map((value) => {
+          const active = parsedProgress.ok && parsedProgress.value === value;
+          return (
+            <Pressable
+              key={value}
+              onPress={() => setProgressText(String(value))}
+              style={[
+                styles.progressPreset,
+                {
+                  borderColor: active ? theme.accentStrong : theme.border,
+                  backgroundColor: active ? theme.accentStrong : 'transparent',
+                },
+              ]}
+              accessibilityRole="button"
+              accessibilityState={{ selected: active }}
+            >
+              <Text style={[styles.progressPresetText, { color: active ? '#fff' : theme.textSecondary }]}>{value}%</Text>
+            </Pressable>
+          );
+        })}
+      </View>
+      {parsedProgress.ok ? (
+        <Text style={[styles.hintText, { color: theme.textFaint }]}>{t('taskForm.progressHint')}</Text>
+      ) : (
+        <View style={styles.hintRow}>
+          <AlertTriangle size={12} color={ERROR_COLOR} />
+          <Text style={[styles.hintText, { color: ERROR_COLOR }]}>{t('taskForm.progressInvalid')}</Text>
+        </View>
+      )}
 
       <Text style={[styles.label, { color: theme.textSecondary }]}>{t('taskForm.project')}</Text>
       <TextInput
@@ -188,9 +304,11 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
 
       <Text style={[styles.label, { color: theme.textSecondary }]}>{t('taskForm.content')}</Text>
       <TextInput
+        ref={contentInputRef}
         style={[inputStyle, styles.multiline]}
         value={content}
         onChangeText={setContent}
+        onFocus={() => scrollInputIntoView(contentInputRef.current)}
         placeholder={t('taskForm.contentPlaceholder')}
         placeholderTextColor={theme.textFaint}
         multiline
@@ -202,15 +320,23 @@ export function TaskForm({ initialValue, currentId, onSubmit, submitLabel }: Tas
           styles.submitButton,
           { backgroundColor: canSubmit ? theme.accentStrong : theme.accentSoft },
         ]}
-        onPress={() => onSubmit(normalizeTaskInput({ title, taskCode, status, tags, project, due, content }))}
+        onPress={() => {
+          if (!parsedProgress.ok) return;
+          onSubmit(normalizeTaskInput({ title, taskCode, status, tags, project, due, progress: parsedProgress.value, content }));
+        }}
       >
         <Text style={styles.submitText}>{submitLabel}</Text>
       </Pressable>
-    </View>
+      {footer}
+      <Animated.View style={keyboardSpacer} />
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+  },
   container: {
     padding: 16,
     gap: 4,
@@ -239,6 +365,48 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
+  },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  progressInput: {
+    width: 64,
+    textAlign: 'center',
+  },
+  progressUnit: {
+    fontSize: 14,
+  },
+  progressTrack: {
+    flex: 1,
+    height: 6,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 3,
+  },
+  progressClear: {
+    borderWidth: 1,
+    borderRadius: 999,
+    padding: 6,
+  },
+  progressPresets: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 8,
+  },
+  progressPreset: {
+    borderWidth: 1,
+    borderRadius: 999,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  progressPresetText: {
+    fontSize: 12,
   },
   hintRow: {
     flexDirection: 'row',

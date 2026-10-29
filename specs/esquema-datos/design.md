@@ -36,6 +36,7 @@ Mapeo 1:1 con `logday-server/specs/esquema-datos/design.md`, quitando
 | created | TEXT (fecha) | |
 | completed_at | TEXT NULL | |
 | due | TEXT NULL | |
+| progress | INTEGER NULL | 0–100 o `NULL` = sin progreso; agregada con `ensureColumn`, ver `progreso-tasks/` |
 | content | TEXT | markdown, default `''` |
 | updated_at | TEXT NOT NULL | bookkeeping para sync futuro |
 | deleted_at | TEXT NULL | soft-delete |

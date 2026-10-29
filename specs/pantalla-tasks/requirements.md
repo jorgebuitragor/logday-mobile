@@ -83,6 +83,13 @@ accesorios), así que se incorporan al formulario:
   (soft-delete: `deleted_at`), no borrarla físicamente — coherente con
   el esquema ya definido.
 
+### Progreso (agregado 2026-10-29)
+
+- El formulario DEBERÁ permitir poner, cambiar y quitar un progreso
+  opcional (entero 0–100, o sin progreso), y la fila del listado y la
+  tarjeta del Kanban DEBERÁN mostrarlo solo si la tarea lo tiene.
+  Requisitos completos en [`progreso-tasks/`](../progreso-tasks/requirements.md).
+
 ## Fuera de este spec
 
 - Selector de proyecto existente para `project` (dropdown como en

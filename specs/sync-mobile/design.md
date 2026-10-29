@@ -391,6 +391,14 @@ quedó encapsulada en `db/notes.ts`/`db/dailyEntries.ts`, detrás de las
 mismas funciones que las pantallas ya llamaban. Reduce el riesgo real
 de esta fase bastante por debajo de lo anticipado en el plan.
 
+## `Task.progress` (agregado 2026-10-29)
+
+Campo nuevo del contrato (logday-server#15), dentro del mismo mapeo
+LWW de Task: va siempre en el create, en el PATCH solo si cambió
+(`null` lo borra), y la clave ausente en una respuesta o en
+`/sync/changes` cuenta como `null`. La cola offline no cambia. Detalle
+en [`progreso-tasks/design.md`](../progreso-tasks/design.md).
+
 ## Explícitamente pendiente
 
 - Diseño detallado de la Fase 4 — se escribe en este mismo archivo al

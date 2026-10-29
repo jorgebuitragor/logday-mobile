@@ -33,6 +33,12 @@ export async function initDb(): Promise<void> {
   // columna nueva en tablas que ya existían en instalaciones previas.
   await ensureColumn('notes', 'content_state', 'TEXT');
   await ensureColumn('daily_entries', 'content_state', 'TEXT');
+  // Progreso opcional de las tareas (specs/progreso-tasks/): entero
+  // 0–100 o NULL = sin progreso. Sin DEFAULT, para que las tareas que
+  // ya existían queden sin progreso y no en 0. Sin CHECK: la validación
+  // vive en `src/lib/taskProgress.ts`, y lo que llega del servidor pasa
+  // por `progressFromServer` antes de escribirse.
+  await ensureColumn('tasks', 'progress', 'INTEGER');
 }
 
 export async function countRows(table: string): Promise<number> {

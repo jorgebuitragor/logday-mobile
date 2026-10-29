@@ -5,6 +5,7 @@ import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { runOnJS, useAnimatedStyle, useSharedValue, type SharedValue } from 'react-native-reanimated';
 
+import { TaskProgressBar } from './TaskProgressBar';
 import { TaskStatusIcon } from './TaskStatusIcon';
 import { todayISO } from '../lib/dates';
 import { useTheme } from '../theme/ThemeContext';
@@ -202,7 +203,11 @@ function KanbanCard({
         >
           {task.title}
         </Text>
-        {(task.taskCode || (task.project && task.project !== 'inbox') || task.due || task.tags.length > 0) ? (
+        {(task.taskCode ||
+          (task.project && task.project !== 'inbox') ||
+          task.due ||
+          task.progress !== null ||
+          task.tags.length > 0) ? (
           <View style={styles.cardMetaRow}>
             {task.taskCode ? <Text style={[styles.cardMetaText, { color: theme.textHint }]}>#{task.taskCode}</Text> : null}
             {task.project && task.project !== 'inbox' ? (
@@ -216,6 +221,7 @@ function KanbanCard({
                 <Text style={[styles.cardMetaText, { color: isOverdue ? OVERDUE_COLOR : theme.textHint }]}>{task.due}</Text>
               </View>
             ) : null}
+            {task.progress !== null ? <TaskProgressBar progress={task.progress} width={32} fontSize={10} /> : null}
             {task.tags.slice(0, 3).map((tag) => (
               <View key={tag} style={[styles.tagPill, { backgroundColor: theme.accentSoft }]}>
                 <Text style={[styles.tagText, { color: theme.accentInk }]}>{tag}</Text>

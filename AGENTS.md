@@ -4,7 +4,7 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v57.0.0/ before 
 
 # AGENTS.md — Logday Mobile
 
-App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo Router y TypeScript. `expo-sqlite` es la única fuente de verdad local, y los tokens de sync viven en `expo-secure-store`. El sync con `logday-server` es opcional. El README todavía dice "en diseño", pero la app ya está construida. Repos hermanos en `../`: `logday-server`, `task-manager` (Desktop), `logday-web`.
+App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo Router y TypeScript. `expo-sqlite` es la única fuente de verdad local, y los tokens de sync viven en `expo-secure-store`. El sync con `logday-server` es opcional. Repos hermanos en `../`: `logday-server`, `task-manager` (Desktop), `logday-web`.
 
 ## Comandos y verificación
 

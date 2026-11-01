@@ -37,6 +37,7 @@ import { useTheme } from '../../src/theme/ThemeContext';
 const ERROR_COLOR = '#dc2626';
 const WARN_COLOR = '#d97706';
 const marker = (name: string) => `{{${name}}}`;
+const EXAMPLE_LABEL = { usual: 'templates.exampleUsual', short: 'templates.exampleShort', named: 'templates.exampleNamed' } as const;
 /** Clave de i18n de un marcador: `hoy.dia` → `templates.marker_hoy_dia`. */
 const markerKey = (name: string) => name.replace(/\./g, '_');
 
@@ -213,10 +214,10 @@ function DailyTemplateSection() {
 
       {source === 'custom' ? (
         <View style={styles.block}>
-          <Text style={[styles.label, { color: theme.textSecondary }]}>{t('templates.examplesTitle')}</Text>
+          <Text style={[styles.label, { color: theme.textSecondary }]}>{t('templates.examplesLabel')}</Text>
           <View style={styles.buttonRow}>
             {DAILY_TEMPLATE_EXAMPLES[language].map((example) => (
-              <SecondaryButton key={example.id} label={t(`templates.example_${example.id}`)} onPress={() => replaceAll(example.template)} />
+              <SecondaryButton key={example.id} label={t(EXAMPLE_LABEL[example.id])} onPress={() => replaceAll(example.template)} />
             ))}
           </View>
 
@@ -250,7 +251,7 @@ function DailyTemplateSection() {
             )}
           </TextInput>
 
-          <Text style={[styles.hint, { color: theme.textHint }]}>{t('templates.markerHint')}</Text>
+          <Text style={[styles.hint, { color: theme.textHint }]}>{t('templates.insertHint')}</Text>
           <View style={styles.markerButtons} accessibilityLabel={t('templates.insertMarker')}>
             {DAILY_TEMPLATE_MARKERS.map((name) => (
               <Pressable
@@ -363,30 +364,36 @@ function OvertimeTemplateSection() {
         </Pressable>
         {helpOpen ? (
           <View style={{ gap: 8, marginTop: 8 }}>
-            <Text style={[styles.helpText, { color: theme.textSecondary }]}>{t('templates.xlsxHelp1')}</Text>
-            <Text style={[styles.helpText, { color: theme.textSecondary }]}>{t('templates.xlsxHelp2', { row: '{{fila.…}}' })}</Text>
-            <View accessibilityRole="list">
-              <View style={[styles.tableRow, { borderColor: theme.border }]}>
-                {(['xlsxColMarker', 'xlsxColMeaning', 'xlsxColExample'] as const).map((col, i) => (
-                  <Text key={col} style={[styles.tableHead, i === 0 ? styles.tableColMarker : styles.tableCol, { color: theme.textHint }]}>
-                    {t(`templates.${col}`)}
-                  </Text>
+            <Text style={[styles.helpText, { color: theme.textSecondary }]}>{t('templates.xlsxIntro')}</Text>
+            {([
+              ['xlsxGroupValues', OVERTIME_TEMPLATE_MARKERS.values],
+              ['xlsxGroupRow', OVERTIME_TEMPLATE_MARKERS.row],
+            ] as const).map(([group, names]) => (
+              <View key={group}>
+                <Text style={[styles.tableGroup, { color: theme.textSecondary }]}>{t(`templates.${group}`)}</Text>
+                <View style={[styles.tableRow, { borderColor: theme.border }]}>
+                  {(['xlsxColWrite', 'xlsxColWhat', 'xlsxColExample'] as const).map((col, i) => (
+                    <Text key={col} style={[styles.tableHead, i === 0 ? styles.tableColMarker : styles.tableCol, { color: theme.textHint }]}>
+                      {t(`templates.${col}`)}
+                    </Text>
+                  ))}
+                </View>
+                {names.map((name) => (
+                  <View key={name} style={[styles.tableRow, { borderColor: theme.border }]}>
+                    <View style={styles.tableColMarker}>
+                      <MarkerBox group={overtimeMarkerGroup(name)} text={marker(name)} mono />
+                    </View>
+                    <Text style={[styles.tableCol, styles.tableCell, { color: theme.textSecondary }]}>
+                      {t(`templates.marker_${markerKey(name)}`)}
+                    </Text>
+                    <Text style={[styles.tableCol, styles.tableCell, { color: theme.textHint }]}>
+                      {t(`templates.markerExample_${markerKey(name)}`)}
+                    </Text>
+                  </View>
                 ))}
               </View>
-              {[...OVERTIME_TEMPLATE_MARKERS.values, ...OVERTIME_TEMPLATE_MARKERS.row].map((name) => (
-                <View key={name} style={[styles.tableRow, { borderColor: theme.border }]}>
-                  <View style={styles.tableColMarker}>
-                    <MarkerBox group={overtimeMarkerGroup(name)} text={marker(name)} mono />
-                  </View>
-                  <Text style={[styles.tableCol, styles.tableCell, { color: theme.textSecondary }]}>
-                    {t(`templates.marker_${markerKey(name)}`)}
-                  </Text>
-                  <Text style={[styles.tableCol, styles.tableCell, { color: theme.textHint }]}>
-                    {t(`templates.markerExample_${markerKey(name)}`)}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            ))}
+            <Text style={[styles.helpText, { color: theme.textSecondary }]}>{t('templates.xlsxRowNote')}</Text>
           </View>
         ) : null}
       </View>
@@ -537,6 +544,11 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingVertical: 6,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  tableGroup: {
+    fontSize: 11,
+    fontWeight: '700',
+    marginTop: 4,
   },
   tableHead: {
     fontSize: 10,

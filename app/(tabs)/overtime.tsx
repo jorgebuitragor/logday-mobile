@@ -125,7 +125,11 @@ export default function OvertimeScreen() {
   async function exportMonthSection(section: MonthSection) {
     const meta = await getOvertimeMonthMeta(section.title);
     try {
-      await exportOvertimeMonth(section.title, monthLabel(section.title), section.data, meta, templates.overtime);
+      await exportOvertimeMonth(section.title, monthLabel(section.title), section.data, meta, templates.overtime, {
+        comp: t('overtimeForm.comp'),
+        pay: t('overtimeForm.pay'),
+        other: t('overtimeForm.other'),
+      });
     } catch (err) {
       // Solo la plantilla elegida (la de Logday o una propia) se avisa
       // aquí; lo demás sigue como antes.

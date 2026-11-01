@@ -18,8 +18,10 @@ tres.
   `TemplatesConfig`) y `buildDailyMessage`. Igual que en Desktop salvo los
   comentarios de dónde se guarda: la de Logday delega en
   `buildDailyCopyText`, importado de `../colombianHolidays`.
-- `dailyTemplate.ts` trae además `hoy.dia`, `DAILY_TEMPLATE_EXAMPLES` y
-  `splitTemplate` (Desktop `b1595a0`).
+- Versión de Desktop `1d8f80f`: `dailyTemplate.ts` trae `hoy.dia`,
+  `LOGDAY_DAILY_TEMPLATE_EN`, `DAILY_TEMPLATE_EXAMPLES` y `splitTemplate`;
+  `overtimeTemplate.ts` acepta `observacionesLabels`, que Mobile llena con
+  `overtimeForm.comp`/`pay`/`other` del idioma de la app.
 
 Los motores compilan en Hermes: el bundle de `expo export` los pasa a
 bytecode sin errores (usan `matchAll` y `\b`, sin lookbehind).

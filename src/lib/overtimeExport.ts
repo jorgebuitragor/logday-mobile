@@ -3,7 +3,7 @@ import { generateOvertimeXlsx } from './overtimeExcel';
 import { readCustomOvertimeTemplate, XLSX_MIME } from './templateFiles';
 import type { OvertimeTemplateChoice } from './templates/choice';
 import { logdayOvertimeTemplate } from './templates/logdayOvertimeXlsx';
-import { fillOvertimeTemplate } from './templates/overtimeTemplate';
+import { fillOvertimeTemplate, type OvertimeTemplateData } from './templates/overtimeTemplate';
 import type { OvertimeEntry, OvertimeMonthMeta } from '../types/overtime';
 
 /** La plantilla elegida no se pudo usar (archivo que falta o que no es un
@@ -23,7 +23,10 @@ export async function exportOvertimeMonth(
   mesLabel: string,
   entries: OvertimeEntry[],
   meta: OvertimeMonthMeta | null,
-  template?: OvertimeTemplateChoice
+  template?: OvertimeTemplateChoice,
+  /** Cómo se escriben 'comp', 'pay' y 'other' en Observaciones con la de
+   *  Logday o una propia (el idioma de la app). Legacy no lo usa. */
+  observacionesLabels?: OvertimeTemplateData['observacionesLabels']
 ): Promise<void> {
   // Mismo fallback que desktop (`appStore.ts`, `exportOvertimeExcel`):
   // "Colaborador" si no hay meta o está vacío — mobile no tiene UI
@@ -62,6 +65,7 @@ export async function exportOvertimeMonth(
       colaborador: metaForExport.colaborador,
       cedula: metaForExport.cedula,
       entries: sorted,
+      observacionesLabels,
     });
   } catch (err) {
     throw new OvertimeTemplateError(err);

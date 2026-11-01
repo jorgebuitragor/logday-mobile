@@ -48,7 +48,11 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
   desktop, adaptado a táctil (ver design.md: botones subir/bajar en
   vez de drag-and-drop con mouse).
 - El sistema DEBERÁ mostrar, al editar un día, el registro del **día
-  calendario inmediatamente anterior** (`date - 1`, panel "Previo")
+  laborable anterior** (panel "Previo"; cambiado 2026-11-01, antes era
+  `date - 1`): el día hábil anterior a `date` saltando fines de semana,
+  festivos colombianos y días de ausencia, igual que
+  `getPreviousWorkingDay` de desktop. Es el mismo día que nombra el
+  mensaje copiado, así que el panel y el mensaje coinciden. Se muestra
   como una lista de actividades **igual de editable** que la del día
   seleccionado, exista o no contenido todavía — el usuario DEBERÁ
   poder registrar el daily del día previo aunque nunca haya tenido
@@ -67,9 +71,13 @@ valor funcional. Lo que sí se deja deliberadamente fuera se detalla en
   tras probar el swipe ("también es posible moverlo manteniendo
   presionado y arrastrando"). Ver design.md.
 - El sistema DEBERÁ permitir copiar al portapapeles un mensaje
-  formateado combinando el día anterior y el de hoy — mismo propósito
-  que `copyFormattedTitle`/`buildDailyCopyText` de desktop — y
-  mostrar una vista previa de ese texto en pantalla.
+  formateado combinando el día anterior y el de hoy, y mostrar una
+  vista previa de ese texto en pantalla. Con la plantilla de Logday (la
+  predeterminada, ver `plantillas/`) el mensaje DEBERÁ ser idéntico al
+  de `buildDailyCopyText` de desktop (cambiado 2026-11-01): fechas
+  "Viernes 30 de Octubre", "El día de hoy, …:" solo si el Daily es de
+  hoy y "El día …:" si no, y "- (sin actividades aún)" si el día no
+  tiene actividades.
 - El sistema DEBERÁ permitir eliminar el registro completo del día
   (soft-delete), con confirmación según
   `confirmacion-eliminar/requirements.md`.
@@ -116,9 +124,6 @@ tocar nada — ver design.md para el detalle de qué se portó y qué no.
   fecha, no un calendario mensual.
 - Exportar mes a PDF/Markdown/texto — implementado, ver
   `exportacion/requirements.md` (no en este spec).
-- Cálculo de "día hábil anterior" respetando festivos colombianos —
-  "Previo" es el día calendario anterior sin más (ver arriba), no el
-  día hábil/laboral anterior.
 - **Ausencias** — implementado como spec propio, ver
   `ausencias/requirements.md` (no en este spec). Nota histórica: el
   checkpoint anterior de este archivo afirmaba incorrectamente que

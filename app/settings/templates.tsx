@@ -9,21 +9,36 @@
 import { ChevronDown, ChevronRight, FileSpreadsheet, Share2, Upload } from 'lucide-react-native';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
-import { addDaysISO, dateFromLocalISO, todayISO } from '../../src/lib/dates';
+import {
+  dailyMarkerGroup,
+  MarkerBox,
+  MarkerSpan,
+  overtimeMarkerGroup,
+} from '../../src/components/TemplateMarkers';
+import { dateFromISO, getPreviousWorkingDay } from '../../src/lib/colombianHolidays';
+import { todayISO } from '../../src/lib/dates';
 import { shareOvertimeTemplate } from '../../src/lib/templateFiles';
+import { fromDisplay, strayLabels, toDisplay, toDisplaySegments, type MarkerLabels } from '../../src/lib/templateMarkerText';
 import { buildDailyMessage, type DailyTemplateSource, type OvertimeTemplateSource } from '../../src/lib/templates/choice';
-import { DAILY_TEMPLATE_MARKERS, LOGDAY_DAILY_TEMPLATE, dailyTemplateContext, renderTemplate } from '../../src/lib/templates/dailyTemplate';
+import {
+  DAILY_TEMPLATE_EXAMPLES,
+  DAILY_TEMPLATE_MARKERS,
+  LOGDAY_DAILY_TEMPLATE,
+  dailyTemplateContext,
+  renderTemplate,
+} from '../../src/lib/templates/dailyTemplate';
 import { OVERTIME_TEMPLATE_MARKERS } from '../../src/lib/templates/overtimeTemplate';
 import { useTemplates } from '../../src/settings/TemplatesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 
 const ERROR_COLOR = '#dc2626';
 const WARN_COLOR = '#d97706';
-const MONO = { fontFamily: Platform.select({ ios: 'Menlo', default: 'monospace' }) };
 const marker = (name: string) => `{{${name}}}`;
+/** Clave de i18n de un marcador: `hoy.dia` → `templates.marker_hoy_dia`. */
+const markerKey = (name: string) => name.replace(/\./g, '_');
 
 function errorMessage(err: unknown): string {
   return err instanceof Error ? err.message : String(err);
@@ -99,7 +114,9 @@ function DailyTemplateSection() {
   const source: DailyTemplateSource = templates.daily?.source ?? 'logday';
   const saved = templates.daily?.text ?? '';
   const [draft, setDraft] = useState(saved);
-  const selection = useRef({ start: saved.length, end: saved.length });
+  // Posición del cursor en lo que se ve (con los «recuadros»), no en la
+  // plantilla guardada.
+  const selection = useRef({ start: 0, end: 0 });
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Lo guardado manda cuando cambia por fuera (al cargar de AsyncStorage):
@@ -116,6 +133,14 @@ function DailyTemplateSection() {
     []
   );
 
+  // El nombre de cada marcador en el idioma de la app: es lo que se ve en
+  // el recuadro, y lo que se vuelve a leer como `{{clave}}`.
+  const labels = useMemo<MarkerLabels>(
+    () => Object.fromEntries(DAILY_TEMPLATE_MARKERS.map((name) => [name, t(`templates.marker_${markerKey(name)}`)])),
+    [t]
+  );
+  const display = toDisplay(draft, labels);
+
   const save = (text: string) => {
     if (saveTimer.current) clearTimeout(saveTimer.current);
     saveTimer.current = setTimeout(() => setDailyTemplate({ source: 'custom', text }), 500);
@@ -124,44 +149,53 @@ function DailyTemplateSection() {
     setDraft(text);
     save(text);
   };
+  /** Reemplaza todo el texto y deja el cursor al final. */
+  const replaceAll = (text: string) => {
+    const end = toDisplay(text, labels).length;
+    selection.current = { start: end, end };
+    edit(text);
+  };
 
   const choose = (next: DailyTemplateSource) => {
     // Al pasar a Propia por primera vez se parte del mensaje de siempre.
     if (next === 'custom' && !saved.trim()) {
+      const end = toDisplay(LOGDAY_DAILY_TEMPLATE, labels).length;
+      selection.current = { start: end, end };
       setDraft(LOGDAY_DAILY_TEMPLATE);
-      selection.current = { start: LOGDAY_DAILY_TEMPLATE.length, end: LOGDAY_DAILY_TEMPLATE.length };
       setDailyTemplate({ source: 'custom', text: LOGDAY_DAILY_TEMPLATE });
       return;
     }
     setDailyTemplate({ source: next });
   };
 
-  // Inserta en el cursor (o reemplaza lo seleccionado) y deja el cursor
-  // lógico después del marcador, para insertar varios seguidos.
+  // Agrega el recuadro donde está el cursor (o en lugar de lo
+  // seleccionado) y deja el cursor después, para agregar varios seguidos.
   const insert = (name: string) => {
+    const box = `«${labels[name]}»`;
     const { start, end } = selection.current;
-    const at = Math.min(start, draft.length);
-    const to = Math.min(Math.max(end, at), draft.length);
-    const text = draft.slice(0, at) + marker(name) + draft.slice(to);
-    const pos = at + marker(name).length;
-    selection.current = { start: pos, end: pos };
-    edit(text);
+    const at = Math.min(start, display.length);
+    const to = Math.min(Math.max(end, at), display.length);
+    const nextDisplay = display.slice(0, at) + box + display.slice(to);
+    selection.current = { start: at + box.length, end: at + box.length };
+    edit(fromDisplay(nextDisplay, labels));
   };
 
-  // Vista previa con datos de ejemplo: hoy y el día anterior, como el
-  // editor del Daily de Mobile.
+  // Vista previa con datos de ejemplo: hoy y el día laborable anterior,
+  // como el editor del Daily.
   const input = useMemo(() => {
-    const today = todayISO();
+    const today = dateFromISO(todayISO());
     return {
-      prevDate: dateFromLocalISO(addDaysISO(today, -1)),
+      prevDate: getPreviousWorkingDay(today),
       prevActivities: t('templates.previewPrev'),
-      todayDate: dateFromLocalISO(today),
+      todayDate: today,
       todayActivities: t('templates.previewToday'),
       language,
     } as const;
   }, [language, t]);
   const preview = buildDailyMessage(source === 'custom' ? { source, text: draft } : { source }, input);
   const check = source === 'custom' && draft.trim() ? renderTemplate(draft, dailyTemplateContext(input)) : null;
+  // Desconocidos: `{{x}}` que no existen y recuadros editados por dentro.
+  const unknown = check ? [...check.unknown.map(marker), ...strayLabels(draft)] : [];
 
   return (
     <View style={styles.section}>
@@ -179,20 +213,20 @@ function DailyTemplateSection() {
 
       {source === 'custom' ? (
         <View style={styles.block}>
-          <View style={styles.editorHeader}>
-            <Text style={[styles.label, { color: theme.textSecondary }]}>{t('templates.editorLabel')}</Text>
-            <SecondaryButton
-              label={t('templates.startWithLogday')}
-              onPress={() => {
-                selection.current = { start: LOGDAY_DAILY_TEMPLATE.length, end: LOGDAY_DAILY_TEMPLATE.length };
-                edit(LOGDAY_DAILY_TEMPLATE);
-              }}
-            />
+          <Text style={[styles.label, { color: theme.textSecondary }]}>{t('templates.examplesTitle')}</Text>
+          <View style={styles.buttonRow}>
+            {DAILY_TEMPLATE_EXAMPLES[language].map((example) => (
+              <SecondaryButton key={example.id} label={t(`templates.example_${example.id}`)} onPress={() => replaceAll(example.template)} />
+            ))}
           </View>
+
+          <Text style={[styles.label, { color: theme.textSecondary, marginTop: 4 }]}>{t('templates.editorLabel')}</Text>
+          {/* Controlado por sus hijos, no por `value`: cada marcador es un
+              tramo con fondo de color. Lo que se escribe vuelve como texto
+              plano y `fromDisplay` reconoce los «recuadros» intactos. */}
           <TextInput
             accessibilityLabel={t('templates.editorLabel')}
-            value={draft}
-            onChangeText={edit}
+            onChangeText={(text) => edit(fromDisplay(text, labels))}
             onSelectionChange={(e) => {
               selection.current = e.nativeEvent.selection;
             }}
@@ -205,32 +239,37 @@ function DailyTemplateSection() {
             autoCorrect={false}
             spellCheck={false}
             textAlignVertical="top"
-            style={[
-              styles.editor,
-              MONO,
-              { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary },
-            ]}
-          />
-          <Text style={[styles.hint, { color: theme.textHint }]}>{t('templates.insertMarker')}:</Text>
-          <View style={styles.chips} accessibilityLabel={t('templates.insertMarker')}>
+            style={[styles.editor, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
+          >
+            {toDisplaySegments(draft, labels).map((segment, i) =>
+              segment.kind === 'marker' ? (
+                <MarkerSpan key={i} group={dailyMarkerGroup(segment.name)} text={segment.text} />
+              ) : (
+                <Text key={i}>{segment.text}</Text>
+              )
+            )}
+          </TextInput>
+
+          <Text style={[styles.hint, { color: theme.textHint }]}>{t('templates.markerHint')}</Text>
+          <View style={styles.markerButtons} accessibilityLabel={t('templates.insertMarker')}>
             {DAILY_TEMPLATE_MARKERS.map((name) => (
               <Pressable
                 key={name}
                 onPress={() => insert(name)}
-                style={[styles.chip, { borderColor: theme.border, backgroundColor: theme.bgSurface }]}
+                accessibilityRole="button"
+                accessibilityLabel={`${t('templates.insertMarker')}: ${labels[name]}`}
+                style={[styles.markerButton, { borderColor: theme.border, backgroundColor: theme.bgSurface }]}
               >
-                <Text style={[{ color: theme.textSecondary, fontSize: 11 }, MONO]}>{marker(name)}</Text>
+                <MarkerBox group={dailyMarkerGroup(name)} text={labels[name]} />
+                <Text style={{ color: theme.textHint, fontSize: 11, marginTop: 4 }} numberOfLines={2}>
+                  {t(`templates.markerExample_${markerKey(name)}`)}
+                </Text>
               </Pressable>
             ))}
           </View>
-          <Text style={[styles.hint, { color: theme.textHint }]}>
-            {t('templates.markerHint', { open: '{{#hoy.es_hoy}}', close: '{{/hoy.es_hoy}}' })}
-          </Text>
           {!draft.trim() ? <Notice kind="info">{t('templates.emptyCustom')}</Notice> : null}
           {check?.error ? <Notice kind="error">{t('templates.syntaxError', { detail: check.error })}</Notice> : null}
-          {check && check.unknown.length > 0 ? (
-            <Notice kind="warn">{t('templates.unknownMarkers', { list: check.unknown.map(marker).join(', ') })}</Notice>
-          ) : null}
+          {unknown.length > 0 ? <Notice kind="warn">{t('templates.unknownMarkers', { list: unknown.join(', ') })}</Notice> : null}
         </View>
       ) : null}
 
@@ -323,14 +362,31 @@ function OvertimeTemplateSection() {
           <Text style={{ color: theme.textSecondary, fontSize: 12, fontWeight: '600' }}>{t('templates.xlsxHelpTitle')}</Text>
         </Pressable>
         {helpOpen ? (
-          <View style={{ gap: 6, marginTop: 8 }}>
-            <Text style={[styles.helpText, { color: theme.textSecondary }]}>
-              {t('templates.xlsxHelp1', { values: OVERTIME_TEMPLATE_MARKERS.values.map(marker).join(', ') })}
-            </Text>
+          <View style={{ gap: 8, marginTop: 8 }}>
+            <Text style={[styles.helpText, { color: theme.textSecondary }]}>{t('templates.xlsxHelp1')}</Text>
             <Text style={[styles.helpText, { color: theme.textSecondary }]}>{t('templates.xlsxHelp2', { row: '{{fila.…}}' })}</Text>
-            <Text style={[styles.helpText, MONO, { color: theme.textHint, fontSize: 11 }]}>
-              {t('templates.xlsxHelp3', { list: OVERTIME_TEMPLATE_MARKERS.row.map(marker).join(', ') })}
-            </Text>
+            <View accessibilityRole="list">
+              <View style={[styles.tableRow, { borderColor: theme.border }]}>
+                {(['xlsxColMarker', 'xlsxColMeaning', 'xlsxColExample'] as const).map((col, i) => (
+                  <Text key={col} style={[styles.tableHead, i === 0 ? styles.tableColMarker : styles.tableCol, { color: theme.textHint }]}>
+                    {t(`templates.${col}`)}
+                  </Text>
+                ))}
+              </View>
+              {[...OVERTIME_TEMPLATE_MARKERS.values, ...OVERTIME_TEMPLATE_MARKERS.row].map((name) => (
+                <View key={name} style={[styles.tableRow, { borderColor: theme.border }]}>
+                  <View style={styles.tableColMarker}>
+                    <MarkerBox group={overtimeMarkerGroup(name)} text={marker(name)} mono />
+                  </View>
+                  <Text style={[styles.tableCol, styles.tableCell, { color: theme.textSecondary }]}>
+                    {t(`templates.marker_${markerKey(name)}`)}
+                  </Text>
+                  <Text style={[styles.tableCol, styles.tableCell, { color: theme.textHint }]}>
+                    {t(`templates.markerExample_${markerKey(name)}`)}
+                  </Text>
+                </View>
+              ))}
+            </View>
           </View>
         ) : null}
       </View>
@@ -394,13 +450,6 @@ const styles = StyleSheet.create({
   block: {
     gap: 8,
   },
-  editorHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-    flexWrap: 'wrap',
-  },
   label: {
     fontSize: 12,
     fontWeight: '600',
@@ -413,17 +462,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 12,
     lineHeight: 18,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  chip: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
   },
   hint: {
     fontSize: 11,
@@ -480,5 +518,39 @@ const styles = StyleSheet.create({
   helpText: {
     fontSize: 12,
     lineHeight: 17,
+  },
+  markerButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  markerButton: {
+    width: '48%',
+    flexGrow: 1,
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 8,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingVertical: 6,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  tableHead: {
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  tableColMarker: {
+    flex: 1.3,
+  },
+  tableCol: {
+    flex: 1,
+  },
+  tableCell: {
+    fontSize: 11,
+    lineHeight: 15,
   },
 });

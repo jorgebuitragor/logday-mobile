@@ -18,19 +18,23 @@ sin validar el `.xlsx` al cargarlo.
 - El sistema DEBERÁ ofrecer dos plantillas para el mensaje del Daily:
   **Logday** (predeterminada) y **Propia**.
 - Mientras esté elegida la de Logday, o no haya ninguna elegida, el sistema
-  DEBERÁ copiar y previsualizar exactamente el mismo texto que antes de este
-  cambio (`buildDailyCopyText` de `src/lib/dailyCopyText.ts`).
+  DEBERÁ copiar y previsualizar el mensaje de siempre
+  (`buildDailyCopyText` de `src/lib/dailyCopyText.ts`, igual al de
+  Desktop, ver `pantalla-dailys/`).
 - Mientras esté elegida la propia, el sistema DEBERÁ armar el mensaje con
   su texto, reemplazando los marcadores `{{anterior.fecha}}`,
-  `{{anterior.actividades}}`, `{{hoy.fecha}}`, `{{hoy.actividades}}` y
-  `{{usuario.nombre}}`, y las secciones `{{#hoy.es_hoy}}…{{/hoy.es_hoy}}`
-  y `{{^hoy.es_hoy}}…{{/hoy.es_hoy}}`.
+  `{{anterior.actividades}}`, `{{hoy.dia}}` ("de hoy, Lunes 2 de
+  Noviembre" si el Daily es de hoy, "Lunes 2 de Noviembre" si no),
+  `{{hoy.fecha}}`, `{{hoy.actividades}}` y `{{usuario.nombre}}`. Las
+  secciones `{{#hoy.es_hoy}}…{{/hoy.es_hoy}}` siguen funcionando, pero no
+  se ofrecen.
 - `{{usuario.nombre}}` DEBERÁ ser el colaborador de la meta de horas extra
   del mes del Daily o, si ese mes no lo tiene, el del último mes que lo
   tenga; vacío si nunca se llenó.
 - Cuando la propia esté vacía, el sistema DEBERÁ usar la de Logday.
 - Cuando se pase a la propia por primera vez (sin texto guardado), el
-  sistema DEBERÁ arrancarla con la de Logday escrita como plantilla.
+  sistema DEBERÁ arrancarla con la de Logday escrita como plantilla
+  (`LOGDAY_DAILY_TEMPLATE`), que da el mismo texto que la de Logday.
 
 ### Excel de horas extra
 
@@ -51,15 +55,24 @@ sin validar el `.xlsx` al cargarlo.
 ### Pantalla de Plantillas
 
 - Ajustes DEBERÁ tener una entrada "Plantillas" que abre la pantalla.
-- La sección del Daily DEBERÁ mostrar el selector, y con la propia: el
-  campo de texto multilínea, botones para insertar cada marcador en el
-  cursor, "Empezar con la de Logday" y los avisos de propia vacía, de
-  marcador desconocido y de sección sin cerrar. Debajo, una vista previa
-  con datos de ejemplo.
+- La sección del Daily DEBERÁ mostrar el selector, y con la propia:
+  - "Ejemplos para empezar": "El de siempre", "Corto" y "Con tu nombre"
+    (`DAILY_TEMPLATE_EXAMPLES`), que reemplazan el texto.
+  - El campo de texto multilínea, donde cada marcador NO DEBERÁ verse como
+    `{{clave}}` sino como un recuadro de color con su nombre (día anterior
+    en ámbar, el Daily en índigo, el usuario en verde azulado). Por dentro
+    se guarda `{{clave}}`.
+  - Un botón por marcador, con el mismo recuadro y un ejemplo del valor
+    debajo, que lo agrega donde está el cursor.
+  - Los avisos de propia vacía, de marcador desconocido (incluido un
+    recuadro editado por dentro) y de sección sin cerrar.
+  Debajo, una vista previa con datos de ejemplo.
 - La sección del Excel DEBERÁ mostrar el selector, el archivo cargado (nombre
   y fecha de carga), "Cargar plantilla (.xlsx)" / "Cargar otra",
   "Compartir la cargada", "Compartir la de Logday" y una ayuda plegable con
-  los marcadores.
+  una tabla de los marcadores: "Escribe en la celda" (`{{colaborador}}`),
+  "Qué pone Logday" ("Tu nombre") y "Ejemplo" ("Ana Gómez"), los de fila en
+  índigo y los demás en ámbar.
 
 ### Persistencia
 

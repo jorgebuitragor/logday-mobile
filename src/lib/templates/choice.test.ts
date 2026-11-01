@@ -1,12 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
-import { buildDailyCopyText } from '../dailyCopyText';
+import { buildDailyCopyText, dateFromISO } from '../colombianHolidays';
 import { buildDailyMessage } from './choice';
-
-// `dateFromISO` de Desktop (colombianHolidays.ts): mediodía local.
-const dateFromISO = (iso: string) => {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d, 12, 0, 0);
-};
 
 const input = {
   prevDate: dateFromISO('2026-10-30'),
@@ -17,7 +11,7 @@ const input = {
   userName: 'Ana',
   now: dateFromISO('2026-11-02'),
 };
-const usual = buildDailyCopyText('2026-10-30', '- A', '2026-11-02', '- B');
+const usual = buildDailyCopyText(input.prevDate, '- A', input.todayDate, '- B');
 
 describe('buildDailyMessage', () => {
   it('sin elección, o con la de Logday, da el mensaje de siempre', () => {

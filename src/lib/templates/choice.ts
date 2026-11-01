@@ -3,12 +3,7 @@
 // - Daily: la de Logday (el mensaje de siempre, predeterminada) o una propia.
 // - Excel de horas extra: Legacy (el de siempre, predeterminado), la de
 //   Logday (genérica) o un .xlsx propio.
-//
-// Copia de task-manager/src/lib/templates/choice.ts. Solo cambia de dónde
-// sale el mensaje de siempre: en Mobile es `buildDailyCopyText` de
-// dailyCopyText.ts, que recibe fechas `YYYY-MM-DD` y no `Date`.
-import { buildDailyCopyText } from '../dailyCopyText';
-import { localISODate } from '../dates';
+import { buildDailyCopyText } from '../colombianHolidays';
 import { dailyTemplateContext, renderTemplate, type DailyContextInput } from './dailyTemplate';
 
 export type DailyTemplateSource = 'logday' | 'custom';
@@ -41,7 +36,7 @@ export const customOvertimeTemplatePath = (baseDir: string) => `${baseDir}/plant
 export function buildDailyMessage(choice: DailyTemplateChoice | undefined, input: DailyContextInput): string {
   const text = choice?.source === 'custom' ? (choice.text ?? '') : '';
   if (!text.trim()) {
-    return buildDailyCopyText(localISODate(input.prevDate), input.prevActivities, localISODate(input.todayDate), input.todayActivities);
+    return buildDailyCopyText(input.prevDate, input.prevActivities, input.todayDate, input.todayActivities);
   }
   return renderTemplate(text, dailyTemplateContext(input)).text;
 }

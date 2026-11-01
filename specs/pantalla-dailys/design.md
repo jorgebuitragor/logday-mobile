@@ -188,22 +188,30 @@ multilínea si se toca desde mobile.
 
 ## `src/lib/dailyCopyText.ts`
 
-Sin cambios de formato de serie respecto a la versión anterior:
-versión simplificada de `buildDailyCopyText` de desktop
-(`task-manager/src/lib/colombianHolidays.ts`), mismo formato de
-mensaje ("Buenos días. / El día X: / ... / El día de hoy, Y: / ..."),
-sin el nombre del día de la semana en español (desktop lo formatea a
-mano con arrays `DIAS`/`MESES`) — se usa la fecha ISO tal cual.
-Copiado al portapapeles vía `expo-clipboard` (`Clipboard.setStringAsync`).
+Copia de `buildDailyCopyText` de desktop
+(`task-manager/src/lib/colombianHolidays.ts`), con el mismo texto
+(cambiado 2026-11-01; antes era una versión reducida con fechas ISO y
+siempre "El día de hoy"): "Buenos días. / El día Viernes 30 de Octubre:
+/ … / El día de hoy, Lunes 2 de Noviembre: / …", con "El día …:" si el
+Daily no es de hoy. Recibe `Date`, no `YYYY-MM-DD`. Se reexporta desde
+`src/lib/colombianHolidays.ts` para que `src/lib/templates/` importe
+igual que en desktop, y es lo que sale con la plantilla de Logday (ver
+`plantillas/design.md`). Copiado al portapapeles vía `expo-clipboard`
+(`Clipboard.setStringAsync`).
 
 ## Pantalla `app/daily/[date].tsx`
 
 Dos paneles apilados (no lado a lado como desktop — pantalla angosta),
 ambos usando `DailyActivityList`:
 
-- **"Previo"** (corregido 2026-08-29): `previousDate = addDaysISO(date, -1)`
-  — siempre calculable, no requiere que exista una entrada previa en
-  la base. El panel es una `DailyActivityList` completamente editable
+- **"Previo"** (cambiado 2026-11-01): `previousDate` es el día
+  laborable anterior, `getPreviousWorkingDay(dateFromISO(date),
+  ausencias)` de `src/lib/colombianHolidays.ts` (puerto de desktop):
+  salta fines de semana, festivos colombianos y los días de
+  `absence_days`. Hasta leer las ausencias la pantalla sigue en
+  "Cargando", para no mostrar un día y cambiarlo. Antes (2026-08-29)
+  era `addDaysISO(date, -1)`. No requiere que exista una entrada previa
+  en la base. El panel es una `DailyActivityList` completamente editable
   sobre esa fecha desde el primer render (cada cambio hace
   `upsertDailyEntry(previousDate, ...)` directo, igual que
   "Seleccionado"), exista o no contenido todavía — ya no hay un estado
@@ -278,10 +286,11 @@ listado (mismo criterio que ya se usó para `router.replace` al
 duplicar una nota desde dentro del editor, ver
 `menu-contextual-notas/design.md`).
 
-La flecha "previo" reutiliza `previousDate` (`addDaysISO(date, -1)`),
-ya calculado para el panel "Previo" — es la misma fecha. La flecha
-"siguiente" es simétrica (`addDaysISO(date, 1)`), sin usarse en
-ningún otro lado de la pantalla todavía.
+La flecha "previo" va al día de calendario anterior
+(`addDaysISO(date, -1)`), no al día laborable del panel "Previo"
+(desde 2026-11-01 son fechas distintas): así se puede llegar a
+cualquier día, también a fines de semana y festivos. La flecha
+"siguiente" es simétrica (`addDaysISO(date, 1)`).
 
 Sin límites: ni tope en el futuro (el resto de la app ya permite
 elegir cualquier fecha futura, `AppCalendarGrid` se usa sin prop

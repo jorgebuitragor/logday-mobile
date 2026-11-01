@@ -9,10 +9,12 @@ import Animated, { useAnimatedStyle, useSharedValue, type SharedValue } from 're
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { DailyActivityList, parseActivityItems, serializeActivityItems } from '../../src/components/DailyActivityList';
 import { getDailyEntry, softDeleteDailyEntry, upsertDailyEntry } from '../../src/db/dailyEntries';
+import { listAbsenceDays } from '../../src/db/absences';
 import { getOvertimeColaborador } from '../../src/db/overtime';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { syncEditorText, type EditorTextState } from '../../src/lib/crdtText';
-import { addDaysISO, dateFromLocalISO, todayISO } from '../../src/lib/dates';
+import { dateFromISO, getPreviousWorkingDay, toISO } from '../../src/lib/colombianHolidays';
+import { addDaysISO, todayISO } from '../../src/lib/dates';
 import { onRemoteChange } from '../../src/lib/syncEvents';
 import { buildDailyMessage } from '../../src/lib/templates/choice';
 import { usePreferences } from '../../src/settings/PreferencesContext';
@@ -54,13 +56,20 @@ export default function DailyEditorScreen() {
   const dragY = useSharedValue(0);
   const [dragItem, setDragItem] = useState<string | null>(null);
 
-  // "Previo" es siempre `date - 1 día` (no "la entrada anterior no
-  // vacía más reciente", como en la primera versión) — el usuario debe
-  // poder registrar el día previo al que está viendo aunque nunca haya
-  // tenido contenido, no solo consultar/editar el último registrado
-  // hace tiempo. Igual que `date`, se crea recién al guardar la
-  // primera actividad (upsert), no hace falta que ya exista.
-  const previousDate = addDaysISO(date, -1);
+  // "Previo" es el día laborable anterior a `date`, como en Desktop
+  // (`getPreviousWorkingDay`): salta fines de semana, festivos colombianos
+  // y los días de ausencia. Es el mismo día que nombra el mensaje del
+  // Daily, así que el panel y el mensaje coinciden. Se puede registrar
+  // aunque nunca haya tenido contenido: el día se crea recién al guardar
+  // la primera actividad (upsert). Hasta leer las ausencias es `null` y la
+  // pantalla sigue en "Cargando".
+  const [absenceDates, setAbsenceDates] = useState<Set<string> | null>(null);
+  useEffect(() => {
+    listAbsenceDays()
+      .then((days) => setAbsenceDates(new Set(days.map((d) => d.date))))
+      .catch(() => setAbsenceDates(new Set()));
+  }, []);
+  const previousDate = absenceDates ? toISO(getPreviousWorkingDay(dateFromISO(date), absenceDates)) : null;
 
   const usesCustomTemplate = templates.daily?.source === 'custom';
   useEffect(() => {
@@ -72,9 +81,9 @@ export default function DailyEditorScreen() {
    *  elegir, o con la de Logday, es el de siempre (`buildDailyCopyText`). */
   function dailyMessage(): string {
     return buildDailyMessage(templates.daily, {
-      prevDate: dateFromLocalISO(previousDate),
+      prevDate: dateFromISO(previousDate ?? date),
       prevActivities: previousContent,
-      todayDate: dateFromLocalISO(date),
+      todayDate: dateFromISO(date),
       todayActivities: content,
       language: i18n.language === 'en' ? 'en' : 'es',
       userName,
@@ -90,7 +99,7 @@ export default function DailyEditorScreen() {
   // agregada desde otro cliente no aparecía, y el siguiente cambio la
   // borraba.
   const selectedPanel = useRef<EditorTextState & { date: string }>({ date, base: '', text: '' });
-  const previousPanel = useRef<EditorTextState & { date: string }>({ date: previousDate, base: '', text: '' });
+  const previousPanel = useRef<EditorTextState & { date: string }>({ date: '', base: '', text: '' });
   // Guardados y recargas en fila (ver la misma fila en note/[id].tsx).
   const queueRef = useRef<Promise<void>>(Promise.resolve());
 
@@ -99,6 +108,7 @@ export default function DailyEditorScreen() {
   }
 
   useEffect(() => {
+    if (!previousDate) return;
     enqueue(async () => {
       const [entry, prev] = await Promise.all([getDailyEntry(date), getDailyEntry(previousDate)]);
       const selected = entry?.content ?? '';
@@ -230,11 +240,13 @@ export default function DailyEditorScreen() {
   // la app tampoco restringe fechas futuras (ver `AppCalendarGrid`,
   // usado sin `max` en dailys.tsx) ni tiene un piso — el día se crea
   // recién al guardar la primera actividad, igual que `previousDate`.
+  // La flecha ◀ va al día de calendario anterior (`date - 1`), no al
+  // laborable del panel "Previo": así se puede llegar a cualquier día.
   function goToDay(nextDate: string) {
     router.replace(`/daily/${nextDate}`);
   }
 
-  if (!loaded) {
+  if (!loaded || !previousDate) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bgBase }]}>
         <Text style={{ color: theme.textSecondary }}>{t('dailyForm.loadingDaily')}</Text>
@@ -254,7 +266,7 @@ export default function DailyEditorScreen() {
     >
       <View style={styles.dateRow}>
         <Pressable
-          onPress={() => goToDay(previousDate)}
+          onPress={() => goToDay(addDaysISO(date, -1))}
           hitSlop={8}
           style={[styles.dateArrow, { borderColor: theme.border }]}
           accessibilityLabel={t('dailyForm.previousDay')}

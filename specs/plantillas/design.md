@@ -15,24 +15,24 @@ tres.
 - `logdayOvertimeXlsx.ts`: la plantilla genérica en base64, con
   `base64ToBytes`/`bytesToBase64` propios, sin `atob`/`btoa`.
 - `choice.ts`: los tipos (`DailyTemplateSource`, `OvertimeTemplateSource`,
-  `TemplatesConfig`) y `buildDailyMessage`. Es lo único adaptado: la de
-  Logday delega en `buildDailyCopyText` de `dailyCopyText.ts`, que recibe
-  fechas `YYYY-MM-DD`, así que las `Date` del contexto se pasan con
-  `localISODate`.
+  `TemplatesConfig`) y `buildDailyMessage`. Igual que en Desktop salvo los
+  comentarios de dónde se guarda: la de Logday delega en
+  `buildDailyCopyText`, importado de `../colombianHolidays`.
+- `dailyTemplate.ts` trae además `hoy.dia`, `DAILY_TEMPLATE_EXAMPLES` y
+  `splitTemplate` (Desktop `b1595a0`).
 
-Los motores corren en Hermes: el bundle de `expo export` los compila a
+Los motores compilan en Hermes: el bundle de `expo export` los pasa a
 bytecode sin errores (usan `matchAll` y `\b`, sin lookbehind).
 
-### Diferencia con Desktop: la plantilla de Logday escrita a mano
+### El mensaje de siempre, igual que en Desktop
 
-El mensaje de siempre de Mobile es una versión reducida del de Desktop:
-fechas `YYYY-MM-DD` en vez de "Viernes 30 de Octubre", el día anterior es
-el de calendario (no el laborable) y siempre dice "El día de hoy".
-`LOGDAY_DAILY_TEMPLATE` reproduce el de Desktop, así que una propia que
-arranca con "Empezar con la de Logday" sale con los nombres de día y mes,
-no idéntica a la de Logday de Mobile. Por eso la prueba
-"da lo mismo que buildDailyCopyText" compara contra una copia del
-`buildDailyCopyText` de Desktop dentro del test.
+`dailyCopyText.ts` es copia de `buildDailyCopyText` de Desktop y se
+reexporta desde `colombianHolidays.ts` (que además trae
+`getPreviousWorkingDay` y `dateFromISO`), así que `choice.ts` y las
+pruebas de los motores importan igual que en Desktop y la prueba "da lo
+mismo que buildDailyCopyText" compara contra la función real de Mobile.
+Antes de este cambio Mobile tenía una versión reducida (fechas ISO, día
+anterior de calendario); ver `pantalla-dailys/design.md`.
 
 ## Persistencia
 
@@ -54,6 +54,15 @@ cambio. El `.xlsx` se copia con `expo-document-picker`
   sale como `OvertimeTemplateError` y `app/(tabs)/overtime.tsx` lo muestra
   con `Alert`.
 - `app/settings/templates.tsx`: puerto de `TemplatesSettingsTab.tsx`.
+  El editor de la propia es un `TextInput` multilínea controlado por sus
+  hijos (no por `value`): cada marcador es un `<Text>` con fondo de color
+  y su nombre entre `«»` (`MarkerSpan`, `src/components/TemplateMarkers.tsx`).
+  `src/lib/templateMarkerText.ts` pasa de `{{clave}}` a `«Nombre»` y de
+  vuelta: al escribir, cada `«Nombre»` que coincide exactamente vuelve a
+  ser `{{clave}}`; si se edita por dentro queda como texto y se avisa como
+  desconocido. Un `TextInput` no deja dar bordes ni relleno a un tramo,
+  así que en el editor el recuadro es solo fondo y color; en los botones y
+  en la tabla del Excel sí es un recuadro (`MarkerBox`).
   "Descargar" de Desktop es "Compartir" aquí: Mobile no tiene diálogo de
   guardar, usa la hoja de compartir (`shareBinaryFile`).
 

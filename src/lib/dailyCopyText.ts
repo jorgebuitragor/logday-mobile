@@ -1,20 +1,54 @@
-// Versión simplificada de task-manager/src/lib/colombianHolidays.ts
-// (buildDailyCopyText): mismo formato de mensaje, sin el nombre del
-// día de la semana en español (ahí desktop formatea "Lunes 12 de
-// enero" a mano) — se usa la fecha ISO tal cual. Reducción de alcance
-// deliberada, ver specs/pantalla-dailys/design.md.
+// El mensaje de siempre del Daily: igual que `buildDailyCopyText` de
+// task-manager/src/lib/colombianHolidays.ts (Desktop) y Web, con el día en
+// letras ("Viernes 30 de Octubre"). Es lo que sale con la plantilla de
+// Logday (ver specs/plantillas/). Se reexporta desde colombianHolidays.ts
+// para que src/lib/templates/ importe igual que en Desktop.
+
+const DIAS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MESES = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
+];
+
+function dayLabel(d: Date): string {
+  return `${DIAS[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
+}
+
+/**
+ * Genera el texto formateado del daily para copiar al canal del equipo.
+ *
+ * Formato:
+ * Buenos días.
+ *
+ * El día [DayName] [Day] de [Month]:
+ * [prevActivities]
+ *
+ * El día de hoy, [DayName] [Day] de [Month]:   (o "El día …:" si no es hoy)
+ * [todayActivities]
+ */
 export function buildDailyCopyText(
-  previousDate: string | null,
-  previousContent: string,
-  date: string,
-  content: string
+  prevDate: Date,
+  prevActivities: string,
+  todayDate: Date,
+  todayActivities: string
 ): string {
-  const today = content.trim() || '- (sin actividades registradas)';
-  const lines = ['Buenos días.', ''];
-  if (previousDate) {
-    const prev = previousContent.trim() || '- (sin actividades registradas)';
-    lines.push(`El día ${previousDate}:`, prev, '');
-  }
-  lines.push(`El día de hoy, ${date}:`, today);
-  return lines.join('\n');
+  const prev = prevActivities.trim() || '- (sin actividades registradas)';
+  const today = todayActivities.trim() || '- (sin actividades aún)';
+  const realToday = new Date();
+  const isToday =
+    todayDate.getFullYear() === realToday.getFullYear() &&
+    todayDate.getMonth() === realToday.getMonth() &&
+    todayDate.getDate() === realToday.getDate();
+  const todayLabel = isToday
+    ? `El día de hoy, ${dayLabel(todayDate)}:`
+    : `El día ${dayLabel(todayDate)}:`;
+  return [
+    'Buenos días.',
+    '',
+    `El día ${dayLabel(prevDate)}:`,
+    prev,
+    '',
+    todayLabel,
+    today,
+  ].join('\n');
 }

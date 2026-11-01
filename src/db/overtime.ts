@@ -189,6 +189,20 @@ export async function getOvertimeMonthMeta(yearMonth: string): Promise<OvertimeM
   };
 }
 
+/** El colaborador para `{{usuario.nombre}}` del Daily (specs/plantillas):
+ * el del mes `yearMonth` si lo tiene; si no, el del último mes que lo
+ * tenga. Vacío si nunca se llenó. */
+export async function getOvertimeColaborador(yearMonth: string): Promise<string> {
+  const row = await getDb().getFirstAsync<{ colaborador: string }>(
+    `SELECT colaborador FROM overtime_month_meta
+     WHERE deleted_at IS NULL AND colaborador <> ''
+     ORDER BY (year_month = ?) DESC, year_month DESC
+     LIMIT 1`,
+    yearMonth
+  );
+  return row?.colaborador ?? '';
+}
+
 // UI propia en `OvertimeMonthActionsSheet` para editar colaborador/
 // cédula por mes. Upsert: la fila puede no existir todavía para un
 // mes sin exportar antes. `base` es lo que mostraba el formulario al

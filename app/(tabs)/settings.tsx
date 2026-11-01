@@ -1,4 +1,5 @@
-import { AlertCircle, BookOpen, Clock, Cloud, CloudOff, Download, Eye, EyeOff, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, TriangleAlert, UserX } from 'lucide-react-native';
+import { AlertCircle, BookOpen, ChevronRight, Clock, Cloud, CloudOff, Download, Eye, EyeOff, FileText, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, TriangleAlert, UserX } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 import type { ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -87,6 +88,7 @@ export default function SettingsScreen() {
   const theme = useTheme();
   const { preference, setPreference } = useThemePreference();
   const { confirmDestructiveActions, setConfirmDestructiveActions, timeFormat, setTimeFormat } = usePreferences();
+  const router = useRouter();
 
   // El teclado tapaba el formulario de Sincronización (reportado con
   // captura) — mismo problema y misma solución ya establecida en el
@@ -193,6 +195,18 @@ export default function SettingsScreen() {
             onValueChange={setConfirmDestructiveActions}
             trackColor={{ true: theme.accentStrong }}
           />
+        </Pressable>
+      </Section>
+
+      {/* Plantillas del Daily y del Excel (specs/plantillas): pantalla
+          aparte, no cabe como una fila más. */}
+      <Section title={t('settings.tabTemplates')} icon={FileText}>
+        <Pressable style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => router.push('/settings/templates')}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>{t('settings.tabTemplates')}</Text>
+            <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }}>{t('templates.rowDesc')}</Text>
+          </View>
+          <ChevronRight size={16} color={theme.textHint} />
         </Pressable>
       </Section>
 

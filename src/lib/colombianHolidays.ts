@@ -1,7 +1,10 @@
-// Puerto mínimo de task-manager/src/lib/colombianHolidays.ts — solo lo
-// que necesita overtimeCalc.ts (getColombianHolidays, toISO). No se
-// portó el resto del archivo (isWorkingDay, getPreviousWorkingDay,
-// buildDailyCopyText, etc.) porque nada en mobile lo usa todavía.
+// Puerto de task-manager/src/lib/colombianHolidays.ts: los festivos
+// (overtimeCalc.ts), el día laborable anterior y `dateFromISO` (el panel
+// "Previo" y el mensaje del Daily). `buildDailyCopyText` vive en
+// dailyCopyText.ts y se reexporta aquí, como lo importa Desktop. No se
+// portaron `isColombianHoliday` ni `isWorkDay`: nada en Mobile los usa.
+
+export { buildDailyCopyText } from './dailyCopyText';
 
 function easterDate(year: number): Date {
   const a = year % 19;
@@ -70,4 +73,35 @@ export function getColombianHolidays(year: number): Set<string> {
   h.add(toISO(toNextMonday(addDays(easter, 68))));
 
   return h;
+}
+
+/**
+ * Devuelve true si la fecha es un día hábil (lunes–viernes, no festivo CO).
+ * @param extraNonWorking Fechas ISO (YYYY-MM-DD) marcadas manualmente como
+ * no laboradas (incapacidad, vacaciones, etc.) que también se excluyen.
+ */
+export function isWorkingDay(date: Date, extraNonWorking?: Set<string>): boolean {
+  const dow = date.getDay();
+  if (dow === 0 || dow === 6) return false;
+  if (extraNonWorking?.has(toISO(date))) return false;
+  return !getColombianHolidays(date.getFullYear()).has(toISO(date));
+}
+
+/**
+ * Devuelve el día hábil inmediatamente anterior a `from`,
+ * omitiendo fines de semana, festivos colombianos, y fechas marcadas
+ * manualmente como no laboradas (`extraNonWorking`, fechas ISO).
+ */
+export function getPreviousWorkingDay(from: Date, extraNonWorking?: Set<string>): Date {
+  const d = new Date(from);
+  d.setHours(12, 0, 0, 0);
+  d.setDate(d.getDate() - 1);
+  while (!isWorkingDay(d, extraNonWorking)) d.setDate(d.getDate() - 1);
+  return d;
+}
+
+/** Construye un objeto Date a partir de YYYY-MM-DD evitando problemas UTC. */
+export function dateFromISO(iso: string): Date {
+  const [y, mo, da] = iso.split('-').map(Number);
+  return new Date(y, mo - 1, da, 12, 0, 0);
 }

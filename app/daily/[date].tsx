@@ -9,20 +9,26 @@ import Animated, { useAnimatedStyle, useSharedValue, type SharedValue } from 're
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { DailyActivityList, parseActivityItems, serializeActivityItems } from '../../src/components/DailyActivityList';
 import { getDailyEntry, softDeleteDailyEntry, upsertDailyEntry } from '../../src/db/dailyEntries';
+import { getOvertimeColaborador } from '../../src/db/overtime';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { syncEditorText, type EditorTextState } from '../../src/lib/crdtText';
-import { buildDailyCopyText } from '../../src/lib/dailyCopyText';
-import { addDaysISO, todayISO } from '../../src/lib/dates';
+import { addDaysISO, dateFromLocalISO, todayISO } from '../../src/lib/dates';
 import { onRemoteChange } from '../../src/lib/syncEvents';
+import { buildDailyMessage } from '../../src/lib/templates/choice';
 import { usePreferences } from '../../src/settings/PreferencesContext';
+import { useTemplates } from '../../src/settings/TemplatesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 
 export default function DailyEditorScreen() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const theme = useTheme();
   const { date } = useLocalSearchParams<{ date: string }>();
   const router = useRouter();
   const { confirmDestructiveActions } = usePreferences();
+  const { templates } = useTemplates();
+  // `{{usuario.nombre}}` de una plantilla propia: el colaborador de la
+  // meta de horas extra (specs/plantillas). Solo se busca si hace falta.
+  const [userName, setUserName] = useState('');
   const [loaded, setLoaded] = useState(false);
   const [content, setContent] = useState('');
   const [previousContent, setPreviousContent] = useState('');
@@ -55,6 +61,25 @@ export default function DailyEditorScreen() {
   // hace tiempo. Igual que `date`, se crea recién al guardar la
   // primera actividad (upsert), no hace falta que ya exista.
   const previousDate = addDaysISO(date, -1);
+
+  const usesCustomTemplate = templates.daily?.source === 'custom';
+  useEffect(() => {
+    if (!usesCustomTemplate) return;
+    getOvertimeColaborador(date.slice(0, 7)).then(setUserName).catch(() => setUserName(''));
+  }, [date, usesCustomTemplate]);
+
+  /** El mensaje con la plantilla elegida en Ajustes → Plantillas. Sin
+   *  elegir, o con la de Logday, es el de siempre (`buildDailyCopyText`). */
+  function dailyMessage(): string {
+    return buildDailyMessage(templates.daily, {
+      prevDate: dateFromLocalISO(previousDate),
+      prevActivities: previousContent,
+      todayDate: dateFromLocalISO(date),
+      todayActivities: content,
+      language: i18n.language === 'en' ? 'en' : 'es',
+      userName,
+    });
+  }
 
   // Cada panel lleva la base (lo último que vino de SQLite: lo cargado,
   // lo ya guardado o lo que llegó por sync) y lo que muestra. Al guardar
@@ -192,7 +217,7 @@ export default function DailyEditorScreen() {
   }
 
   async function handleCopy() {
-    const text = buildDailyCopyText(previousDate, previousContent, date, content);
+    const text = dailyMessage();
     await Clipboard.setStringAsync(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
@@ -218,7 +243,7 @@ export default function DailyEditorScreen() {
   }
 
   const isToday = date === todayISO();
-  const previewText = buildDailyCopyText(previousDate, previousContent, date, content);
+  const previewText = dailyMessage();
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.bgBase }}>

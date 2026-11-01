@@ -9,11 +9,12 @@ App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo
 ## Comandos y verificación
 
 - `npm install`, `npm start`: Expo Go por LAN durante el desarrollo.
-- No hay pruebas automáticas. Cada cambio se verifica con:
+- Cada cambio se verifica con:
   1. `./node_modules/.bin/tsc --noEmit` (o `npm run typecheck`). No usar `npx tsc`: no muestra salida en este entorno.
   2. `npm run lint`.
-  3. Pedir el bundle de Metro de `expo-router/entry` y buscar errores reales de "Unable to resolve module". Ignorar los que aparecen como texto dentro del propio código de errores de Metro.
-  4. Que las claves de i18n en español y en inglés sean las mismas.
+  3. `npm test`: Jest en Node, solo para lógica pura (por ahora los motores de `src/lib/templates/`). Config en `jest.config.js`; no usa el preset `jest-expo`, que con SDK 57 no encuentra `expo-modules-core`.
+  4. Pedir el bundle de Metro de `expo-router/entry` y buscar errores reales de "Unable to resolve module". Ignorar los que aparecen como texto dentro del propio código de errores de Metro.
+  5. Que las claves de i18n en español y en inglés sean las mismas.
 - CI: typecheck y lint con Node 22.
 
 ## Convenciones
@@ -23,6 +24,7 @@ App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo
 - Sin store global reactivo para el sync, y SQLite embebido sin WatermelonDB: decisiones registradas en el vault.
 - i18n con i18next, español e inglés, nunca voseo.
 - Specs SDD en `specs/` (ver `specs/README.md`): el spec se actualiza en el mismo PR que el código.
+- `src/lib/templates/` es copia de Desktop (`task-manager`): los motores no importan nada de la app y no se cambian solo aquí. Solo `choice.ts` está adaptado.
 - Ramas: `feature/<slug>` desde `develop`, con PR a `develop`.
 
 ## No hacer sin preguntar a Jorge

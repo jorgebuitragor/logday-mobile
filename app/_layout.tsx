@@ -11,6 +11,7 @@ import { initDb } from '../src/db';
 import { PolicyGateModal } from '../src/components/PolicyGateModal';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { SyncProvider } from '../src/settings/SyncContext';
+import { TemplatesProvider } from '../src/settings/TemplatesContext';
 import { ThemeProvider, useTheme, useThemeScheme } from '../src/theme/ThemeContext';
 
 // `SafeAreaProvider` no estaba montado en ningún lado — nada en la
@@ -25,9 +26,11 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ThemeProvider>
           <PreferencesProvider>
-            <SyncProvider>
-              <RootLayoutInner />
-            </SyncProvider>
+            <TemplatesProvider>
+              <SyncProvider>
+                <RootLayoutInner />
+              </SyncProvider>
+            </TemplatesProvider>
           </PreferencesProvider>
         </ThemeProvider>
       </SafeAreaProvider>
@@ -104,6 +107,7 @@ function RootLayoutInner() {
         <Stack.Screen name="overtime/new" options={{ title: t('overtimeForm.newTitle'), presentation: 'modal' }} />
         <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="search" options={{ title: t('search.placeholder'), presentation: 'modal' }} />
+        <Stack.Screen name="settings/templates" options={{ title: t('settings.tabTemplates') }} />
       </Stack>
       <PolicyGateModal />
     </>

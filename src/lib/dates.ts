@@ -37,6 +37,13 @@ export function todayISO(): string {
   return localISODate();
 }
 
+/** `Date` de una fecha de calendario `YYYY-MM-DD`, a mediodía local (como
+ *  `dateFromISO` de Desktop): ida y vuelta exacta con `localISODate`. */
+export function dateFromLocalISO(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d, 12, 0, 0);
+}
+
 export function addDaysISO(iso: string, delta: number): string {
   const [y, m, d] = iso.split('-').map(Number);
   return localISODate(new Date(y, m - 1, d + delta));

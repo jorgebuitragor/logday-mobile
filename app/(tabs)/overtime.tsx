@@ -2,7 +2,7 @@ import { useFocusEffect, useRouter } from 'expo-router';
 import { MoreHorizontal, Timer } from 'lucide-react-native';
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -17,9 +17,10 @@ import {
 } from '../../src/db/overtime';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
-import { exportOvertimeMonth } from '../../src/lib/overtimeExport';
+import { exportOvertimeMonth, OvertimeTemplateError } from '../../src/lib/overtimeExport';
 import { observacionesLabel } from '../../src/lib/overtimeLabels';
 import { usePreferences } from '../../src/settings/PreferencesContext';
+import { useTemplates } from '../../src/settings/TemplatesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { OvertimeEntry, OvertimeMonthMeta } from '../../src/types/overtime';
 
@@ -78,6 +79,7 @@ export default function OvertimeScreen() {
   const theme = useTheme();
   const router = useRouter();
   const { confirmDestructiveActions } = usePreferences();
+  const { templates } = useTemplates();
   const [entries, setEntries] = useState<OvertimeEntry[]>([]);
   const [actionsMonth, setActionsMonth] = useState<MonthSection | null>(null);
   const [loadedMonthMeta, setLoadedMonthMeta] = useState<{ month: string; meta: OvertimeMonthMeta | null } | null>(null);
@@ -122,7 +124,14 @@ export default function OvertimeScreen() {
 
   async function exportMonthSection(section: MonthSection) {
     const meta = await getOvertimeMonthMeta(section.title);
-    await exportOvertimeMonth(section.title, monthLabel(section.title), section.data, meta);
+    try {
+      await exportOvertimeMonth(section.title, monthLabel(section.title), section.data, meta, templates.overtime);
+    } catch (err) {
+      // Solo la plantilla elegida (la de Logday o una propia) se avisa
+      // aquí; lo demás sigue como antes.
+      if (!(err instanceof OvertimeTemplateError)) throw err;
+      Alert.alert(t('templates.exportError'), `${t('templates.exportErrorDesc')}\n\n(${err.message})`);
+    }
   }
 
   async function handleSaveMeta(colaborador: string, cedula: string, base: { colaborador: string; cedula: string }) {

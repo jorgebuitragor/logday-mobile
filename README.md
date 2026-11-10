@@ -2,6 +2,8 @@
 
 App de Logday para Android e iOS: tareas, notas, dailys (registro diario de actividades), ausencias y horas extra.
 
+Sitio de Logday: **[logday.dev](https://logday.dev)**, con la presentación del proyecto y las descargas de Desktop.
+
 Como [Logday Desktop](https://github.com/jorgebuitragor/logday), es local-first: todo vive en una base SQLite del teléfono y la app funciona completa sin servidor. El sync con [`logday-server`](https://github.com/jorgebuitragor/logday-server) es opcional. Sirve para tener los mismos datos que en Desktop y [Logday Web](https://github.com/jorgebuitragor/logday-web).
 
 Está hecha con Expo SDK 57 (managed) + React Native 0.86 + TypeScript y Expo Router. Usa `expo-sqlite` para los datos, `expo-secure-store` para los tokens del sync y Yjs para el texto de notas y dailys.

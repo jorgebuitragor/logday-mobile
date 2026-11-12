@@ -1,4 +1,6 @@
+import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Stack, useRouter } from 'expo-router';
+import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +14,7 @@ import { PolicyGateModal } from '../src/components/PolicyGateModal';
 import { UndoToast } from '../src/components/UndoToast';
 import { autoPurgeTrash } from '../src/db/trash';
 import { startDueDigestScheduling } from '../src/lib/dueNotifications';
+import { listenQuickActions, registerQuickActions } from '../src/lib/quickActions';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { SyncProvider } from '../src/settings/SyncContext';
 import { TemplatesProvider } from '../src/settings/TemplatesContext';
@@ -23,6 +26,10 @@ import { ThemeProvider, useTheme, useThemeScheme } from '../src/theme/ThemeConte
 // `MarkdownToolbar` quedó pegada al borde inferior real de la
 // pantalla, invadiendo la zona de gestos de Android (ver
 // specs/pantalla-notes/design.md, "Safe area").
+// "Compartir con Logday" (specs/captura-rapida/) necesita un build propio:
+// en Expo Go no hay módulo nativo y se apaga.
+const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -31,7 +38,9 @@ export default function RootLayout() {
           <PreferencesProvider>
             <TemplatesProvider>
               <SyncProvider>
-                <RootLayoutInner />
+                <ShareIntentProvider options={{ disabled: IS_EXPO_GO, resetOnBackground: true }}>
+                  <RootLayoutInner />
+                </ShareIntentProvider>
               </SyncProvider>
             </TemplatesProvider>
           </PreferencesProvider>
@@ -66,6 +75,18 @@ function RootLayoutInner() {
     if (!dbReady) return;
     return startDueDigestScheduling((url) => router.navigate(url as '/'));
   }, [dbReady, router]);
+
+  // Captura rápida (specs/captura-rapida/): atajos del ícono y lo que llega
+  // por "Compartir". Con la base lista, porque abren pantallas que la leen.
+  const { hasShareIntent } = useShareIntentContext();
+  useEffect(() => {
+    if (!dbReady) return;
+    void registerQuickActions(t).catch((e: unknown) => console.warn('[atajos] no se pudieron registrar', e));
+    return listenQuickActions((href) => router.push(href as '/'));
+  }, [dbReady, router, t]);
+  useEffect(() => {
+    if (dbReady && hasShareIntent) router.navigate('/capture');
+  }, [dbReady, hasShareIntent, router]);
 
   // Sin esta pieza, Android no tenía ningún <StatusBar> declarado — el
   // estilo de íconos quedaba en lo que sea que el SO decidiera por
@@ -123,6 +144,7 @@ function RootLayoutInner() {
         <Stack.Screen name="overtime/new" options={{ title: t('overtimeForm.newTitle'), presentation: 'modal' }} />
         <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="search" options={{ title: t('search.placeholder'), presentation: 'modal' }} />
+        <Stack.Screen name="capture" options={{ title: t('capture.title'), presentation: 'modal' }} />
         <Stack.Screen name="settings/index" options={{ title: t('tabs.settings') }} />
         <Stack.Screen name="settings/templates" options={{ title: t('settings.tabTemplates') }} />
         <Stack.Screen name="settings/trash" options={{ title: t('trash.title') }} />

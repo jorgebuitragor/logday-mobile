@@ -519,5 +519,18 @@
     "deniedTitle": "Notificaciones desactivadas",
     "deniedMessage": "Para recibir el resumen, permite las notificaciones de Logday en los ajustes del teléfono.",
     "openSettings": "Abrir ajustes"
+  },
+  "capture": {
+    "title": "Guardar en Logday",
+    "asTask": "Tarea",
+    "asNote": "Nota",
+    "placeholder": "La primera línea es el título",
+    "hintTask": "Va a la bandeja de entrada. La primera línea es el título y el resto, la descripción.",
+    "hintNote": "La primera línea es el título y el resto, el contenido."
+  },
+  "quickActions": {
+    "newTask": "Nueva tarea",
+    "newNote": "Nueva nota",
+    "dailyToday": "Daily de hoy"
   }
 }

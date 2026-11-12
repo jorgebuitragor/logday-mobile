@@ -98,6 +98,18 @@ describe('resumen de vencimientos', () => {
     expect([...mockScheduled.keys()]).toEqual(['otra-cosa']);
   });
 
+  it('si Android no deja crear el canal propio, programa igual en el de omisión', async () => {
+    const Notifications = jest.requireMock<{ setNotificationChannelAsync: jest.Mock }>('expo-notifications');
+    Notifications.setNotificationChannelAsync.mockImplementationOnce(async () => {
+      throw new Error('NotificationsChannelsProvider no disponible');
+    });
+    jest.spyOn(console, 'warn').mockImplementation(() => {});
+    expect(await enableDueDigest()).toBe(true);
+    const today = mockScheduled.get(`due-digest-${TODAY}`) as { trigger: { channelId?: string } } | undefined;
+    expect(today).toBeDefined();
+    expect(today?.trigger.channelId).toBeUndefined();
+  });
+
   it('se reprograma después de un pull, con los datos nuevos', async () => {
     await enableDueDigest();
     const stop = startDueDigestScheduling(() => {});

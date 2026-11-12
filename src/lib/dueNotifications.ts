@@ -86,11 +86,20 @@ async function rescheduleOnce(): Promise<void> {
   if (!(await isDueDigestEnabled())) return;
   if (!(await Notifications.getPermissionsAsync()).granted) return;
 
+  // Canal propio en Android, para que se pueda silenciar aparte. Si no se
+  // puede crear (Expo Go en Android lo rechaza), se programa igual en el
+  // canal por omisión: antes la falla cancelaba todos los resúmenes.
+  let channelId: string | undefined;
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
-      name: i18n.t('notifications.channelName'),
-      importance: Notifications.AndroidImportance.DEFAULT,
-    });
+    try {
+      await Notifications.setNotificationChannelAsync(CHANNEL_ID, {
+        name: i18n.t('notifications.channelName'),
+        importance: Notifications.AndroidImportance.DEFAULT,
+      });
+      channelId = CHANNEL_ID;
+    } catch (e) {
+      console.warn('[notificaciones] sin canal propio; se usa el canal por omisión', e);
+    }
   }
   const plan = planDueDigests(await listTasks(), new Date(), await getDueDigestTime());
   for (const digest of plan) {
@@ -101,7 +110,7 @@ async function rescheduleOnce(): Promise<void> {
         body: digestBody(i18n.t.bind(i18n), digest),
         data: { url: '/' },
       },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: digest.fireAt, channelId: CHANNEL_ID },
+      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: digest.fireAt, ...(channelId ? { channelId } : {}) },
     });
   }
 }

@@ -135,7 +135,9 @@ function RootLayoutInner() {
           contentStyle: { backgroundColor: theme.bgBase },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* `title` es lo que muestra el botón de volver de las pantallas que
+            se abren desde las pestañas (Ajustes): sin él decía "(tabs)". */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: t('tabs.home') }} />
         <Stack.Screen name="task/new" options={{ title: t('taskForm.newTitle'), presentation: 'modal' }} />
         <Stack.Screen name="task/[id]" options={{ title: t('taskForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="note/new" options={{ title: t('noteForm.editTitle'), presentation: 'modal' }} />

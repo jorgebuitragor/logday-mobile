@@ -32,4 +32,10 @@ Estado: implementado, pendiente confirmación en vivo.
       Salieron y se corrigieron tres cosas: la papelera abierta no se
       actualizaba tras "Deshacer", los diálogos de borrar decían "no se
       puede deshacer" y el subtítulo no concordaba en género ("Nota ·
-      eliminado") y se cortaba. Sin probar en Android ni con sync real.
+      eliminado") y se cortaba.
+- [x] En Expo Go, en el emulador de Android (Pixel 8, Android 16, 12 nov
+      2026): borrar desde el detalle, el aviso "Deleted · Undo" sobre la
+      barra de pestañas, deshacer, el estado vacío de la papelera, y
+      restaurar desde ella. Sin probar con sync real.
+- [ ] El aviso de deshacer tapa en parte el botón flotante "+" de las
+      listas durante sus 5 segundos (visto en Android).

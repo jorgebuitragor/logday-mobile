@@ -50,6 +50,25 @@
         }
       ],
       [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_task": {
+              "foregroundImage": "./assets/quick-actions/task.png",
+              "backgroundColor": "#ffffff"
+            },
+            "shortcut_note": {
+              "foregroundImage": "./assets/quick-actions/note.png",
+              "backgroundColor": "#ffffff"
+            },
+            "shortcut_daily": {
+              "foregroundImage": "./assets/quick-actions/daily.png",
+              "backgroundColor": "#ffffff"
+            }
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",

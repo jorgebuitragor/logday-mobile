@@ -1,4 +1,5 @@
 import * as QuickActions from 'expo-quick-actions';
+import { Platform } from 'react-native';
 
 import { todayISO } from './dates';
 
@@ -26,14 +27,27 @@ export function quickActionHref(id: string, today: string = todayISO()): string 
   }
 }
 
-/** Registra los atajos con los textos del idioma actual. Los íconos son los
- *  del sistema en iOS; en Android van sin ícono propio por ahora. */
+/** Ícono de cada atajo. En iOS, los del sistema. En Android, los recursos
+ *  que genera el plugin de `expo-quick-actions` desde `androidIcons` de
+ *  app.json (los glifos de Lucide del Inicio, en `assets/quick-actions/`):
+ *  Android busca un recurso con ese nombre, y uno que no existe deja el
+ *  atajo con un círculo vacío. */
+export function quickActionIcon(id: QuickActionId, os: string = Platform.OS): string {
+  const icons: Record<QuickActionId, { ios: string; android: string }> = {
+    'new-task': { ios: 'task', android: 'shortcut_task' },
+    'new-note': { ios: 'compose', android: 'shortcut_note' },
+    'daily-today': { ios: 'date', android: 'shortcut_daily' },
+  };
+  return os === 'android' ? icons[id].android : icons[id].ios;
+}
+
+/** Registra los atajos con los textos del idioma actual. */
 export async function registerQuickActions(t: (key: string) => string): Promise<void> {
   if (!(await QuickActions.isSupported())) return;
   await QuickActions.setItems([
-    { id: 'new-task', title: t('quickActions.newTask'), icon: 'task' },
-    { id: 'new-note', title: t('quickActions.newNote'), icon: 'compose' },
-    { id: 'daily-today', title: t('quickActions.dailyToday'), icon: 'date' },
+    { id: 'new-task', title: t('quickActions.newTask'), icon: quickActionIcon('new-task') },
+    { id: 'new-note', title: t('quickActions.newNote'), icon: quickActionIcon('new-note') },
+    { id: 'daily-today', title: t('quickActions.dailyToday'), icon: quickActionIcon('daily-today') },
   ]);
 }
 

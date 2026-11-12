@@ -21,5 +21,5 @@
 - [x] Íconos claro, oscuro y teñido de iOS en `ios.icon`, revisados en el catálogo que genera `expo prebuild`.
 - [ ] Verlos en un iPhone (necesita el build de iOS).
 - [x] HTTP sin cifrar: solo hacia la red local (Jorge, 12 nov 2026). Regla en `src/lib/serverUrl.ts`, aviso en Ajustes, `usesCleartextTraffic` en Android y `NSAllowsLocalNetworking` en iOS.
-- [ ] Probar el sync por HTTP contra un servidor en la red local con un APK nuevo.
+- [x] Probar el sync por HTTP contra un servidor en la red local con un APK nuevo (12 nov 2026, build preview 4 en el emulador contra un `logday-server` local en `http://192.168.20.121:8099`): login, política, subida y bajada de tareas, y el tiempo real por `ws://`. En Ajustes se ven el error rojo con `http://` público, y el aviso ámbar al escribir la URL local y ya conectado.
 - [ ] Build `production` (AAB) y subida a la prueba interna de Play (con OK de Jorge).

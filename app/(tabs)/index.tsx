@@ -1,5 +1,5 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { AlertCircle, CalendarOff, CheckSquare, ChevronRight, FileText, NotebookPen, Plus, Timer } from 'lucide-react-native';
+import { AlertCircle, CalendarDays, CalendarOff, CheckSquare, ChevronRight, FileText, NotebookPen, Plus, Timer } from 'lucide-react-native';
 import type { ComponentType, ReactNode } from 'react';
 import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -103,7 +103,7 @@ export default function HomeScreen() {
         )}
       </Card>
 
-      <Card title={t('home.weekTitle')} icon={CalendarOff} theme={theme}>
+      <Card title={t('home.weekTitle')} icon={CalendarDays} theme={theme}>
         <View style={styles.weekRow}>
           {summary.week.map((day) => {
             const d = dateFromISO(day.date);

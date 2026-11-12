@@ -126,9 +126,16 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   // puede haber quedado vieja — mismo problema/solución que el resto
   // de este proyecto resuelve con refs (ver note/[id].tsx).
   const configRef = useRef(syncConfig);
-  useEffect(() => {
-    configRef.current = syncConfig;
-  }, [syncConfig]);
+
+  // Toda escritura de `syncConfig` pasa por aquí: el ref se actualiza
+  // antes que el estado. Si se copiara en un `useEffect`, los efectos de
+  // los hijos (que corren antes que los del padre) verían la config
+  // vieja: al conectar, "Sesiones activas" pedía la lista con el sync
+  // todavía desconectado en el ref y fallaba hasta tocar "Reintentar".
+  function commitSyncConfig(next: SyncConfig): void {
+    configRef.current = next;
+    setSyncConfig(next);
+  }
 
   useEffect(() => {
     (async () => {
@@ -141,7 +148,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       try {
         const stored = JSON.parse(storedRaw) as Omit<SyncConfig, 'accessToken' | 'refreshToken'>;
         const restored: SyncConfig = { ...stored, accessToken: accessToken ?? '', refreshToken: refreshTokenValue ?? '' };
-        setSyncConfig(restored);
+        commitSyncConfig(restored);
         if (restored.enabled && restored.accessToken) {
           setSyncConnectionStatus('connected');
         }
@@ -180,7 +187,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       // Lo creado sin sesión solo está en SQLite: el primer pull lo sube
       // (Fase 4 del sync, ver syncInitialUpload.ts).
       await requestInitialUpload();
-      setSyncConfig(next);
+      commitSyncConfig(next);
       setSyncConnectionStatus('connected');
       void evaluatePolicyGate(serverUrl, tokens);
     } catch (e) {
@@ -202,7 +209,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       logoutRemote(serverUrl, currentRefreshToken).catch(() => {});
     }
     await persistConfig(EMPTY_CONFIG);
-    setSyncConfig(EMPTY_CONFIG);
+    commitSyncConfig(EMPTY_CONFIG);
     setSyncConnectionStatus('disconnected');
     setSyncErrorMsg(null);
     setLastCheckedAt(null);
@@ -279,7 +286,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       const nextCfg: SyncConfig = { ...configRef.current, accessToken: tokens.access_token, refreshToken: tokens.refresh_token };
       configRef.current = nextCfg;
       await persistConfig(nextCfg);
-      setSyncConfig(nextCfg);
+      commitSyncConfig(nextCfg);
       void evaluatePolicyGate(beforeRefresh.serverUrl, tokens);
       return await fn(tokens.access_token);
     }

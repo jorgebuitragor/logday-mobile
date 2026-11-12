@@ -275,3 +275,13 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [ ] Checkpoint en vivo: editar en el teléfono con Web abierta y
       comprobar en el log del servidor que el teléfono no pide
       `/sync/changes` por su propio eco, y que sí lo pide al editar en Web.
+
+## "Sesiones activas" al conectar (nov 2026)
+
+- [x] `SyncContext` actualiza `configRef` en el mismo momento que el
+      estado (`commitSyncConfig`), no en un `useEffect`. Antes, el efecto
+      de "Sesiones activas" (hijo) corría antes que el del proveedor
+      (padre), leía el sync desconectado y mostraba "No se pudieron
+      cargar las sesiones" hasta tocar "Reintentar". Visto el 12 nov 2026
+      probando el build preview 4.
+- [ ] Probarlo en un APK: conectar y ver la lista sin tocar "Reintentar".

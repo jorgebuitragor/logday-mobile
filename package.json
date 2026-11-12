@@ -25,7 +25,7 @@
     "i18next": "^26.4.0",
     "isomorphic-webcrypto": "^2.3.8",
     "lucide-react-native": "^1.37.0",
-    "markdown-it": "^15.0.1",
+    "markdown-it": "^15.0.3",
     "punycode": "^2.3.1",
     "react": "19.2.3",
     "react-i18next": "^17.0.12",
@@ -58,5 +58,10 @@
     "typecheck": "tsc --noEmit",
     "test": "jest"
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "react-native-markdown-display": {
+      "markdown-it": "$markdown-it"
+    }
+  }
 }

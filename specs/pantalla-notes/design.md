@@ -275,17 +275,20 @@ librería que `markdown-it`/`turndown` que ya se habían evaluado como
 seguras antes de descartarlas por otro motivo (no por riesgo, sino
 porque ya no hacían falta tras revertir tentap-editor).
 
-Nota sobre auditoría de dependencias: `npm install` reportó una
-vulnerabilidad "high" (`linkify-it`, ReDoS por complejidad cuadrática
-en su scanner de `mailto:`, sin fix disponible todavía) arrastrada por
-`markdown-it` (dependencia de `react-native-markdown-display`). Riesgo
-aceptado por ahora: es un problema de negación de servicio explotable
-con texto adversarial, y el contenido que se renderiza acá es siempre
-del propio usuario en su propio dispositivo (no hay sync ni contenido
-remoto todavía) — no hay una superficie de ataque real hoy. Si en el
-futuro las notas empiezan a sincronizarse desde otros dispositivos o
-un servidor, este punto se vuelve relevante y hay que revisarlo de
-nuevo.
+Nota sobre auditoría de dependencias: la librería (7.0.2, sin
+mantenimiento desde 2023) pide `markdown-it` ^10, que arrastra avisos de
+DoS por complejidad cuadrática en `markdown-it` y `linkify-it`. En agosto
+se aceptó el riesgo porque el contenido era siempre local. Con el sync
+ya no lo es: una nota puede llegar de otro cliente. Desde nov 2026 (U-04
+de la auditoría del 9 nov 2026), `package.json` fuerza con `overrides` a
+que la librería use el mismo `markdown-it` que la app (^15.0.3, sin
+avisos conocidos). `src/lib/markdownRender.test.ts` comprueba dos cosas:
+que la librería resuelve esa misma copia, y que su parser arma el mismo
+árbol que con la versión 10 para un corpus de lo que se escribe en una
+nota (el fixture se generó con 10.0.0). La única diferencia real es el
+número de los ítems de una lista numerada en `sourceInfo`, que la regla
+de render no lee. Si un día hay que cambiar de librería, la alternativa
+es un fork mantenido como `@ronradtke/react-native-markdown-display`.
 
 **Toggle, no modos múltiples**: desktop ofrece tres modos
 (WYSIWYG/Fuente/Split) porque su editor de fuente y el WYSIWYG son

@@ -109,12 +109,21 @@ que Hermes no expone).
   localmente y encolada para mandar en cuanto haya conexión — sin
   perder ni una parte de lo escrito offline.
 
-## Requisitos (EARS) — Fases siguientes
+## Requisitos (EARS) — Fase 4: subida inicial de lo creado sin sesión
 
-Se detallan en `design.md`/`tasks.md` a medida que arranca cada fase
-(Fase 4: migración inicial de datos preexistentes) — no se escriben
-de antemano en detalle para no comprometerse a un diseño antes de que
-cada checkpoint en vivo confirme los supuestos de la fase anterior.
+- Cuando el usuario inicie sesión, el sistema DEBERÁ subir al servidor
+  todo lo que exista en el teléfono y el servidor no tenga (Task, Note,
+  DailyEntry, OvertimeEntry, OvertimeMonthMeta y AbsenceDay), sin que el
+  usuario tenga que hacer nada.
+- El sistema NO DEBERÁ pisar en el servidor nada que ya exista allá ni
+  inventar un `updated_at` para ganar un conflicto.
+- El sistema NO DEBERÁ resucitar lo que está borrado en el servidor ni
+  subir lo que está borrado en el teléfono.
+- Si una nota o un daily existe en los dos lados, el sistema DEBERÁ
+  conservar el texto de ambos (merge CRDT), también para el texto de
+  antes de la Fase 3, que no tenía estado CRDT.
+- Si la subida se corta, el sistema DEBERÁ terminarla en un pull
+  siguiente, y correrla de nuevo NO DEBERÁ duplicar nada.
 
 ## Fuera de este spec
 

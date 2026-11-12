@@ -22,6 +22,7 @@ import type {
 } from './syncMapping';
 import { emitRemoteChange } from './syncEvents';
 import * as syncQueue from './syncQueue';
+import { isInitialUploadPending, runInitialUpload } from './syncInitialUpload';
 import { getSyncRuntime } from './syncRuntime';
 
 // Orquestador de sync — pull (`reconcileSync`) + drenado de las 2
@@ -68,7 +69,7 @@ async function applyRemoteChanges(changes: SyncChange[]): Promise<void> {
  * página aplicada ya está en la base. Antes se juntaba el delta entero en
  * memoria y el cursor solo se guardaba al final: si la app moría en medio
  * de un full resync de miles de cambios, volvía a empezar desde cero. */
-async function pullFrom(sinceStart: number): Promise<void> {
+async function pullFrom(sinceStart: number, onPage?: (changes: SyncChange[]) => void): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime) return;
   let since = sinceStart;
@@ -76,6 +77,7 @@ async function pullFrom(sinceStart: number): Promise<void> {
     const page = await runtime.withSyncAuth((token) => syncChangesRemote(runtime.serverUrl, token, since, PAGE_LIMIT));
     if (page.length === 0) break;
     await applyRemoteChanges(page);
+    onPage?.(page);
     since = page.reduce((m, c) => Math.max(m, c.seq), since);
     await setCursor(since);
     if (page.length < PAGE_LIMIT) break;
@@ -91,6 +93,20 @@ async function reconcileOnce(): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled || !runtime.connected) return;
   await whenDbReady();
+  if (await isInitialUploadPending()) {
+    // Recién iniciada la sesión: trae todo desde 0 y sube lo que solo
+    // existe en el teléfono (Fase 4, ver syncInitialUpload.ts). Si falla,
+    // se reintenta entera en el próximo pull.
+    try {
+      await runInitialUpload(async (onPage) => {
+        await setCursor(0);
+        await pullFrom(0, onPage);
+      });
+    } catch (e) {
+      console.warn('[sync] subida inicial incompleta, se reintenta en el próximo pull', e);
+    }
+    return;
+  }
   try {
     await pullFrom(await getCursor());
   } catch (e) {

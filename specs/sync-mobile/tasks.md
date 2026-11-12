@@ -241,3 +241,25 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [ ] Medir un full resync grande en un teléfono (antes y después).
 - [ ] Confirmar en un teléfono que una instalación previa abre bien con
       la migración 1.
+
+## Fase 4 — subida inicial (nov 2026)
+
+- [x] `src/lib/syncInitialUpload.ts`: siembra del estado CRDT, foto de
+      lo local, pull desde 0 con las claves del servidor y subida de lo
+      que falta.
+- [x] `uploadLocal*` en `src/db/*` y `seedMissing*ContentStates` en
+      notas y dailys.
+- [x] `syncConnect` marca la subida; `reconcileOnce` la corre.
+- [x] `crdtText`: `stateVectorFromStateB64` y `hasInsertsMissingFrom`.
+- [x] Pruebas de punta a punta (7): servidor vacío, el servidor ya lo
+      tiene, borrados de los dos lados, daily legado con el mismo día en
+      el servidor, nota legada, correrla dos veces y corte a medias.
+      Quitar la siembra o el criterio de contenido hace fallar la prueba
+      correspondiente.
+- [ ] Checkpoint en vivo: usar la app sin servidor (tareas, notas,
+      dailys, horas extra y ausencias), conectar contra un servidor con
+      datos de Desktop y comprobar en Web que llegó todo y no se perdió
+      nada.
+- [ ] Pendiente aparte: no apagar el sync cuando vence la sesión, para
+      que las ediciones de ese periodo se encolen.
+

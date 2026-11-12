@@ -62,6 +62,26 @@ export function applyIncomingUpdate(doc: Y.Doc, updateB64: string): void {
   Y.applyUpdate(doc, base64ToBytes(updateB64));
 }
 
+/** Vector de estado (qué operaciones de cada cliente contiene) de un
+ *  snapshot, sin armar un `Y.Doc`. Pesa unos bytes: sirve para recordar
+ *  qué tiene el servidor de cada nota o daily sin guardar su estado. */
+export function stateVectorFromStateB64(stateB64: string): Uint8Array {
+  return Y.encodeStateVectorFromUpdate(base64ToBytes(stateB64));
+}
+
+/** ¿`localStateB64` tiene texto escrito que el vector de estado del
+ *  servidor no cubre? Compara inserciones (relojes por cliente), no
+ *  borrados: un borrado sin texto nuevo no se detecta. Para la subida
+ *  inicial alcanza, porque lo que importa es no perder texto. */
+export function hasInsertsMissingFrom(localStateB64: string, remoteStateVector: Uint8Array | null): boolean {
+  const local = Y.decodeStateVector(stateVectorFromStateB64(localStateB64));
+  const remote = remoteStateVector ? Y.decodeStateVector(remoteStateVector) : new Map<number, number>();
+  for (const [client, clock] of local) {
+    if (clock > (remote.get(client) ?? 0)) return true;
+  }
+  return false;
+}
+
 // ── Diff y traslación de ediciones ────────────────────────────────
 // Puerto de `noteContentSync.ts` (task-manager, PR jorgebuitragor/logday#3
 // y #8). Mismo algoritmo para que los clientes generen las mismas

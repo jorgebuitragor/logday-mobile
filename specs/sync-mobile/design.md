@@ -474,6 +474,77 @@ Pruebas: `src/lib/syncEngine.pull.test.ts` (páginas, cursor tras un
 fallo, 410, pull único) y `src/db/index.test.ts` (migraciones sobre
 `node:sqlite`, con el mock de `src/__mocks__/expo-sqlite.ts`).
 
+## Fase 4 — subida inicial (nov 2026)
+
+**Por qué hace falta.** Con el sync apagado (antes de conectar por
+primera vez o tras cerrar sesión, también cuando la sesión vence) los
+`sync*` de `src/db/*` no hacen nada: lo creado se queda solo en SQLite
+y nada lo encola. Al conectar, el pull trae lo del servidor pero nada
+subía lo local. Además, un daily de antes de la Fase 3 (texto sin
+`content_state`) **perdía su texto** cuando el pull traía ese mismo día
+desde otro cliente: `applyRemoteDailyEntryChangeLocked` pisa `content`
+y el merge CRDT no tenía nada local que conservar.
+
+**Cómo funciona** (`src/lib/syncInitialUpload.ts`):
+
+1. `syncConnect` marca la subida como pendiente (`AsyncStorage`) antes
+   de pasar a "conectado".
+2. El siguiente pull (`reconcileOnce`, que es único gracias al pull
+   único) ve la marca y, en vez del pull incremental:
+   - siembra el estado CRDT de las notas y dailys con texto que no lo
+     tienen (`seedMissing*ContentStates`), con el mismo criterio que
+     ya usan los editores al tocar una fila así;
+   - toma una foto de lo local: claves vivas de las 6 entidades y el
+     estado CRDT de notas y dailys;
+   - pone el cursor en 0 y hace un pull completo, página por página,
+     anotando de cada cambio su clave, si es un borrado y el vector de
+     estado de su contenido;
+   - recorre la foto local y sube lo que falta con las mismas funciones
+     que el envío normal (`uploadLocal*`, que usan `syncCreate*`): lo
+     que falle queda en las colas.
+3. Al terminar quita la marca. Si algo lanza, la marca queda y se repite
+   entera en el próximo pull; lo ya subido aparece como "ya existía".
+
+**Reglas** (las de la migración de Desktop, `syncMigration.ts`):
+
+- Solo se sube lo que el servidor no tiene por su clave. Nunca se pisa
+  lo que existe allá: una task, un registro de horas extra, una ausencia
+  o los datos del colaborador de un mes que ya están en el servidor se
+  quedan como están, y el pull ya los dejó así en el teléfono.
+- Lo borrado en el servidor no se sube (el pull ya lo borró aquí), y lo
+  borrado en el teléfono tampoco.
+- Notas y dailys se mezclan en vez de saltarse, porque el contenido es
+  CRDT. Si el estado local tiene inserciones que el vector de estado
+  del servidor no cubre (`hasInsertsMissingFrom`), se manda el estado
+  local, que tras el pull ya incluye el del servidor. El resultado tiene
+  el texto de los dos lados. Desktop, en cambio, salta la nota si el
+  servidor ya tiene contenido.
+
+**Diferencias con Desktop, a propósito:**
+
+- Es automática al iniciar sesión, no un botón. En un teléfono nadie
+  va a buscar "migrar datos" en Ajustes, y el caso real es "la usé sin
+  servidor y ahora lo conecto".
+- Las claves del servidor salen del mismo `/sync/changes` desde 0 y no
+  de los listados por entidad (`GET /tasks`, etc.): una sola descarga,
+  incluye los borrados y no hace falta agregar 6 funciones de API.
+
+**Límites conocidos:**
+
+- Lo que se **edita** sin sesión en algo que ya estaba en el servidor no
+  se sube: esta subida solo crea lo que falta y agrega texto a notas y
+  dailys. Arreglarlo de raíz es no apagar el sync cuando vence la
+  sesión, sino seguir encolando hasta que se vuelva a iniciar
+  (pendiente aparte).
+- Al iniciar sesión con **otra cuenta**, se sube a ella todo lo que hay
+  en el teléfono, incluido lo que había bajado de la cuenta anterior.
+  Igual que el botón de Desktop.
+- Cada inicio de sesión hace un pull completo desde 0.
+
+Pruebas: `src/lib/syncInitialUpload.test.ts` corre el código real de
+`src/db/*` sobre `node:sqlite` contra un servidor falso que pagina por
+`seq`, responde 409 a un id repetido y mezcla el contenido con Yjs.
+
 ## Explícitamente pendiente
 
 - Diseño detallado de la Fase 4 — se escribe en este mismo archivo al

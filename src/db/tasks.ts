@@ -243,6 +243,14 @@ async function syncDeleteTask(id: string): Promise<void> {
   }
 }
 
+/** Subida inicial (Fase 4 del sync, `src/lib/syncInitialUpload.ts`):
+ *  crea en el servidor una task que solo existe en el teléfono. Si falla,
+ *  queda en la cola como cualquier create. */
+export async function uploadLocalTask(id: string): Promise<void> {
+  const task = await getTask(id);
+  if (task && !task.deletedAt) await syncCreateTask(task);
+}
+
 /** Aplica la respuesta de un create/patch a la fila local, campo por
  * campo, salteando cualquier campo que ya tenga una entrada más
  * nueva en cola ("regla de prioridad cola vs. respuesta tardía",

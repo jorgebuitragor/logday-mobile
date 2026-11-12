@@ -15,5 +15,8 @@ Estado: implementado, pendiente confirmación en vivo.
       en "Vencen hoy" y el engranaje abre Ajustes. Se corrigieron dos
       cosas: el botón de volver de Ajustes decía "(tabs)" y "Tu semana"
       tenía el ícono de calendario tachado.
-- [ ] Falta: un teléfono chico, el tema oscuro, Android, y que una tarea
-      editada en Web aparezca sin salir del Inicio.
+- [x] En Expo Go, en el emulador de Android (Pixel 8, Android 16, en
+      inglés, 12 nov 2026): la bienvenida con la base vacía, y una tarea de
+      hoy en "Due today".
+- [ ] Falta: un teléfono chico, el tema oscuro, y que una tarea editada en
+      Web aparezca sin salir del Inicio.

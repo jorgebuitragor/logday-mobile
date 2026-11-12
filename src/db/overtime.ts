@@ -246,6 +246,19 @@ export async function upsertOvertimeMonthMeta(
 // comentario ahí) — evita un ciclo de import entre este archivo y
 // syncEngine.ts.
 
+/** Subida inicial (Fase 4 del sync): ver `uploadLocalTask` en db/tasks.ts. */
+export async function uploadLocalOvertimeEntry(id: string): Promise<void> {
+  const entry = await getOvertimeEntry(id);
+  if (entry && !entry.deletedAt) await syncCreateOvertimeEntry(entry);
+}
+
+/** Subida inicial de los datos del colaborador de un mes que el servidor
+ *  no tiene. El PATCH crea la meta si no existe. */
+export async function uploadLocalOvertimeMonthMeta(yearMonth: string): Promise<void> {
+  const meta = await getOvertimeMonthMeta(yearMonth);
+  if (meta && !meta.deletedAt) await syncPatchOvertimeMonthMeta(yearMonth, { colaborador: meta.colaborador, cedula: meta.cedula });
+}
+
 async function syncCreateOvertimeEntry(entry: OvertimeEntry): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled) return;

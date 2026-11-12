@@ -119,6 +119,12 @@ export async function deleteAbsenceDay(id: string): Promise<void> {
 // comentario ahí) — evita un ciclo de import entre este archivo y
 // syncEngine.ts.
 
+/** Subida inicial (Fase 4 del sync): ver `uploadLocalTask` en db/tasks.ts. */
+export async function uploadLocalAbsenceDay(id: string): Promise<void> {
+  const absence = await getAbsenceDay(id);
+  if (absence && !absence.deletedAt) await syncCreateAbsenceDay(absence);
+}
+
 async function syncCreateAbsenceDay(absence: AbsenceDay): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled) return;

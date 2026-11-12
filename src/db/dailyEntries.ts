@@ -172,6 +172,40 @@ async function applyRemoteDailyContentState(date: string, contentStateB64: strin
   );
 }
 
+// ── Subida inicial (Fase 4 del sync, `src/lib/syncInitialUpload.ts`) ──
+
+/** Siembra el estado CRDT de los dailys con texto que nunca lo tuvieron
+ *  (anteriores a la Fase 3 del sync). Además de dar operaciones que
+ *  subir, evita perder texto: `applyRemoteDailyEntryChangeLocked` pisa
+ *  `content` con el del servidor y, sin estado local, el merge CRDT no
+ *  tiene nada local que conservar. */
+export async function seedMissingDailyContentStates(): Promise<void> {
+  const rows = await getDb().getAllAsync<{ date: string }>(
+    "SELECT date FROM daily_entries WHERE content_state IS NULL AND content != ''"
+  );
+  for (const { date } of rows) {
+    await withKeyLock(dailyLock(date), async () => {
+      if (await getDailyContentStateB64(date)) return;
+      const row = await getDb().getFirstAsync<{ content: string }>('SELECT content FROM daily_entries WHERE date = ?', date);
+      if (!row?.content) return;
+      const doc = docFromStateB64(null);
+      applyTextEdit(doc, row.content);
+      await getDb().runAsync('UPDATE daily_entries SET content_state = ? WHERE date = ?', encodeDocStateB64(doc), date);
+      doc.destroy();
+    });
+  }
+}
+
+/** Sube el contenido de un daily local. Si el servidor ya tenía ese día,
+ *  el pull de la subida inicial ya mezcló su estado con el local, así que
+ *  esto solo agrega lo escrito en el teléfono. */
+export async function uploadLocalDailyEntry(date: string): Promise<void> {
+  const entry = await getDailyEntry(date);
+  if (!entry) return;
+  const stateB64 = await getDailyContentStateB64(date);
+  if (stateB64) await pushDailyContent(date, stateB64);
+}
+
 // ── Pull (/sync/changes) ──────────────────────────────────────────
 
 export function applyRemoteDailyEntryChange(change: SyncChange): Promise<void> {

@@ -10,6 +10,7 @@ import {
   exportAccountRemote, deleteAccountRemote,
 } from '../lib/syncApi';
 import { drainSyncQueue, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
+import { requestInitialUpload } from '../lib/syncInitialUpload';
 import { setSyncRuntime } from '../lib/syncRuntime';
 import { startRealtime, stopRealtime } from '../lib/realtime';
 import { todayISO } from '../lib/dates';
@@ -169,6 +170,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         deviceId: tokens.device_id,
       };
       await persistConfig(next);
+      // Lo creado sin sesión solo está en SQLite: el primer pull lo sube
+      // (Fase 4 del sync, ver syncInitialUpload.ts).
+      await requestInitialUpload();
       setSyncConfig(next);
       setSyncConnectionStatus('connected');
       void evaluatePolicyGate(serverUrl, tokens);

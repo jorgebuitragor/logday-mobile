@@ -395,6 +395,39 @@ async function applyRemoteNoteContentState(id: string, contentStateB64: string):
   }
 }
 
+// ── Subida inicial (Fase 4 del sync, `src/lib/syncInitialUpload.ts`) ──
+
+/** Siembra el estado CRDT de las notas con texto que nunca lo tuvieron
+ *  (anteriores a la Fase 3 del sync). Sin estado, el texto no tiene
+ *  operaciones Yjs que subir. Mismo criterio que `applyNoteContentEdit`
+ *  cuando se edita una nota así. */
+export async function seedMissingNoteContentStates(): Promise<void> {
+  const rows = await getDb().getAllAsync<{ id: string }>("SELECT id FROM notes WHERE content_state IS NULL AND content != ''");
+  for (const { id } of rows) {
+    await withKeyLock(noteLock(id), async () => {
+      if (await getNoteContentStateB64(id)) return;
+      const note = await getNote(id);
+      if (!note?.content) return;
+      const doc = docFromStateB64(null);
+      applyTextEdit(doc, note.content);
+      await setNoteContentStateB64(id, encodeDocStateB64(doc));
+      doc.destroy();
+    });
+  }
+}
+
+/** Sube una nota local: la crea en el servidor si no existe allá
+ *  (`create`) y manda su contenido (`pushContent`). Lo que falle queda en
+ *  las colas como cualquier otra escritura. */
+export async function uploadLocalNote(id: string, opts: { create: boolean; pushContent: boolean }): Promise<void> {
+  const note = await getNote(id);
+  if (!note || note.deletedAt) return;
+  if (opts.create) await syncCreateNote(note);
+  if (!opts.pushContent) return;
+  const stateB64 = await getNoteContentStateB64(id);
+  if (stateB64) await pushNoteContent(id, stateB64);
+}
+
 // ── Pull (/sync/changes) ──────────────────────────────────────────
 
 const EPOCH = '0000-01-01T00:00:00.000Z';

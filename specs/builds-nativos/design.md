@@ -41,3 +41,13 @@ eas build -p android --profile production  # AAB para Play
 - de `expo-secure-store`: `USE_BIOMETRIC` y `USE_FINGERPRINT`.
 
 **Arranque en el emulador.** Con el emulador saturado (dibujo por software y la Mac con carga 11), el arranque en frío tardó de 10 a 24 s y hubo avisos de ANR. Con la carga normal, el APK precompilado como lo instala Play tardó 1,1 a 2,7 s. Hay que medirlo en un teléfono físico.
+
+## Íconos de los accesos rápidos en Android
+
+Android busca un recurso (drawable o mipmap) con el nombre del `icon` de cada atajo; si no existe, el lanzador muestra un círculo vacío.
+
+- **Recursos.** El plugin de `expo-quick-actions` genera `shortcut_task`, `shortcut_note` y `shortcut_daily` como íconos adaptativos desde `androidIcons` de `app.json`. Son los glifos de Lucide del Inicio (`CheckSquare`, `FileText` y `NotebookPen`), en el color de acento sobre blanco y ocupando un tercio del lienzo, como pide Android. Los SVG fuente están en `assets/quick-actions/`.
+- **Nombre por plataforma.** `quickActionIcon` elige el nombre: en iOS siguen los íconos del sistema.
+- **Prueba.** Una prueba revisa que cada nombre de Android exista en `androidIcons`.
+
+Usar el plugin destapó un problema del árbol de npm. Con `legacy-peer-deps`, `ajv-keywords@5`, que pide `ajv ^8` como peer, quedaba junto al `ajv` 6 de ESLint, y el prebuild fallaba también en EAS. Por eso `ajv ^8` está en `devDependencies`; la razón está en `.npmrc`.

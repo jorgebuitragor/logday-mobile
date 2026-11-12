@@ -12,8 +12,8 @@
   - [ ] el splash animado (el del wordmark) en el build: el emulador dibuja por software y no se pudo capturar cuadro a cuadro;
   - [x] compartir texto con Logday: abre "Guardar en Logday" con el texto y lo guarda como tarea en `inbox` (título y contenido bien separados);
   - [x] los accesos rápidos: los tres aparecen al mantener presionado el ícono y "Daily de hoy" abre el de hoy;
-  - [ ] los íconos de los accesos rápidos en Android: salen como círculos vacíos, porque `task`, `compose` y `date` son símbolos de iOS y Android necesita recursos propios;
+  - [x] los íconos de los accesos rápidos en Android: salían como círculos vacíos, porque `task`, `compose` y `date` son símbolos de iOS. Arreglado con `androidIcons` del plugin y `quickActionIcon` (los glifos de Lucide del Inicio en `assets/quick-actions/`). En el segundo build se ven los tres y "Nueva tarea" abre el formulario;
   - [ ] tocar una notificación;
   - [ ] "reducir movimiento".
-- [ ] Decidir HTTP sin cifrar y el nombre bajo el ícono (ver requirements).
+- [ ] Decidir HTTP sin cifrar y el nombre bajo el ícono (ver requirements). En el cajón de apps del Pixel, "Logday Mobile" se corta como "Logday Mob…".
 - [ ] Build `production` (AAB) y subida a la prueba interna de Play (con OK de Jorge).

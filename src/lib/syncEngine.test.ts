@@ -8,7 +8,8 @@ import * as syncQueue from './syncQueue';
 import { setSyncRuntime } from './syncRuntime';
 
 // Los `apply*` de `src/db/*` escriben en SQLite; aquí solo importa qué pasa
-// con la cola, no la fila local.
+// con la cola, no la fila local. La base se da por lista.
+jest.mock('../db/index', () => ({ whenDbReady: () => Promise.resolve() }));
 jest.mock('../db/absences', () => ({ applyAbsenceDayResponse: jest.fn(), applyRemoteAbsenceDayChange: jest.fn() }));
 jest.mock('../db/dailyEntries', () => ({ applyRemoteDailyEntryChange: jest.fn() }));
 jest.mock('../db/notes', () => ({ applyNoteResponse: jest.fn(), applyRemoteNoteChange: jest.fn() }));

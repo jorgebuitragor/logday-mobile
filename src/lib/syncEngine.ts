@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { applyAbsenceDayResponse, applyRemoteAbsenceDayChange } from '../db/absences';
 import { applyRemoteDailyEntryChange } from '../db/dailyEntries';
+import { whenDbReady } from '../db/index';
 import { applyNoteResponse, applyRemoteNoteChange } from '../db/notes';
 import { applyOvertimeEntryResponse, applyOvertimeMonthMetaResponse, applyRemoteOvertimeEntryChange, applyRemoteOvertimeMonthMetaChange } from '../db/overtime';
 import { applyRemoteTaskChange, applyTaskResponse } from '../db/tasks';
@@ -61,48 +62,78 @@ async function applyRemoteChanges(changes: SyncChange[]): Promise<void> {
   }
 }
 
-// Trae TODO el delta desde `sinceStart`, paginando en loop — usado
-// tanto por el camino normal (desde el cursor guardado) como por el
-// fallback de cursor inválido (since=0) de `reconcileSync`.
-async function fetchAllChanges(sinceStart: number): Promise<{ changes: SyncChange[]; maxSeq: number }> {
+/** Trae y aplica el delta desde `sinceStart` página por página, guardando
+ * el cursor al terminar cada una. El servidor devuelve cada página
+ * ordenada por `seq`, así que todo lo anterior al último `seq` de una
+ * página aplicada ya está en la base. Antes se juntaba el delta entero en
+ * memoria y el cursor solo se guardaba al final: si la app moría en medio
+ * de un full resync de miles de cambios, volvía a empezar desde cero. */
+async function pullFrom(sinceStart: number): Promise<void> {
   const runtime = getSyncRuntime();
-  if (!runtime) return { changes: [], maxSeq: sinceStart };
-  const all: SyncChange[] = [];
+  if (!runtime) return;
   let since = sinceStart;
-  let pageLen = PAGE_LIMIT;
-  while (pageLen === PAGE_LIMIT) {
+  for (;;) {
     const page = await runtime.withSyncAuth((token) => syncChangesRemote(runtime.serverUrl, token, since, PAGE_LIMIT));
-    pageLen = page.length;
     if (page.length === 0) break;
-    all.push(...page);
+    await applyRemoteChanges(page);
     since = page.reduce((m, c) => Math.max(m, c.seq), since);
+    await setCursor(since);
+    if (page.length < PAGE_LIMIT) break;
   }
-  return { changes: all, maxSeq: since };
 }
 
 /** Pull incremental desde el cursor guardado; si el servidor dice que
  * el cursor ya no es válido (410 — se purgaron tombstones más viejos
- * de lo que este cliente conoce), descarta el cursor y hace un full
- * resync desde cero — igual que `reconcileSync` en `appStore.ts` de
- * desktop. */
-export async function reconcileSync(): Promise<void> {
+ * de lo que este cliente conoce, o el cursor es de otro servidor),
+ * descarta el cursor y hace un full resync desde cero — igual que
+ * `reconcileSync` en `appStore.ts` de desktop. */
+async function reconcileOnce(): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled || !runtime.connected) return;
-  const cursor = await getCursor();
+  await whenDbReady();
   try {
-    const { changes, maxSeq } = await fetchAllChanges(cursor);
-    await applyRemoteChanges(changes);
-    if (changes.length > 0) await setCursor(maxSeq);
+    await pullFrom(await getCursor());
   } catch (e) {
     if (e instanceof SyncApiError && e.status === 410) {
-      const { changes, maxSeq } = await fetchAllChanges(0);
-      await applyRemoteChanges(changes);
-      await setCursor(maxSeq);
+      try {
+        await setCursor(0);
+        await pullFrom(0);
+      } catch {
+        // Lo que se alcanzó a aplicar ya dejó su cursor; el resto llega
+        // en el próximo pull.
+      }
     }
     // Otros errores (red caída, etc.): se reintenta solo en el
     // próximo tick del polling — no hay nada más que hacer acá sin
     // bloquear la UI.
   }
+}
+
+// Un solo pull a la vez. Dos en paralelo (el polling, un aviso de `/ws` y
+// la vuelta a primer plano pueden coincidir) aplicaban los mismos cambios
+// dos veces y podían dejar el cursor más atrás de lo aplicado. Si llega
+// un pedido con uno en curso, se corre uno más al terminar (y solo uno,
+// aunque lleguen varios): lo que avisó el pedido puede haber llegado al
+// servidor después de que el pull en curso leyó esa página.
+let pullInFlight: Promise<void> | null = null;
+let pullPending = false;
+
+export function reconcileSync(): Promise<void> {
+  if (pullInFlight) {
+    pullPending = true;
+    return pullInFlight;
+  }
+  pullInFlight = (async () => {
+    try {
+      do {
+        pullPending = false;
+        await reconcileOnce();
+      } while (pullPending);
+    } finally {
+      pullInFlight = null;
+    }
+  })();
+  return pullInFlight;
 }
 
 /** Reenvía una escritura que quedó en cola — mismo despacho por
@@ -206,6 +237,7 @@ async function sendQueuedWrite(write: syncQueue.QueuedWrite): Promise<'ok' | 'pe
 export async function drainSyncQueue(): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled || !runtime.connected) return;
+  await whenDbReady();
   await syncQueue.drainQueue(sendQueuedWrite);
 }
 
@@ -218,6 +250,7 @@ export async function drainSyncQueue(): Promise<void> {
 export async function drainContentSyncQueue(): Promise<void> {
   const runtime = getSyncRuntime();
   if (!runtime?.enabled || !runtime.connected) return;
+  await whenDbReady();
   const { serverUrl, withSyncAuth } = runtime;
   await contentSyncQueue.drain(async (entity, key, updateB64) => {
     // "Ahora" (no el `queuedAt` original) — mismo criterio que

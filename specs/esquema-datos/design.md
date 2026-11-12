@@ -9,13 +9,34 @@ verdad — este documento la explica, no la reemplaza) y
 SQLite embebido vía `expo-sqlite` (decidido en
 `arquitectura-inicial/design.md`). `src/db/index.ts` abre una única
 conexión (`openDatabaseSync('logday.db')`, singleton en memoria del
-módulo) y corre `SCHEMA_SQL` completo con `execAsync` al arrancar —
-todas las sentencias usan `CREATE TABLE IF NOT EXISTS`, así que correr
-el esquema en cada arranque es idempotente y hace de "migración cero":
-no hace falta un runner de migraciones mientras solo exista una
-versión del esquema. Cuando el esquema cambie por primera vez (agregar
-una columna, por ejemplo), ahí sí hay que introducir un mecanismo real
-de versionado — no antes.
+módulo) en modo WAL (`PRAGMA journal_mode = WAL`, guardado en el
+archivo): sin él, cada escritura fuera de una transacción reescribe el
+journal completo, y un full resync de miles de cambios era lento.
+
+### Migraciones (`PRAGMA user_version`, nov 2026)
+
+`initDb` corre las migraciones numeradas de `MIGRATIONS` que falten
+según `PRAGMA user_version`, en orden, cada una en una transacción
+junto con el nuevo `user_version`. Si una falla, la base queda en la
+versión anterior y se reintenta al abrir otra vez. Si la base tiene una
+versión más nueva que la app, `initDb` falla en vez de abrirla.
+
+- **Nunca** se edita ni se reordena una migración ya publicada: los
+  cambios nuevos van al final de la lista.
+- La migración 1 es el esquema que había antes de este mecanismo
+  (`SCHEMA_SQL`, con `CREATE TABLE IF NOT EXISTS`, más las columnas que
+  agregaba `ensureColumn` al abrir: `content_state` de notas y dailys,
+  `progress` de tasks). Es idempotente a propósito: sirve a una base
+  nueva y a las instalaciones previas, que tienen `user_version` 0.
+- `whenDbReady()` se resuelve al terminar `initDb`. El motor de sync lo
+  espera, porque `SyncProvider` monta antes que la pantalla que llama a
+  `initDb` y podía escribir antes de que existieran las tablas o en
+  medio de una migración.
+
+Antes (hasta oct 2026) se corría `SCHEMA_SQL` en cada arranque y
+`ensureColumn` agregaba columnas sueltas. Servía para agregar columnas,
+pero no para cambiar un tipo, migrar datos ni crear índices en orden
+(M-11 de la auditoría del 9 nov 2026).
 
 ## Tablas
 
@@ -36,7 +57,7 @@ Mapeo 1:1 con `logday-server/specs/esquema-datos/design.md`, quitando
 | created | TEXT (fecha) | |
 | completed_at | TEXT NULL | |
 | due | TEXT NULL | |
-| progress | INTEGER NULL | 0–100 o `NULL` = sin progreso; agregada con `ensureColumn`, ver `progreso-tasks/` |
+| progress | INTEGER NULL | 0–100 o `NULL` = sin progreso; agregada en la migración 1 (antes con `ensureColumn`), ver `progreso-tasks/` |
 | content | TEXT | markdown, default `''` |
 | updated_at | TEXT NOT NULL | bookkeeping para sync futuro |
 | deleted_at | TEXT NULL | soft-delete |

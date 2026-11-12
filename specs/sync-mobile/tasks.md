@@ -226,3 +226,18 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [ ] Confirmar en un teléfono: editar sin conexión, revocar el
       dispositivo desde Web, volver a iniciar sesión y ver que la
       edición llega.
+
+## Pull por páginas y pull único (nov 2026)
+
+- [x] `reconcileSync` aplica y guarda el cursor página por página
+      (M-11 de la auditoría del 9 nov 2026).
+- [x] Un solo pull a la vez, con un pull pendiente si llegan pedidos
+      en medio.
+- [x] El motor espera `whenDbReady()`.
+- [x] Base en WAL y migraciones con `user_version` (ver
+      `esquema-datos/design.md`).
+- [x] Pruebas: `syncEngine.pull.test.ts` y `src/db/index.test.ts`. Sin
+      el arreglo fallan las del cursor tras un fallo y la del pull único.
+- [ ] Medir un full resync grande en un teléfono (antes y después).
+- [ ] Confirmar en un teléfono que una instalación previa abre bien con
+      la migración 1.

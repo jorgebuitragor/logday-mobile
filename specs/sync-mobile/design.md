@@ -432,6 +432,48 @@ Pruebas en `src/lib/syncQueue.test.ts`, `contentSyncQueue.test.ts` y
 `syncEngine.test.ts`, con los mocks de módulos nativos en
 `src/__mocks__/`. Contra el código anterior fallan 7 de las 19.
 
+## Pull por páginas y pull único (nov 2026)
+
+M-11 de la auditoría del 9 nov 2026 (Q-36) proponía aplicar cada página
+del pull en una transacción, porque un full resync de miles de cambios
+se aplicaba en autocommit (lento) y, si la app moría a mitad, volvía a
+empezar desde cero. Lo que se hizo:
+
+- **Cursor por página.** `reconcileSync` ya no junta todo el delta en
+  memoria: trae una página, la aplica y guarda el cursor con su último
+  `seq`, y sigue. El servidor ordena cada página por `seq`
+  (`changesSince` en logday-server), así que lo anterior a ese `seq` ya
+  está aplicado. Si la app muere, el próximo pull sigue desde la última
+  página completa. Tras un 410 el cursor vuelve a 0 y se trae todo,
+  también página por página.
+- **WAL** (ver `esquema-datos/design.md`): es lo que hace barata cada
+  escritura en autocommit.
+- **Un solo pull a la vez** (también parte de A-10). El polling, los
+  avisos de `/ws` y la vuelta a primer plano lanzaban pulls en
+  paralelo que aplicaban lo mismo dos veces y podían dejar el cursor
+  por detrás de lo aplicado. Ahora, si llega un pedido con uno en curso,
+  se corre uno más al terminar, y solo uno aunque lleguen varios. El
+  debounce de los avisos y la supresión del eco siguen pendientes (A-10).
+- El motor espera `whenDbReady()` antes de tocar la base.
+
+**Sin transacción por página, a propósito.** `withTransactionAsync`
+hace `BEGIN` en la única conexión de la app, así que las escrituras del
+usuario que caigan mientras se aplica la página entran en esa
+transacción: un `ROLLBACK` las borraría y, hasta el `COMMIT`, no están
+en disco. `withExclusiveTransactionAsync` abre otra conexión, pero
+obliga a pasar el `txn` por todos los `applyRemote*` de `src/db/*` (y
+sus lecturas). Además, las escrituras de la conexión principal fallan
+con "database is locked" mientras dura, y un `applyRemote*` que espera
+el `withKeyLock` de una entidad que el usuario está guardando se
+trabaría con ella. Aplicar la página a medias no corrompe nada: cada
+cambio es idempotente y el cursor no pasa de la última página completa.
+Si hiciera falta más velocidad, el siguiente paso es pasar el `txn` por
+`src/db/*`, no un `BEGIN` compartido.
+
+Pruebas: `src/lib/syncEngine.pull.test.ts` (páginas, cursor tras un
+fallo, 410, pull único) y `src/db/index.test.ts` (migraciones sobre
+`node:sqlite`, con el mock de `src/__mocks__/expo-sqlite.ts`).
+
 ## Explícitamente pendiente
 
 - Diseño detallado de la Fase 4 — se escribe en este mismo archivo al

@@ -284,4 +284,6 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       (padre), leía el sync desconectado y mostraba "No se pudieron
       cargar las sesiones" hasta tocar "Reintentar". Visto el 12 nov 2026
       probando el build preview 4.
-- [ ] Probarlo en un APK: conectar y ver la lista sin tocar "Reintentar".
+- [x] Probado el 12 nov 2026 con el build preview 5 en el emulador,
+      contra un servidor local: al conectar, la app pide `GET /devices`
+      justo después del login y la lista aparece sin tocar "Reintentar".

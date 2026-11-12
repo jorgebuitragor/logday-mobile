@@ -12,7 +12,11 @@ Estado: implementado, pendiente confirmación en un build propio.
 - [x] Eventos `onPullFinished` (emitido por `reconcileSync`) y
       `onLocalTaskChange` (emitido por `src/db/tasks.ts`).
 - [x] Sección en Ajustes y textos es/en.
-- [ ] Probar en el build de desarrollo de la fase 2: pedir el permiso al
-      encender, recibir el resumen a la hora elegida, tocarlo y caer en
-      el Inicio, y que cambie al completar una tarea.
+- [x] En Expo Go, en el simulador de iOS (11 nov 2026): el permiso se
+      pide solo al encender el interruptor; con una tarea de hoy se
+      programan 7 resúmenes, y el de hoy llegó a la hora elegida como
+      banner con la app abierta ("Tus vencimientos · 1 tarea vence hoy").
+- [ ] En el build de desarrollo de la fase 2 (Android): lo mismo, más
+      tocar el resumen y caer en el Inicio, y que cambie al completar una
+      tarea. No se probó tocarlo ni con la app en segundo plano.
 - [ ] En la beta: un teléfono Xiaomi o Samsung con ahorro de batería.

@@ -16,7 +16,15 @@ Estado: implementado, pendiente confirmación en un build propio.
       pide solo al encender el interruptor; con una tarea de hoy se
       programan 7 resúmenes, y el de hoy llegó a la hora elegida como
       banner con la app abierta ("Tus vencimientos · 1 tarea vence hoy").
-- [ ] En el build de desarrollo de la fase 2 (Android): lo mismo, más
-      tocar el resumen y caer en el Inicio, y que cambie al completar una
-      tarea. No se probó tocarlo ni con la app en segundo plano.
+- [x] En Expo Go, en el emulador de Android (Pixel 8, Android 16, 12 nov
+      2026): el permiso `POST_NOTIFICATIONS` se pide al encender, y el
+      resumen llegó a la cortina ("Your due dates · 1 task is due today")
+      dentro de la ventana de 2 minutos. Salieron y se corrigieron dos
+      cosas: Expo Go rechaza el canal propio y eso cancelaba todos los
+      resúmenes, y el aviso de setState sobre `ContextNavigator` al
+      arrancar (ver design.md). En Expo Go, tocar el resumen abre la
+      pantalla de inicio de Expo Go, no la app.
+- [ ] En el build de desarrollo de la fase 2 (Android): tocar el resumen y
+      caer en el Inicio, el canal propio, que cambie al completar una
+      tarea y con la app en segundo plano.
 - [ ] En la beta: un teléfono Xiaomi o Samsung con ahorro de batería.

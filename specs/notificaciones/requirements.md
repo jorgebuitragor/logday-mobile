@@ -27,8 +27,10 @@ local, sin push. Desktop no tiene esto.
   servidor de push ni Firebase.
 - Tocar el resumen DEBERÁ abrir el Inicio.
 - El sistema NO DEBERÁ usar alarmas exactas (Android 14 las restringe y
-  Play pide justificarlas): el resumen puede llegar con unos minutos de
-  margen.
+  Play pide justificarlas): el resumen puede llegar con margen. En el
+  emulador, Android dio una ventana de 2 minutos al resumen del día y de
+  hasta una hora a los de los días siguientes (resumen de las 8:00 entre
+  las 8:00 y las 9:00).
 
 ## Fuera de este spec
 

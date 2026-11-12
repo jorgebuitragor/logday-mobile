@@ -308,6 +308,17 @@ la lista completa). No se tematizaron `table`/`th`/`td` (mobile no
 tiene UI para crear tablas desde la toolbar, así que no hace falta
 pulir su renderizado más allá del default de la librería).
 
+**Enlaces (agregado 2026-11-11, M-08 de la auditoría):** sin
+`onLinkPress`, la librería le pasaba cualquier URL a `Linking.openURL`,
+incluidos `intent://` y los esquemas de otras apps. El contenido de una
+nota llega también por sync o pegado, así que no es de confianza.
+`handleLinkPress` (en `app/note/[id].tsx`) siempre devuelve `false`
+para que la librería no abra nada por su cuenta. Con un esquema
+permitido (`src/lib/noteLinks.ts`: `http`, `https` y `mailto`) muestra
+un `Alert` con la URL real y el botón "Abrir"; con otro, un `Alert` que
+dice que no se puede abrir. `markdown-it` ya descartaba `javascript:`,
+`vbscript:`, `file:` y `data:` al parsear; la lista cubre el resto.
+
 ## Indicador de guardado (agregado 2026-08-30)
 
 Reportado en vivo por el usuario, con captura: "Al intentar añadir

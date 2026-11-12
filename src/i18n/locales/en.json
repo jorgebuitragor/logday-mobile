@@ -153,7 +153,11 @@
     "tagsModalTitle": "Edit tags",
     "tagsDone": "Done",
     "folderButton": "Folder",
-    "tagsButton": "Tags"
+    "tagsButton": "Tags",
+    "linkConfirmTitle": "Open this link?",
+    "linkOpen": "Open",
+    "linkBlockedTitle": "This link can't be opened",
+    "linkBlockedMessage": "For security, notes only open web links (http and https) and email links (mailto)."
   },
   "noteSort": {
     "trigger": "Sort",

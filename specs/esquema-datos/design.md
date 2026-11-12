@@ -137,6 +137,28 @@ spec de sync futuro, no de este.
   ordenable lexicográficamente y compatible con lo que ya usa el
   servidor.
 
+## Respaldo de Android desactivado (agregado 2026-11-11)
+
+`app.json` pone `android.allowBackup: false` (M-08 de la auditoría del
+9 nov 2026). Sin eso, Android sube a Google Drive los datos de la app,
+`logday.db` incluida, con las ausencias por `incapacidad`, que son datos
+de salud. Ese respaldo queda fuera del control del usuario dentro de
+Logday y fuera de lo que dice la política de datos.
+
+- **Costo aceptado:** al cambiar de teléfono sin sync, los datos no se
+  restauran solos. La forma de llevarlos a otro teléfono es el sync con
+  `logday-server`, donde el usuario puede exportar o borrar sus datos
+  desde Ajustes.
+- **Transferencia directa entre teléfonos:** desde Android 12,
+  `allowBackup: false` no cubre la copia directa de un teléfono a otro
+  (cable o Wi-Fi). Se acepta: va de un teléfono del usuario a otro suyo
+  y no pasa por la nube. Cerrarla pide `dataExtractionRules`, un XML que
+  hoy obligaría a escribir un config plugin propio.
+- **iOS:** la base sigue entrando al respaldo de iCloud del teléfono,
+  que está cifrado con la cuenta del usuario. Excluirla pide marcar el
+  archivo con `NSURLIsExcludedFromBackupKey` desde código nativo; queda
+  como pendiente si la política de datos lo exige.
+
 ## Explícitamente pendiente
 
 - Formato/librería CRDT concreta para `notes`/`daily_entries.content`

@@ -69,6 +69,13 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "59e373ea-5545-4ea5-a3da-9f9c6ec7ba2b"
+      }
+    },
+    "owner": "jbuitrago1298"
   }
 }

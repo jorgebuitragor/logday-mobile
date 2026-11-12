@@ -16,4 +16,7 @@ module.exports = {
   transform: {
     '\\.[jt]sx?$': ['babel-jest', { presets: [babelPresetExpo], babelrc: false, configFile: false }],
   },
+  // `react-native-markdown-display` se publica como fuente ESM sin compilar.
+  // Su parser (sin React Native) se prueba en src/lib/markdownRender.test.ts.
+  transformIgnorePatterns: ['/node_modules/(?!react-native-markdown-display/)'],
 };

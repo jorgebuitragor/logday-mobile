@@ -166,6 +166,10 @@ revertir el editor WYSIWYG. Ver design.md, "Vista previa".
       esta librería — riesgo aceptado y documentado en design.md (sin
       superficie de ataque real hoy: contenido siempre local, sin
       sync todavía).
+- [x] U-04 (nov 2026): con el sync el riesgo ya no aplica. `overrides`
+      fuerza `markdown-it` ^15.0.3 en la librería, y
+      `src/lib/markdownRender.test.ts` comprueba la copia única y el
+      mismo árbol que con la versión 10.
 - [ ] Verificar en vivo: el toggle cambia de modo sin perder el
       contenido; el markdown renderiza legible en modo oscuro y modo
       claro (títulos, negrita, cursiva, código, listas, citas,

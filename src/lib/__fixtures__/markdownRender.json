@@ -1,0 +1,1984 @@
+{
+ "encabezados": [
+  {
+   "type": "heading1",
+   "sourceType": "heading1",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "#",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Uno",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "heading2",
+   "sourceType": "heading2",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "##",
+   "content": "",
+   "tokenIndex": 5,
+   "index": 1,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 6,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Dos",
+       "tokenIndex": 7,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "heading3",
+   "sourceType": "heading3",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "###",
+   "content": "",
+   "tokenIndex": 10,
+   "index": 2,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 11,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Tres",
+       "tokenIndex": 12,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "heading4",
+   "sourceType": "heading4",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "####",
+   "content": "",
+   "tokenIndex": 15,
+   "index": 3,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 16,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Cuatro",
+       "tokenIndex": 17,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "heading5",
+   "sourceType": "heading5",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "#####",
+   "content": "",
+   "tokenIndex": 20,
+   "index": 4,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 21,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Cinco",
+       "tokenIndex": 22,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "heading6",
+   "sourceType": "heading6",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "######",
+   "content": "",
+   "tokenIndex": 25,
+   "index": 5,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 26,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Seis",
+       "tokenIndex": 27,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "enfasis": [
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Texto con ",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "strong",
+       "sourceType": "strong",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "**",
+       "content": "",
+       "tokenIndex": 3,
+       "index": 1,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "negrita",
+         "tokenIndex": 4,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": ", ",
+       "tokenIndex": 6,
+       "index": 2,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "em",
+       "sourceType": "em",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "*",
+       "content": "",
+       "tokenIndex": 7,
+       "index": 3,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "cursiva",
+         "tokenIndex": 8,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": ", ",
+       "tokenIndex": 10,
+       "index": 4,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "s",
+       "sourceType": "s",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "~~",
+       "content": "",
+       "tokenIndex": 11,
+       "index": 5,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "tachado",
+         "tokenIndex": 12,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": " y ",
+       "tokenIndex": 14,
+       "index": 6,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "code_inline",
+       "sourceType": "code_inline",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "`",
+       "content": "código",
+       "tokenIndex": 15,
+       "index": 7,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": ".",
+       "tokenIndex": 16,
+       "index": 8,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "listas": [
+  {
+   "type": "bullet_list",
+   "sourceType": "bullet_list",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "-",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "-",
+     "content": "",
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "uno",
+         "tokenIndex": 3,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "-",
+     "content": "",
+     "tokenIndex": 6,
+     "index": 1,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 7,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "dos",
+         "tokenIndex": 8,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "bullet_list",
+       "sourceType": "bullet_list",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": true,
+       "markup": "-",
+       "content": "",
+       "tokenIndex": 10,
+       "index": 1,
+       "attributes": {},
+       "children": [
+        {
+         "type": "list_item",
+         "sourceType": "list_item",
+         "sourceMeta": null,
+         "block": true,
+         "markup": "-",
+         "content": "",
+         "tokenIndex": 11,
+         "index": 0,
+         "attributes": {},
+         "children": [
+          {
+           "type": "textgroup",
+           "sourceType": "textgroup",
+           "block": false,
+           "tokenIndex": 12,
+           "index": 0,
+           "attributes": {},
+           "children": [
+            {
+             "type": "text",
+             "sourceType": "text",
+             "sourceInfo": "",
+             "sourceMeta": null,
+             "block": false,
+             "markup": "",
+             "content": "anidado",
+             "tokenIndex": 13,
+             "index": 0,
+             "attributes": {},
+             "children": []
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "list_item",
+         "sourceType": "list_item",
+         "sourceMeta": null,
+         "block": true,
+         "markup": "-",
+         "content": "",
+         "tokenIndex": 16,
+         "index": 1,
+         "attributes": {},
+         "children": [
+          {
+           "type": "textgroup",
+           "sourceType": "textgroup",
+           "block": false,
+           "tokenIndex": 17,
+           "index": 0,
+           "attributes": {},
+           "children": [
+            {
+             "type": "text",
+             "sourceType": "text",
+             "sourceInfo": "",
+             "sourceMeta": null,
+             "block": false,
+             "markup": "",
+             "content": "otro",
+             "tokenIndex": 18,
+             "index": 0,
+             "attributes": {},
+             "children": []
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "-",
+     "content": "",
+     "tokenIndex": 23,
+     "index": 2,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 24,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "tres",
+         "tokenIndex": 25,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "ordered_list",
+   "sourceType": "ordered_list",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": ".",
+   "content": "",
+   "tokenIndex": 29,
+   "index": 1,
+   "attributes": {},
+   "children": [
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": ".",
+     "content": "",
+     "tokenIndex": 30,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 31,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "primero",
+         "tokenIndex": 32,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": ".",
+     "content": "",
+     "tokenIndex": 35,
+     "index": 1,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 36,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "segundo",
+         "tokenIndex": 37,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "ordered_list",
+       "sourceType": "ordered_list",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": true,
+       "markup": ".",
+       "content": "",
+       "tokenIndex": 39,
+       "index": 1,
+       "attributes": {},
+       "children": [
+        {
+         "type": "list_item",
+         "sourceType": "list_item",
+         "sourceMeta": null,
+         "block": true,
+         "markup": ".",
+         "content": "",
+         "tokenIndex": 40,
+         "index": 0,
+         "attributes": {},
+         "children": [
+          {
+           "type": "textgroup",
+           "sourceType": "textgroup",
+           "block": false,
+           "tokenIndex": 41,
+           "index": 0,
+           "attributes": {},
+           "children": [
+            {
+             "type": "text",
+             "sourceType": "text",
+             "sourceInfo": "",
+             "sourceMeta": null,
+             "block": false,
+             "markup": "",
+             "content": "sub",
+             "tokenIndex": 42,
+             "index": 0,
+             "attributes": {},
+             "children": []
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "tareas": [
+  {
+   "type": "bullet_list",
+   "sourceType": "bullet_list",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "-",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "-",
+     "content": "",
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "[ ] pendiente",
+         "tokenIndex": 3,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "-",
+     "content": "",
+     "tokenIndex": 6,
+     "index": 1,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 7,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "[x] hecha",
+         "tokenIndex": 8,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "cita": [
+  {
+   "type": "blockquote",
+   "sourceType": "blockquote",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": ">",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "paragraph",
+     "sourceType": "paragraph",
+     "sourceInfo": "",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "",
+     "content": "",
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "una cita",
+         "tokenIndex": 3,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        },
+        {
+         "type": "softbreak",
+         "sourceType": "softbreak",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "",
+         "tokenIndex": 4,
+         "index": 1,
+         "attributes": {},
+         "children": []
+        },
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "de dos líneas",
+         "tokenIndex": 5,
+         "index": 2,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "blockquote",
+     "sourceType": "blockquote",
+     "sourceInfo": "",
+     "sourceMeta": null,
+     "block": true,
+     "markup": ">",
+     "content": "",
+     "tokenIndex": 8,
+     "index": 1,
+     "attributes": {},
+     "children": [
+      {
+       "type": "paragraph",
+       "sourceType": "paragraph",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": true,
+       "markup": "",
+       "content": "",
+       "tokenIndex": 9,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "textgroup",
+         "sourceType": "textgroup",
+         "block": false,
+         "tokenIndex": 10,
+         "index": 0,
+         "attributes": {},
+         "children": [
+          {
+           "type": "text",
+           "sourceType": "text",
+           "sourceInfo": "",
+           "sourceMeta": null,
+           "block": false,
+           "markup": "",
+           "content": "anidada",
+           "tokenIndex": 11,
+           "index": 0,
+           "attributes": {},
+           "children": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "codigo": [
+  {
+   "type": "fence",
+   "sourceType": "fence",
+   "sourceInfo": "ts",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "```",
+   "content": "const a = 1;\n",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": []
+  },
+  {
+   "type": "code_block",
+   "sourceType": "code_block",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "indentado\n",
+   "tokenIndex": 1,
+   "index": 1,
+   "attributes": {},
+   "children": []
+  }
+ ],
+ "enlaces": [
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "link",
+       "sourceType": "link",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {
+        "href": "https://logday.app"
+       },
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "web",
+         "tokenIndex": 3,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": " y ",
+       "tokenIndex": 5,
+       "index": 1,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "link",
+       "sourceType": "link",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "",
+       "tokenIndex": 6,
+       "index": 2,
+       "attributes": {
+        "href": "mailto:ana@ejemplo.com"
+       },
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "correo",
+         "tokenIndex": 7,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": " y ",
+       "tokenIndex": 9,
+       "index": 3,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "link",
+       "sourceType": "link",
+       "sourceInfo": "auto",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "autolink",
+       "content": "",
+       "tokenIndex": 10,
+       "index": 4,
+       "attributes": {
+        "href": "https://auto.link"
+       },
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "https://auto.link",
+         "tokenIndex": 11,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": " y https://sin.marcas",
+       "tokenIndex": 13,
+       "index": 5,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "enlacesRaros": [
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "[x](javascript:alert(1)) ",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "link",
+       "sourceType": "link",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "",
+       "tokenIndex": 3,
+       "index": 1,
+       "attributes": {
+        "href": "intent://scan#Intent;end"
+       },
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "y",
+         "tokenIndex": 4,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      },
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": " ",
+       "tokenIndex": 6,
+       "index": 2,
+       "attributes": {},
+       "children": []
+      },
+      {
+       "type": "link",
+       "sourceType": "link",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "",
+       "tokenIndex": 7,
+       "index": 3,
+       "attributes": {
+        "href": "/relativo"
+       },
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "z",
+         "tokenIndex": 8,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "imagen": [
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "image",
+     "sourceType": "image",
+     "sourceInfo": "",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "",
+     "content": "logo",
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {
+      "src": "https://logday.app/logo.png",
+      "alt": "logo",
+      "title": "título"
+     },
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "logo",
+       "tokenIndex": 0,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "tabla": [
+  {
+   "type": "table",
+   "sourceType": "table",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "thead",
+     "sourceType": "thead",
+     "sourceInfo": "",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "",
+     "content": "",
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "tr",
+       "sourceType": "tr",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": true,
+       "markup": "",
+       "content": "",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "th",
+         "sourceType": "th",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": true,
+         "markup": "",
+         "content": "",
+         "tokenIndex": 3,
+         "index": 0,
+         "attributes": {},
+         "children": [
+          {
+           "type": "textgroup",
+           "sourceType": "textgroup",
+           "block": false,
+           "tokenIndex": 4,
+           "index": 0,
+           "attributes": {},
+           "children": [
+            {
+             "type": "text",
+             "sourceType": "text",
+             "sourceInfo": "",
+             "sourceMeta": null,
+             "block": false,
+             "markup": "",
+             "content": "a",
+             "tokenIndex": 5,
+             "index": 0,
+             "attributes": {},
+             "children": []
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "th",
+         "sourceType": "th",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": true,
+         "markup": "",
+         "content": "",
+         "tokenIndex": 8,
+         "index": 1,
+         "attributes": {
+          "style": "text-align:center"
+         },
+         "children": [
+          {
+           "type": "textgroup",
+           "sourceType": "textgroup",
+           "block": false,
+           "tokenIndex": 9,
+           "index": 0,
+           "attributes": {},
+           "children": [
+            {
+             "type": "text",
+             "sourceType": "text",
+             "sourceInfo": "",
+             "sourceMeta": null,
+             "block": false,
+             "markup": "",
+             "content": "b",
+             "tokenIndex": 10,
+             "index": 0,
+             "attributes": {},
+             "children": []
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "tbody",
+     "sourceType": "tbody",
+     "sourceInfo": "",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "",
+     "content": "",
+     "tokenIndex": 15,
+     "index": 1,
+     "attributes": {},
+     "children": [
+      {
+       "type": "tr",
+       "sourceType": "tr",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": true,
+       "markup": "",
+       "content": "",
+       "tokenIndex": 16,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "td",
+         "sourceType": "td",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": true,
+         "markup": "",
+         "content": "",
+         "tokenIndex": 17,
+         "index": 0,
+         "attributes": {},
+         "children": [
+          {
+           "type": "textgroup",
+           "sourceType": "textgroup",
+           "block": false,
+           "tokenIndex": 18,
+           "index": 0,
+           "attributes": {},
+           "children": [
+            {
+             "type": "text",
+             "sourceType": "text",
+             "sourceInfo": "",
+             "sourceMeta": null,
+             "block": false,
+             "markup": "",
+             "content": "1",
+             "tokenIndex": 19,
+             "index": 0,
+             "attributes": {},
+             "children": []
+            }
+           ]
+          }
+         ]
+        },
+        {
+         "type": "td",
+         "sourceType": "td",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": true,
+         "markup": "",
+         "content": "",
+         "tokenIndex": 22,
+         "index": 1,
+         "attributes": {
+          "style": "text-align:center"
+         },
+         "children": [
+          {
+           "type": "textgroup",
+           "sourceType": "textgroup",
+           "block": false,
+           "tokenIndex": 23,
+           "index": 0,
+           "attributes": {},
+           "children": [
+            {
+             "type": "text",
+             "sourceType": "text",
+             "sourceInfo": "",
+             "sourceMeta": null,
+             "block": false,
+             "markup": "",
+             "content": "2",
+             "tokenIndex": 24,
+             "index": 0,
+             "attributes": {},
+             "children": []
+            }
+           ]
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "tipografia": [
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "“comillas” y ‘simples’ – guiones — © …",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "html": [
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "<b>negrita html</b> y <script>alert(1)</script>",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "separadores": [
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "arriba",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "hr",
+   "sourceType": "hr",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "---",
+   "content": "",
+   "tokenIndex": 5,
+   "index": 1,
+   "attributes": {},
+   "children": []
+  },
+  {
+   "type": "paragraph",
+   "sourceType": "paragraph",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "",
+   "content": "",
+   "tokenIndex": 6,
+   "index": 2,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 7,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "abajo",
+       "tokenIndex": 8,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    },
+    {
+     "type": "hardbreak",
+     "sourceType": "hardbreak",
+     "sourceInfo": "",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "",
+     "content": "",
+     "tokenIndex": 10,
+     "index": 1,
+     "attributes": {},
+     "children": []
+    },
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 11,
+     "index": 2,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "con salto",
+       "tokenIndex": 12,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "mezcla": [
+  {
+   "type": "heading2",
+   "sourceType": "heading2",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "##",
+   "content": "",
+   "tokenIndex": 0,
+   "index": 0,
+   "attributes": {},
+   "children": [
+    {
+     "type": "textgroup",
+     "sourceType": "textgroup",
+     "block": false,
+     "tokenIndex": 1,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "text",
+       "sourceType": "text",
+       "sourceInfo": "",
+       "sourceMeta": null,
+       "block": false,
+       "markup": "",
+       "content": "Daily",
+       "tokenIndex": 2,
+       "index": 0,
+       "attributes": {},
+       "children": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "bullet_list",
+   "sourceType": "bullet_list",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": "-",
+   "content": "",
+   "tokenIndex": 5,
+   "index": 1,
+   "attributes": {},
+   "children": [
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "-",
+     "content": "",
+     "tokenIndex": 6,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 7,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "revisé ",
+         "tokenIndex": 8,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        },
+        {
+         "type": "strong",
+         "sourceType": "strong",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "**",
+         "content": "",
+         "tokenIndex": 9,
+         "index": 1,
+         "attributes": {},
+         "children": [
+          {
+           "type": "text",
+           "sourceType": "text",
+           "sourceInfo": "",
+           "sourceMeta": null,
+           "block": false,
+           "markup": "",
+           "content": "el sync",
+           "tokenIndex": 10,
+           "index": 0,
+           "attributes": {},
+           "children": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    },
+    {
+     "type": "list_item",
+     "sourceType": "list_item",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "-",
+     "content": "",
+     "tokenIndex": 15,
+     "index": 1,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 16,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "pendiente: ",
+         "tokenIndex": 17,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        },
+        {
+         "type": "link",
+         "sourceType": "link",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "",
+         "tokenIndex": 18,
+         "index": 1,
+         "attributes": {
+          "href": "https://github.com/x/y/pull/1"
+         },
+         "children": [
+          {
+           "type": "text",
+           "sourceType": "text",
+           "sourceInfo": "",
+           "sourceMeta": null,
+           "block": false,
+           "markup": "",
+           "content": "PR",
+           "tokenIndex": 19,
+           "index": 0,
+           "attributes": {},
+           "children": []
+          }
+         ]
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "type": "blockquote",
+   "sourceType": "blockquote",
+   "sourceInfo": "",
+   "sourceMeta": null,
+   "block": true,
+   "markup": ">",
+   "content": "",
+   "tokenIndex": 24,
+   "index": 2,
+   "attributes": {},
+   "children": [
+    {
+     "type": "paragraph",
+     "sourceType": "paragraph",
+     "sourceInfo": "",
+     "sourceMeta": null,
+     "block": true,
+     "markup": "",
+     "content": "",
+     "tokenIndex": 25,
+     "index": 0,
+     "attributes": {},
+     "children": [
+      {
+       "type": "textgroup",
+       "sourceType": "textgroup",
+       "block": false,
+       "tokenIndex": 26,
+       "index": 0,
+       "attributes": {},
+       "children": [
+        {
+         "type": "text",
+         "sourceType": "text",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "",
+         "content": "nota: ",
+         "tokenIndex": 27,
+         "index": 0,
+         "attributes": {},
+         "children": []
+        },
+        {
+         "type": "code_inline",
+         "sourceType": "code_inline",
+         "sourceInfo": "",
+         "sourceMeta": null,
+         "block": false,
+         "markup": "`",
+         "content": "npm test",
+         "tokenIndex": 28,
+         "index": 1,
+         "attributes": {},
+         "children": []
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Logday Mobile",
+    "name": "Logday",
     "slug": "logday-mobile",
     "scheme": "logdaymobile",
     "version": "1.0.0",
@@ -9,10 +9,25 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
-      "userInterfaceStyle": "automatic"
+      "icon": {
+        "light": "./assets/ios-icon-light.png",
+        "dark": "./assets/ios-icon-dark.png",
+        "tinted": "./assets/ios-icon-tinted.png"
+      },
+      "userInterfaceStyle": "automatic",
+      "bundleIdentifier": "dev.logday.app",
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "userInterfaceStyle": "automatic",
+      "package": "dev.logday.app",
+      "blockedPermissions": [
+        "android.permission.SYSTEM_ALERT_WINDOW",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#6366f1",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -40,6 +55,25 @@
         }
       ],
       [
+        "expo-quick-actions",
+        {
+          "androidIcons": {
+            "shortcut_task": {
+              "foregroundImage": "./assets/quick-actions/task.png",
+              "backgroundColor": "#ffffff"
+            },
+            "shortcut_note": {
+              "foregroundImage": "./assets/quick-actions/note.png",
+              "backgroundColor": "#ffffff"
+            },
+            "shortcut_daily": {
+              "foregroundImage": "./assets/quick-actions/daily.png",
+              "backgroundColor": "#ffffff"
+            }
+          }
+        }
+      ],
+      [
         "expo-notifications",
         {
           "icon": "./assets/android-icon-monochrome.png",
@@ -59,6 +93,13 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "59e373ea-5545-4ea5-a3da-9f9c6ec7ba2b"
+      }
+    },
+    "owner": "jbuitrago1298"
   }
 }

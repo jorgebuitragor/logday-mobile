@@ -34,14 +34,25 @@ npm start          # abre Expo; escanea el QR con Expo Go
 
 Para probar el sync, el servidor tiene que ser alcanzable desde el teléfono: usa la IP del computador en la red (por ejemplo `http://192.168.1.10:8080`), no `localhost`.
 
-No hay pruebas automáticas. Cada cambio se revisa con:
+Cada cambio se revisa con:
 
 ```bash
 npm run typecheck
 npm run lint
+npm test           # Jest; necesita Node 22.13 o superior
 ```
 
 Después hay que pedir el bundle de Metro y comprobar que las claves de i18n en español y en inglés sean las mismas. El paso a paso está en [`AGENTS.md`](./AGENTS.md).
+
+## Builds nativos
+
+Los instaladores se generan en EAS (la nube de Expo) con los perfiles de [`eas.json`](./eas.json): `development`, `preview` (APK para instalar a mano) y `production` (AAB para Play). El identificador es `dev.logday.app`. Detalle en [`specs/builds-nativos/`](./specs/builds-nativos/requirements.md).
+
+```bash
+eas build -p android --profile preview
+```
+
+Un build real de Android o iOS no acepta servidores `http://` sin cifrar, a diferencia de Expo Go: el servidor de sync tiene que estar en HTTPS.
 
 ## Documentación
 

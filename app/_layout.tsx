@@ -47,7 +47,6 @@ function RootLayoutInner() {
   const scheme = useThemeScheme();
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     initDb()
@@ -59,13 +58,6 @@ function RootLayoutInner() {
       })
       .catch((error: Error) => setDbError(error.message));
   }, []);
-
-  // Resumen de vencimientos (specs/notificaciones/): se reprograma con la
-  // base lista. Tocar la notificación abre el Inicio.
-  useEffect(() => {
-    if (!dbReady) return;
-    return startDueDigestScheduling((url) => router.navigate(url as '/'));
-  }, [dbReady, router]);
 
   // Sin esta pieza, Android no tenía ningún <StatusBar> declarado — el
   // estilo de íconos quedaba en lo que sea que el SO decidiera por
@@ -130,9 +122,25 @@ function RootLayoutInner() {
         <Stack.Screen name="settings/trash" options={{ title: t('trash.title') }} />
       </Stack>
       <UndoToast />
+      <ReadyEffects />
       <PolicyGateModal />
     </>
   );
+}
+
+// Lo que navega por su cuenta, montado junto al `Stack` y solo con la base
+// lista. Con `useRouter` en `RootLayoutInner`, que mientras abre la base no
+// tiene ningún navegador montado, Expo Router avisaba al arrancar de un
+// setState sobre `ContextNavigator` sin montar (visto en el emulador de
+// Android, donde abrir la base tarda más).
+function ReadyEffects() {
+  const router = useRouter();
+
+  // Resumen de vencimientos (specs/notificaciones/): se reprograma al
+  // abrir. Tocar la notificación abre el Inicio.
+  useEffect(() => startDueDigestScheduling((url) => router.navigate(url as '/')), [router]);
+
+  return null;
 }
 
 const styles = StyleSheet.create({

@@ -57,6 +57,16 @@ describe('realtime', () => {
     expect(JSON.parse(socket.sent[0])).toEqual({ type: 'auth', token: 'token' });
   });
 
+  it('usa ws:// hacia la red local y no abre el socket hacia un servidor público por http://', () => {
+    const options = { getAccessToken: () => 'token', onNotice, onReconnecting: () => Promise.resolve() };
+    startRealtime({ ...options, serverUrl: '192.168.1.10:8080' });
+    expect(FakeSocket.instances.map((s) => s.url)).toEqual(['ws://192.168.1.10:8080/ws']);
+    stopRealtime();
+
+    startRealtime({ ...options, serverUrl: 'http://servidor.test' });
+    expect(FakeSocket.instances).toHaveLength(1);
+  });
+
   it('junta una ráfaga de avisos en un solo onNotice con todos sus seq', () => {
     const socket = start();
     socket.receive(JSON.stringify({ type: 'task', id: 'a', seq: 5 }));

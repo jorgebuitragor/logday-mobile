@@ -18,6 +18,12 @@
       "bundleIdentifier": "dev.logday.app",
       "config": {
         "usesNonExemptEncryption": false
+      },
+      "infoPlist": {
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": false,
+          "NSAllowsLocalNetworking": true
+        }
       }
     },
     "android": {
@@ -90,6 +96,14 @@
           "dark": {
             "image": "./assets/splash-mark.png",
             "backgroundColor": "#121212"
+          }
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
           }
         }
       ]

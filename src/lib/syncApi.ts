@@ -13,6 +13,7 @@ import type {
   TaskCreatePayload, TaskApiResponse, TaskPatchPayload,
 } from './syncMapping';
 import { recordOwnWriteSeq } from './ownWrites';
+import { resolveServerUrl } from './serverUrl';
 
 export class SyncApiError extends Error {
   status: number;
@@ -29,21 +30,13 @@ export function isPermanentSyncError(e: unknown): boolean {
   return e instanceof SyncApiError && e.status >= 400 && e.status < 500 && ![401, 408, 429].includes(e.status);
 }
 
-/** Antepone http:// si el usuario no escribió un esquema — mismo
- *  criterio que desktop (`normalizeServerUrl`), la razón es la misma:
- *  tipear algo como "192.168.1.10:8080" sin esquema es lo natural. */
-export function normalizeServerUrl(url: string): string {
-  const trimmed = url.trim().replace(/\/+$/, '');
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `http://${trimmed}`;
-}
-
 async function request<T>(
   baseUrl: string,
   method: string,
   path: string,
   opts?: { token?: string; body?: unknown }
 ): Promise<T> {
-  const res = await fetch(`${normalizeServerUrl(baseUrl)}${path}`, {
+  const res = await fetch(`${resolveServerUrl(baseUrl)}${path}`, {
     method,
     headers: {
       'Content-Type': 'application/json',

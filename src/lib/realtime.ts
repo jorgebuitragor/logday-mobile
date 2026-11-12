@@ -9,7 +9,7 @@
 // pero el servidor autentica por mensaje porque el navegador no puede).
 // Si la auth falla, el servidor cierra con 1008.
 import { clearOwnWriteSeqs } from './ownWrites';
-import { normalizeServerUrl } from './syncApi';
+import { resolveServerUrl } from './serverUrl';
 
 export interface RealtimeOptions {
   serverUrl: string;
@@ -60,7 +60,15 @@ export function stopRealtime(): void {
 function connect(): void {
   const opts = options;
   if (!opts || socket) return;
-  const url = `${normalizeServerUrl(opts.serverUrl).replace(/^http/, 'ws')}/ws`;
+  let base: string;
+  try {
+    base = resolveServerUrl(opts.serverUrl);
+  } catch {
+    // Servidor público por http:// (ver serverUrl.ts): no se abre el
+    // socket. El polling choca con la misma regla y muestra el error.
+    return;
+  }
+  const url = `${base.replace(/^http/, 'ws')}/ws`;
   const current = new WebSocket(url);
   socket = current;
   let openedAt = 0;

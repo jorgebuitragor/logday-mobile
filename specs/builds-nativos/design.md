@@ -16,6 +16,19 @@
 - **Firma de Android:** la llave de subida (keystore) la generó EAS en el primer build y vive en los servidores de Expo (credenciales remotas). Para Play se usa Play App Signing: Google firma lo que se publica y esta llave solo sirve para subir. Conviene descargar una copia de respaldo con `eas credentials`.
 - **`expo-dev-client`:** lo necesita el perfil `development`. En los builds `preview` y `production` no se incluye el menú de desarrollo.
 
+## HTTP solo en la red local (12 nov 2026)
+
+- **La regla vive en la app**, en `src/lib/serverUrl.ts`, porque Android no sabe limitar HTTP a un rango de IPs: solo lo permite o lo bloquea para todo.
+  - `checkServerUrl` revisa lo que escribe el usuario y devuelve la URL con esquema, si va cifrada, o por qué no sirve (`empty`, `invalid`, `insecure-public`).
+  - `resolveServerUrl` es el único paso hacia el servidor: lo usan `request` de `syncApi.ts` y `realtime.ts`. Ante un `http://` público lanza `InsecureServerUrlError`, y `SyncContext` la convierte en el mensaje traducido. El socket de `/ws` ni se abre.
+  - Se interpreta a mano y no con `URL`, porque en React Native `URL#hostname` no está implementado. Se toma el host después del último `@`, para que `http://192.168.1.10@servidor.com` no pase por local.
+- **Sin esquema** se asume `https://` hacia lo público. Antes se asumía siempre `http://`, como Desktop, pero en un build real eso nunca conectaba con un servidor público.
+- **Sistema:**
+  - Android: `usesCleartextTraffic: true` con el plugin `expo-build-properties`. Expo solo lo enciende en los builds de debug.
+  - iOS: `ios.infoPlist.NSAppTransportSecurity` con `NSAllowsLocalNetworking: true` y `NSAllowsArbitraryLoads: false`. Según la documentación de Apple, la excepción de red local no pide justificación en la revisión y cubre los nombres sin dominio, los `.local` y las IPs. Desde iOS 17 las IPs dejaron de pasar por omisión, así que la excepción hace falta.
+  - Revisado con `expo prebuild`: el manifiesto lleva `android:usesCleartextTraffic="true"` y el `Info.plist` solo esas dos claves.
+- **Ajustes:** debajo de la URL sale en rojo el error de `http://` público, y el botón de conectar queda deshabilitado. En ámbar sale el aviso de conexión sin cifrar. Una vez conectado, el aviso se repite junto al servidor.
+
 ## Verificación hecha sin EAS
 
 Se generó el proyecto Android (`expo prebuild`) en una copia aparte, sin tocar el repo:

@@ -11,6 +11,7 @@ import {
 } from '../lib/syncApi';
 import { drainSyncQueue, handleRealtimeNotices, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
 import { requestInitialUpload } from '../lib/syncInitialUpload';
+import { InsecureServerUrlError, InvalidServerUrlError } from '../lib/serverUrl';
 import { setSyncRuntime } from '../lib/syncRuntime';
 import { startRealtime, stopRealtime } from '../lib/realtime';
 import { todayISO } from '../lib/dates';
@@ -108,6 +109,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   const [syncConfig, setSyncConfig] = useState<SyncConfig>(EMPTY_CONFIG);
   const [syncConnectionStatus, setSyncConnectionStatus] = useState<SyncConnectionStatus>('disconnected');
   const [syncErrorMsg, setSyncErrorMsg] = useState<string | null>(null);
+
+  function syncErrorText(e: unknown): string {
+    if (e instanceof InsecureServerUrlError) return t('sync.insecurePublicUrl');
+    if (e instanceof InvalidServerUrlError) return t('sync.invalidServerUrl');
+    return e instanceof Error ? e.message : String(e);
+  }
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
   const [policyGate, setPolicyGate] = useState<{ text: string; version: number } | null>(null);
   const [sensitiveDataAccepted, setSensitiveDataAccepted] = useState(true);
@@ -178,7 +185,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       void evaluatePolicyGate(serverUrl, tokens);
     } catch (e) {
       setSyncConnectionStatus('error');
-      setSyncErrorMsg(e instanceof SyncApiError ? e.message : e instanceof Error ? e.message : String(e));
+      setSyncErrorMsg(syncErrorText(e));
       throw e;
     }
   }
@@ -293,7 +300,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       setLastCheckedAt(new Date().toISOString());
     } catch (e) {
       setSyncConnectionStatus('error');
-      setSyncErrorMsg(e instanceof SyncApiError ? e.message : e instanceof Error ? e.message : String(e));
+      setSyncErrorMsg(syncErrorText(e));
     }
   }
 

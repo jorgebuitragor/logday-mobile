@@ -38,7 +38,7 @@ beforeEach(async () => {
   fetchMock.mockReset();
   respondWith([]);
   global.fetch = fetchMock;
-  setSyncRuntime({ enabled: true, connected: true, serverUrl: 'http://servidor.test', withSyncAuth: (fn) => fn('token') });
+  setSyncRuntime({ enabled: true, connected: true, serverUrl: 'https://servidor.test', withSyncAuth: (fn) => fn('token') });
 });
 
 afterEach(() => {
@@ -48,13 +48,13 @@ afterEach(() => {
 describe('seq de las escrituras propias', () => {
   it('una escritura que devuelve la entidad anota su seq', async () => {
     respondWith({ id: 't1', seq: 41 });
-    await patchTaskRemote('http://servidor.test', 'token', 't1', { title: 'x', updated_at: '2026-11-11T12:00:00Z' });
+    await patchTaskRemote('https://servidor.test', 'token', 't1', { title: 'x', updated_at: '2026-11-11T12:00:00Z' });
     expect(isOwnWriteSeq(41)).toBe(true);
   });
 
   it('una lectura no anota nada, aunque traiga seq', async () => {
     respondWith([{ type: 'task', id: 't1', seq: 42, deleted: false, updated_at: '', data: {} }]);
-    await syncChangesRemote('http://servidor.test', 'token', 0, 500);
+    await syncChangesRemote('https://servidor.test', 'token', 0, 500);
     expect(isOwnWriteSeq(42)).toBe(false);
   });
 

@@ -1,6 +1,6 @@
 # Builds nativos (EAS) — Requirements
 
-Estado: en progreso. La configuración ya está; falta el primer build en EAS y probarlo en un teléfono.
+Estado: en progreso. La configuración ya está y hay APK `preview`; falta probarlo en un teléfono y el build para Play.
 
 ## Contexto
 
@@ -28,10 +28,17 @@ Hasta la 1.0, Logday Mobile solo se probó en Expo Go. Para publicar en las tien
 - En Android 13 o superior, con los íconos temáticos activados, el ícono DEBERÁ tomar los colores del tema del sistema como el resto de apps, y seguir mostrando el documento con su doblez y la línea de tendencia.
 - El ícono de Android DEBERÁ caber en la zona segura del ícono adaptativo, para que ninguna máscara del lanzador (círculo, squircle, cuadrado) le corte el documento.
 
+### Servidores de sync por HTTP (decidido por Jorge el 12 nov 2026)
+
+En un build real, Android 9 o superior bloquea por omisión las conexiones `http://`, e iOS también, por App Transport Security. Muchas instalaciones propias de `logday-server` corren por HTTP en la red interna, y para una IP privada no se puede pedir un certificado público. Cerrar HTTP del todo las dejaría por fuera; abrirlo para cualquier servidor mandaría el token y el contenido en texto plano por internet.
+
+- Cuando la URL del servidor apunte a la red local, la app DEBERÁ aceptar `http://`. Cuenta como red local: `localhost`, las IPs privadas (`10.x`, `172.16–31.x`, `192.168.x`), de enlace local (`169.254.x`, `fe80::`), las IPv6 ULA (`fc00::/7`), las de CGNAT (`100.64.0.0/10`, la de Tailscale), los nombres `.local` y los nombres sin dominio (`nas`).
+- Cuando la URL apunte a un servidor público con `http://`, la app NO DEBERÁ conectarse, y DEBERÁ explicar en Ajustes que hace falta `https://`.
+- Cuando la URL no traiga esquema, la app DEBERÁ usar `http://` hacia la red local y `https://` hacia lo demás.
+- Mientras la conexión vaya por HTTP, Ajustes DEBERÁ avisar que no va cifrada, al escribir la URL y una vez conectado.
+- En iOS, la app NO DEBERÁ usar las excepciones de ATS que Apple obliga a justificar en la revisión (`NSAllowsArbitraryLoads` y las de cada dominio). Solo `NSAllowsLocalNetworking`, que no la pide.
+- Queda por fuera un servidor con nombre de dominio interno (`logday.empresa.com`) por HTTP: se usa su IP o se le pone HTTPS. Se revisa si alguien lo necesita.
+
 ## PENDIENTE DE DECISIÓN
 
-- **HTTP sin cifrar.** En un build real, Android 9 o superior bloquea por omisión las conexiones `http://`, e iOS también, por App Transport Security. En Expo Go sí funcionan. Un servidor de sync en la red local con `http://192.168.x.x:8080` dejaría de conectar. Hay tres opciones:
-  - Solo HTTPS, que es lo más seguro y lo que piden las tiendas.
-  - Permitir HTTP en general (`usesCleartextTraffic` en Android y `NSAllowsArbitraryLoads` en iOS), que obliga a justificarlo ante Apple.
-  - En iOS, permitir solo la red local (`NSAllowsLocalNetworking`). Android no tiene un equivalente para IPs arbitrarias.
 - **Workflow de release por tag** que adjunte el APK al Release de GitHub, como el de Desktop. Va después del primer build.

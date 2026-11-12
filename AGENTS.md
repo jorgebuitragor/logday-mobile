@@ -12,7 +12,7 @@ App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo
 - Cada cambio se verifica con:
   1. `./node_modules/.bin/tsc --noEmit` (o `npm run typecheck`). No usar `npx tsc`: no muestra salida en este entorno.
   2. `npm run lint`.
-  3. `npm test`: Jest en Node, solo para lógica pura (por ahora los motores de `src/lib/templates/`). Config en `jest.config.js`; no usa el preset `jest-expo`, que con SDK 57 no encuentra `expo-modules-core`.
+  3. `npm test`: Jest en Node ≥ 22.13 (las pruebas de `src/db/` usan `node:sqlite`; con el Node 20 local, correrlo con otro Node). Config en `jest.config.js`; no usa el preset `jest-expo`, que con SDK 57 no encuentra `expo-modules-core`. Los módulos nativos (`expo-sqlite`, AsyncStorage, `expo-crypto`) tienen mocks automáticos en `src/__mocks__/`.
   4. Pedir el bundle de Metro de `expo-router/entry` y buscar errores reales de "Unable to resolve module". Ignorar los que aparecen como texto dentro del propio código de errores de Metro.
   5. Que las claves de i18n en español y en inglés sean las mismas.
 - CI: typecheck y lint con Node 22.

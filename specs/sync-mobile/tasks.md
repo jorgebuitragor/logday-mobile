@@ -211,3 +211,18 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [x] Las notas creadas en Mobile antes de este arreglo no llegaban al
       servidor, pero no hay nada que recuperar: la app sigue en
       desarrollo y no hay datos reales en ningún teléfono (21 oct 2026).
+
+## Pull por páginas y pull único (nov 2026)
+
+- [x] `reconcileSync` aplica y guarda el cursor página por página
+      (M-11 de la auditoría del 9 nov 2026).
+- [x] Un solo pull a la vez, con un pull pendiente si llegan pedidos
+      en medio.
+- [x] El motor espera `whenDbReady()`.
+- [x] Base en WAL y migraciones con `user_version` (ver
+      `esquema-datos/design.md`).
+- [x] Pruebas: `syncEngine.pull.test.ts` y `src/db/index.test.ts`. Sin
+      el arreglo fallan las del cursor tras un fallo y la del pull único.
+- [ ] Medir un full resync grande en un teléfono (antes y después).
+- [ ] Confirmar en un teléfono que una instalación previa abre bien con
+      la migración 1.

@@ -105,7 +105,9 @@ function RootLayoutInner() {
           contentStyle: { backgroundColor: theme.bgBase },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        {/* `title` es lo que muestra el botón de volver de las pantallas que
+            se abren desde las pestañas (Ajustes): sin él decía "(tabs)". */}
+        <Stack.Screen name="(tabs)" options={{ headerShown: false, title: t('tabs.home') }} />
         <Stack.Screen name="task/new" options={{ title: t('taskForm.newTitle'), presentation: 'modal' }} />
         <Stack.Screen name="task/[id]" options={{ title: t('taskForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="note/new" options={{ title: t('noteForm.editTitle'), presentation: 'modal' }} />
@@ -114,6 +116,7 @@ function RootLayoutInner() {
         <Stack.Screen name="overtime/new" options={{ title: t('overtimeForm.newTitle'), presentation: 'modal' }} />
         <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="search" options={{ title: t('search.placeholder'), presentation: 'modal' }} />
+        <Stack.Screen name="settings/index" options={{ title: t('tabs.settings') }} />
         <Stack.Screen name="settings/templates" options={{ title: t('settings.tabTemplates') }} />
         <Stack.Screen name="settings/trash" options={{ title: t('trash.title') }} />
       </Stack>

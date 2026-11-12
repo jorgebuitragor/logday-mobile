@@ -11,8 +11,9 @@ Expo Router usa `app/` como raíz de rutas. Estructura elegida:
 app/
   _layout.tsx        # layout raíz, inicializa la DB una sola vez
   (tabs)/
-    _layout.tsx      # define el tab bar (Tasks, Notes, Dailys, Overtime)
-    index.tsx         # tab "Tasks"
+    _layout.tsx      # define el tab bar (Inicio, Tasks, Notes, Dailys, Overtime)
+    index.tsx         # tab "Inicio" (desde nov 2026, ver inicio/)
+    tasks.tsx         # tab "Tasks" (antes index.tsx)
     notes.tsx          # tab "Notes"
     dailys.tsx          # tab "Dailys"
     overtime.tsx          # tab "Overtime"

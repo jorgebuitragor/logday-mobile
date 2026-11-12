@@ -1,5 +1,5 @@
 import { useRouter, Tabs } from 'expo-router';
-import { CalendarDays, CheckSquare, Notebook, Search, Settings, Timer } from 'lucide-react-native';
+import { CalendarDays, CheckSquare, House, Notebook, Search, Settings, Timer } from 'lucide-react-native';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -51,8 +51,28 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: theme.bgBase },
       }}
     >
+      {/* Inicio (specs/inicio/) es la primera pestaña. Ajustes salió de la
+          barra (ya eran 5 pestañas) a un engranaje en la cabecera del
+          Inicio, junto a la búsqueda. */}
       <Tabs.Screen
         name="index"
+        options={{
+          title: t('tabs.home'),
+          tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <Pressable onPress={() => router.push('/search')} style={styles.headerIcon} accessibilityLabel={t('search.placeholder')}>
+                <Search color={theme.textPrimary} size={20} />
+              </Pressable>
+              <Pressable onPress={() => router.push('/settings')} style={styles.headerIcon} accessibilityLabel={t('tabs.settings')}>
+                <Settings color={theme.textPrimary} size={20} />
+              </Pressable>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="tasks"
         options={{
           title: t('tabs.tasks'),
           tabBarIcon: ({ color, size }) => <CheckSquare color={color} size={size} />,
@@ -79,13 +99,6 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, size }) => <Timer color={color} size={size} />,
         }}
       />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: t('tabs.settings'),
-          tabBarIcon: ({ color, size }) => <Settings color={color} size={size} />,
-        }}
-      />
     </Tabs>
   );
 }
@@ -98,6 +111,15 @@ const styles = StyleSheet.create({
   },
   headerSearch: {
     marginRight: 16,
+    padding: 4,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginRight: 12,
+  },
+  headerIcon: {
     padding: 4,
   },
 });

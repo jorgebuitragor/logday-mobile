@@ -295,6 +295,18 @@ DailyEntry).
   1008). Reintenta con backoff de 3 a 60 s. `SyncContext` lo abre con la
   conexión, lo cierra cuando la app pasa a segundo plano (iOS la
   suspende) y al volver al frente lo reabre después de un pull.
+  Desde nov 2026 (A-10 de la auditoría) no hace pull por el eco de las
+  escrituras propias: `syncApi.request` anota en `ownWrites.ts` el `seq`
+  de cada respuesta de escritura (los últimos 200), `realtime.ts` le
+  pasa a `onNotice` los `seq` de los avisos agrupados, y
+  `handleRealtimeNotices` (`syncEngine.ts`) se salta el pull si todos
+  son propios o ya los cubre el cursor. Es lo mismo que Desktop y Web,
+  con una diferencia: Web avanza el cursor con el `seq` de sus
+  escrituras, y aquí no, porque eso se salta los cambios de otros
+  clientes con `seq` en medio. Los borrados no se reconocen (el
+  servidor responde 204 sin `seq`) y su eco sigue haciendo un pull. Los
+  `seq` propios se olvidan al abrir el tiempo real, porque la sesión
+  pudo cambiar de cuenta.
 - `SyncContext.tsx`: 2 `useEffect` nuevos — uno empuja el runtime a
   `syncRuntime.ts` en cada cambio relevante de `syncConfig`/
   `syncConnectionStatus`; otro arranca `drainSyncQueue().then(reconcileSync)`

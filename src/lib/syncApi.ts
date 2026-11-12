@@ -12,6 +12,7 @@ import type {
   OvertimeMonthMetaApiResponse, OvertimeMonthMetaPatchPayload,
   TaskCreatePayload, TaskApiResponse, TaskPatchPayload,
 } from './syncMapping';
+import { recordOwnWriteSeq } from './ownWrites';
 
 export class SyncApiError extends Error {
   status: number;
@@ -54,7 +55,12 @@ async function request<T>(
   if (!res.ok) {
     throw new SyncApiError(res.status, text || `HTTP ${res.status}`);
   }
-  return text ? (JSON.parse(text) as T) : (undefined as T);
+  const body = text ? (JSON.parse(text) as T) : (undefined as T);
+  // Toda escritura que devuelve la entidad trae su `seq`: se anota para
+  // reconocer el eco de `/ws` (ver ownWrites.ts).
+  const seq = (body as { seq?: unknown } | undefined)?.seq;
+  if (method !== 'GET' && typeof seq === 'number') recordOwnWriteSeq(seq);
+  return body;
 }
 
 export interface TokenResponse {

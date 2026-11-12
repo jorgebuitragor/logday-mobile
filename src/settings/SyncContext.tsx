@@ -9,7 +9,7 @@ import {
   TokenResponse, getPolicyRemote, acceptPolicyRemote, acceptSensitiveDataRemote,
   exportAccountRemote, deleteAccountRemote,
 } from '../lib/syncApi';
-import { drainSyncQueue, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
+import { drainSyncQueue, handleRealtimeNotices, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
 import { requestInitialUpload } from '../lib/syncInitialUpload';
 import { setSyncRuntime } from '../lib/syncRuntime';
 import { startRealtime, stopRealtime } from '../lib/realtime';
@@ -386,7 +386,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   // inmediato al conectar, no espera los 30s del primer tick.
   //
   // Con la conexión también abre el tiempo real (`src/lib/realtime.ts`):
-  // cada aviso de `/ws` dispara el mismo pull que el polling. En segundo
+  // cada aviso de `/ws` dispara el mismo pull que el polling, salvo el eco
+  // de las escrituras propias (`handleRealtimeNotices`). En segundo
   // plano iOS suspende la app, así que el socket se cierra al irse y se
   // reabre al volver, con un pull para ponerse al día.
   useEffect(() => {
@@ -400,7 +401,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
       startRealtime({
         serverUrl: configRef.current.serverUrl,
         getAccessToken: () => configRef.current.accessToken,
-        onNotice: () => void reconcileSync(),
+        onNotice: (seqs) => void handleRealtimeNotices(seqs),
         onReconnecting: () => reconcileSync(),
       });
     void catchUp();

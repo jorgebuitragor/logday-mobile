@@ -8,14 +8,16 @@
 // el access token (React Native puede mandar cabeceras en el handshake,
 // pero el servidor autentica por mensaje porque el navegador no puede).
 // Si la auth falla, el servidor cierra con 1008.
+import { clearOwnWriteSeqs } from './ownWrites';
 import { normalizeServerUrl } from './syncApi';
 
 export interface RealtimeOptions {
   serverUrl: string;
   /** El access token vigente, leído en el momento de conectar. */
   getAccessToken: () => string;
-  /** Llega un aviso (agrupados por NOTICE_DEBOUNCE_MS). */
-  onNotice: () => void;
+  /** Llegaron avisos, agrupados por NOTICE_DEBOUNCE_MS: el `seq` de cada
+   *  uno, o `null` si el aviso no traía uno legible. */
+  onNotice: (seqs: (number | null)[]) => void;
   /** Se cerró la conexión: antes de reconectar hay que ponerse al día
    *  con lo que no se avisó, y si la auth falló, renovar el access
    *  token. Un pull por `withSyncAuth` hace las dos cosas. */
@@ -33,11 +35,13 @@ let options: RealtimeOptions | null = null;
 let socket: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let noticeTimer: ReturnType<typeof setTimeout> | null = null;
+let noticeSeqs: (number | null)[] = [];
 let reconnectDelay = RECONNECT_MIN_MS;
 
 export function startRealtime(next: RealtimeOptions): void {
   options = next;
   reconnectDelay = RECONNECT_MIN_MS;
+  clearOwnWriteSeqs();
   connect();
 }
 
@@ -47,6 +51,7 @@ export function stopRealtime(): void {
   if (noticeTimer) clearTimeout(noticeTimer);
   reconnectTimer = null;
   noticeTimer = null;
+  noticeSeqs = [];
   const current = socket;
   socket = null;
   current?.close();
@@ -64,11 +69,19 @@ function connect(): void {
     openedAt = Date.now();
     current.send(JSON.stringify({ type: 'auth', token: opts.getAccessToken() }));
   };
-  current.onmessage = () => {
+  // El servidor avisa antes de responder la escritura que causó el
+  // aviso, así que el eco de una escritura propia suele llegar antes de
+  // que su respuesta anote el `seq` (ver ownWrites.ts). Esperar
+  // NOTICE_DEBOUNCE_MS le da tiempo a esa respuesta y además junta una
+  // ráfaga de avisos en una sola decisión.
+  current.onmessage = (event: WebSocketMessageEvent) => {
+    noticeSeqs.push(parseSeq(event.data));
     if (noticeTimer) return;
     noticeTimer = setTimeout(() => {
       noticeTimer = null;
-      options?.onNotice();
+      const seqs = noticeSeqs;
+      noticeSeqs = [];
+      options?.onNotice(seqs);
     }, NOTICE_DEBOUNCE_MS);
   };
   current.onerror = () => current.close();
@@ -92,4 +105,14 @@ function connect(): void {
         }, delay);
       });
   };
+}
+
+function parseSeq(data: unknown): number | null {
+  if (typeof data !== 'string') return null;
+  try {
+    const seq = (JSON.parse(data) as { seq?: unknown } | null)?.seq;
+    return typeof seq === 'number' ? seq : null;
+  } catch {
+    return null;
+  }
 }

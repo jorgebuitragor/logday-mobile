@@ -263,3 +263,15 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [ ] Pendiente aparte: no apagar el sync cuando vence la sesión, para
       que las ediciones de ese periodo se encolen.
 
+## Tiempo real sin eco (nov 2026)
+
+- [x] `src/lib/ownWrites.ts`: los `seq` de las escrituras propias;
+      `syncApi.request` los anota.
+- [x] `realtime.ts` pasa los `seq` de cada ráfaga de avisos;
+      `handleRealtimeNotices` decide si hace falta el pull (A-10 de la
+      auditoría del 9 nov 2026; el pull único ya estaba).
+- [x] Pruebas: `realtime.test.ts` y `realtimeEcho.test.ts`. Sin el
+      arreglo fallan las del eco y la del `seq` anotado.
+- [ ] Checkpoint en vivo: editar en el teléfono con Web abierta y
+      comprobar en el log del servidor que el teléfono no pide
+      `/sync/changes` por su propio eco, y que sí lo pide al editar en Web.

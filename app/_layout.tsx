@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import { initDb } from '../src/db';
 import { PolicyGateModal } from '../src/components/PolicyGateModal';
 import { UndoToast } from '../src/components/UndoToast';
 import { autoPurgeTrash } from '../src/db/trash';
+import { startDueDigestScheduling } from '../src/lib/dueNotifications';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { SyncProvider } from '../src/settings/SyncContext';
 import { TemplatesProvider } from '../src/settings/TemplatesContext';
@@ -121,9 +122,25 @@ function RootLayoutInner() {
         <Stack.Screen name="settings/trash" options={{ title: t('trash.title') }} />
       </Stack>
       <UndoToast />
+      <ReadyEffects />
       <PolicyGateModal />
     </>
   );
+}
+
+// Lo que navega por su cuenta, montado junto al `Stack` y solo con la base
+// lista. Con `useRouter` en `RootLayoutInner`, que mientras abre la base no
+// tiene ningún navegador montado, Expo Router avisaba al arrancar de un
+// setState sobre `ContextNavigator` sin montar (visto en el emulador de
+// Android, donde abrir la base tarda más).
+function ReadyEffects() {
+  const router = useRouter();
+
+  // Resumen de vencimientos (specs/notificaciones/): se reprograma al
+  // abrir. Tocar la notificación abre el Inicio.
+  useEffect(() => startDueDigestScheduling((url) => router.navigate(url as '/')), [router]);
+
+  return null;
 }
 
 const styles = StyleSheet.create({

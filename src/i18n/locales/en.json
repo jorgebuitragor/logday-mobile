@@ -506,5 +506,22 @@
     "overtimeHours": "{{hours}} h overtime",
     "recentNotes": "Recent notes",
     "noNotes": "No notes yet."
+  },
+  "notifications": {
+    "sectionTitle": "Notifications",
+    "digestToggle": "Daily due-date summary",
+    "digestDesc": "One notification a day with the tasks due today and the overdue ones. It is built on this phone; nothing is sent to any server.",
+    "digestTime": "Summary time",
+    "digestTitle": "Your due dates",
+    "dueToday_one": "1 task is due today",
+    "dueToday_other": "{{count}} tasks are due today",
+    "overdue_one": "1 overdue",
+    "overdue_other": "{{count}} overdue",
+    "onlyOverdue_one": "You have 1 overdue task",
+    "onlyOverdue_other": "You have {{count}} overdue tasks",
+    "channelName": "Due-date summary",
+    "deniedTitle": "Notifications are off",
+    "deniedMessage": "To get the summary, allow Logday's notifications in your phone settings.",
+    "openSettings": "Open settings"
   }
 }

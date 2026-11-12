@@ -7,6 +7,7 @@ import { createTaskRemote, deleteTaskRemote, patchTaskRemote, SyncApiError, type
 import { taskFieldsToPatchPayload, taskFromApiResponse, taskToCreatePayload, TASK_FIELD_MAP, type TaskApiResponse } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
 import { syncRestore, type RestoreResult } from '../lib/syncRestore';
+import { emitLocalTaskChange } from '../lib/syncEvents';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import { nextCompletedAt } from '../lib/taskCompletion';
 import { isValidProgress } from '../lib/taskProgress';
@@ -102,6 +103,7 @@ export async function createTask(input: TaskInput): Promise<string> {
     input.content,
     now
   );
+  emitLocalTaskChange();
   void syncCreateTask({
     id, title: input.title, taskCode: input.taskCode, status: input.status, tags: input.tags,
     project: input.project, created: now, completedAt, due: input.due, progress: input.progress, content: input.content,
@@ -149,6 +151,7 @@ export async function updateTask(id: string, input: TaskInput, base: TaskInput):
     // haya cambiado: con LWW por campo, el servidor podría tener otro
     // valor de otro cliente y quedaría un `done` con la fecha de otro.
     if ('status' in changed) changed.completedAt = completedAt;
+    emitLocalTaskChange();
     void syncPatchTask(id, changed);
   });
 }
@@ -175,6 +178,7 @@ export async function updateTaskStatus(id: string, status: TaskStatus): Promise<
       now,
       id
     );
+    emitLocalTaskChange();
     void syncPatchTask(id, { status, completedAt });
   });
 }
@@ -184,6 +188,7 @@ export async function softDeleteTask(id: string): Promise<void> {
   // Bajo el candado de la entidad, igual que `apply*Response`: si no, una
   // respuesta que leyó la fila antes de este UPDATE la reescribía viva.
   await withKeyLock(taskLock(id), () => getDb().runAsync('UPDATE tasks SET deleted_at = ? WHERE id = ?', now, id));
+  emitLocalTaskChange();
   void syncDeleteTask(id);
 }
 
@@ -348,6 +353,7 @@ export async function restoreTask(id: string): Promise<RestoreResult> {
     return { ...current, updatedAt: now, deletedAt: null };
   });
   if (!restored) return { restored: false, synced: Promise.resolve() };
+  emitLocalTaskChange();
   const { title, taskCode, status, tags, project, completedAt, due, progress, content } = restored;
   const fields = { title, taskCode, status, tags, project, completedAt, due, progress, content };
   const synced = syncRestore({

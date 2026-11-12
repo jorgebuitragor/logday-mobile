@@ -523,5 +523,18 @@
     "deniedTitle": "Notifications are off",
     "deniedMessage": "To get the summary, allow Logday's notifications in your phone settings.",
     "openSettings": "Open settings"
+  },
+  "capture": {
+    "title": "Save to Logday",
+    "asTask": "Task",
+    "asNote": "Note",
+    "placeholder": "The first line is the title",
+    "hintTask": "It goes to the inbox. The first line is the title and the rest, the description.",
+    "hintNote": "The first line is the title and the rest, the content."
+  },
+  "quickActions": {
+    "newTask": "New task",
+    "newNote": "New note",
+    "dailyToday": "Today's daily"
   }
 }

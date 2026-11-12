@@ -29,7 +29,7 @@ esto se resuelve con la marca ya existente en el ecosistema
 
 ## Fuera de este spec
 
-- Pantalla de login/splash con branding propio — no existe todavía
-  auth en mobile.
+- Pantalla de login con branding propio. El splash con la marca se hizo
+  en noviembre de 2026: ver `splash/`.
 - Ícono monocromático de Android 13+ ajustado a mano (se generó
   automáticamente desde el glyph, sin revisión visual fina).

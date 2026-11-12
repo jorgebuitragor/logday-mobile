@@ -1,8 +1,10 @@
+import { JetBrainsMono_600SemiBold, useFonts } from '@expo-google-fonts/jetbrains-mono';
 import Constants, { ExecutionEnvironment } from 'expo-constants';
 import { Stack, useRouter } from 'expo-router';
 import { ShareIntentProvider, useShareIntentContext } from 'expo-share-intent';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -10,6 +12,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import '../src/i18n';
 import { initDb } from '../src/db';
+import { BootSplash } from '../src/components/BootSplash';
 import { PolicyGateModal } from '../src/components/PolicyGateModal';
 import { UndoToast } from '../src/components/UndoToast';
 import { autoPurgeTrash } from '../src/db/trash';
@@ -18,7 +21,7 @@ import { listenQuickActions, registerQuickActions } from '../src/lib/quickAction
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { SyncProvider } from '../src/settings/SyncContext';
 import { TemplatesProvider } from '../src/settings/TemplatesContext';
-import { ThemeProvider, useTheme, useThemeScheme } from '../src/theme/ThemeContext';
+import { ThemeProvider, useTheme, useThemeReady, useThemeScheme } from '../src/theme/ThemeContext';
 
 // `SafeAreaProvider` no estaba montado en ningún lado — nada en la
 // app leía los insets del sistema (gestos/barra de navegación de
@@ -29,6 +32,17 @@ import { ThemeProvider, useTheme, useThemeScheme } from '../src/theme/ThemeConte
 // "Compartir con Logday" (specs/captura-rapida/) necesita un build propio:
 // en Expo Go no hay módulo nativo y se apaga.
 const IS_EXPO_GO = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+// El splash nativo se queda hasta que `BootSplash` pinta su primer cuadro
+// (specs/splash/): así no hay un salto a una pantalla vacía mientras cargan
+// el tema guardado y la fuente del wordmark.
+void SplashScreen.preventAutoHideAsync().catch(() => {});
+// Expo Go no permite cambiar la transición (avisa por consola).
+if (!IS_EXPO_GO) SplashScreen.setOptions({ fade: true, duration: 150 });
+
+// Si el tema guardado o la fuente no llegan en este tiempo, el splash se
+// muestra igual (con la fuente del sistema) para no dejar trabado el nativo.
+const BRAND_TIMEOUT_MS = 3000;
 
 export default function RootLayout() {
   return (
@@ -56,6 +70,20 @@ function RootLayoutInner() {
   const scheme = useThemeScheme();
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+  const themeReady = useThemeReady();
+  const [fontsLoaded, fontError] = useFonts({ JetBrainsMono_600SemiBold });
+  const [splashGone, setSplashGone] = useState(false);
+  const hideSplash = useCallback(() => setSplashGone(true), []);
+  const [brandTimedOut, setBrandTimedOut] = useState(false);
+  useEffect(() => {
+    const timer = setTimeout(() => setBrandTimedOut(true), BRAND_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Si la base no abre, se muestra el error en lugar del splash.
+  useEffect(() => {
+    if (dbError) void SplashScreen.hideAsync().catch(() => {});
+  }, [dbError]);
 
   useEffect(() => {
     initDb()
@@ -78,6 +106,11 @@ function RootLayoutInner() {
   // (color de íconos/texto) según el tema.
   const statusBar = <StatusBar style={scheme === 'light' ? 'dark' : 'light'} />;
 
+  // Sin el tema guardado ni la fuente, el splash nativo sigue a la vista.
+  // Si la fuente falla, el wordmark sale con la del sistema.
+  const brandReady = (themeReady && (fontsLoaded || !!fontError)) || brandTimedOut;
+  if (!brandReady) return null;
+
   if (dbError) {
     return (
       <View style={[styles.center, { backgroundColor: theme.bgBase }]}>
@@ -87,18 +120,27 @@ function RootLayoutInner() {
     );
   }
 
+  // `BootSplash` va siempre en la misma posición, para que no se vuelva a
+  // montar (y a animar) cuando la base termina de abrir. La app se monta
+  // debajo y el splash se desvanece encima.
+  const splash = splashGone ? null : (
+    <BootSplash key="boot-splash" done={dbReady} onHidden={hideSplash} accessibilityLabel={t('db.initializing')} />
+  );
+
   if (!dbReady) {
     return (
-      <View style={[styles.center, { backgroundColor: theme.bgBase }]}>
+      <>
         {statusBar}
-        <Text style={{ color: theme.textPrimary }}>{t('db.initializing')}</Text>
-      </View>
+        {null}
+        {splash}
+      </>
     );
   }
 
   return (
     <>
       {statusBar}
+      <>
       <Stack
         key={i18n.language}
         screenOptions={{
@@ -134,6 +176,8 @@ function RootLayoutInner() {
       <UndoToast />
       <ReadyEffects />
       <PolicyGateModal />
+      </>
+      {splash}
     </>
   );
 }

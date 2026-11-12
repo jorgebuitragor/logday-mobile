@@ -16,15 +16,22 @@ interface LogoMarkProps {
 // adaptable: cambia solo con re-renderizar, no hace falta un asset
 // distinto por tema (y ahora hay 8, no 2) — ver
 // specs/temas-adicionales/design.md.
+/** Formas del logo, compartidas con el splash animado (`BootSplash`). */
+export const LOGO_DOC_PATH = 'M19 13.5h19L47 21.5V48.5a2 2 0 0 1-2 2H19a2 2 0 0 1-2-2V15.5a2 2 0 0 1 2-2z';
+export const LOGO_FOLD_PATH = 'M38 13.5L47 21.5h-9z';
+export const LOGO_TREND_PATH = 'M20 36h4l3-8.5 4.5 13L44 25';
+/** Largo de la línea de tendencia en unidades del viewBox (≈46,7). */
+export const LOGO_TREND_LENGTH = 47;
+
 export function LogoMark({ size = 24 }: LogoMarkProps) {
   const theme = useTheme();
   return (
     <Svg viewBox="0 0 64 64" width={size} height={size}>
       <Rect x={0} y={0} width={64} height={64} rx={15} fill={theme.accent} />
-      <Path d="M19 13.5h19L47 21.5V48.5a2 2 0 0 1-2 2H19a2 2 0 0 1-2-2V15.5a2 2 0 0 1 2-2z" fill="#ffffff" />
-      <Path d="M38 13.5L47 21.5h-9z" fill={theme.accent} fillOpacity={0.24} />
+      <Path d={LOGO_DOC_PATH} fill="#ffffff" />
+      <Path d={LOGO_FOLD_PATH} fill={theme.accent} fillOpacity={0.24} />
       <Path
-        d="M20 36h4l3-8.5 4.5 13L44 25"
+        d={LOGO_TREND_PATH}
         fill="none"
         stroke={theme.accent}
         strokeWidth={2.6}

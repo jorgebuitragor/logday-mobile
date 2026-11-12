@@ -50,6 +50,9 @@ interface ThemeContextValue {
   scheme: ResolvedScheme;
   preference: ThemePreference;
   setPreference: (preference: ThemePreference) => void;
+  /** Ya se leyó el tema guardado. Antes vale 'system', y el splash de
+   *  arranque espera esto para no mostrarse con los colores de otro tema. */
+  ready: boolean;
 }
 
 const defaultValue: ThemeContextValue = {
@@ -57,6 +60,7 @@ const defaultValue: ThemeContextValue = {
   scheme: 'dark',
   preference: 'system',
   setPreference: () => {},
+  ready: false,
 };
 
 const ThemeCtx = createContext<ThemeContextValue>(defaultValue);
@@ -64,13 +68,17 @@ const ThemeCtx = createContext<ThemeContextValue>(defaultValue);
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const colorScheme = useColorScheme();
   const [preference, setPreferenceState] = useState<ThemePreference>('system');
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((stored) => {
-      if (stored && (VALID_PREFERENCES as string[]).includes(stored)) {
-        setPreferenceState(stored as ThemePreference);
-      }
-    });
+    AsyncStorage.getItem(STORAGE_KEY)
+      .then((stored) => {
+        if (stored && (VALID_PREFERENCES as string[]).includes(stored)) {
+          setPreferenceState(stored as ThemePreference);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setReady(true));
   }, []);
 
   function setPreference(next: ThemePreference) {
@@ -99,8 +107,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [tokens.bgBase]);
 
   const value = useMemo(
-    () => ({ tokens, scheme: effectiveScheme, preference, setPreference }),
-    [tokens, effectiveScheme, preference]
+    () => ({ tokens, scheme: effectiveScheme, preference, setPreference, ready }),
+    [tokens, effectiveScheme, preference, ready]
   );
 
   return <ThemeCtx.Provider value={value}>{children}</ThemeCtx.Provider>;
@@ -112,6 +120,10 @@ export function useTheme(): ThemeTokens {
 
 export function useThemeScheme(): ResolvedScheme {
   return useContext(ThemeCtx).scheme;
+}
+
+export function useThemeReady(): boolean {
+  return useContext(ThemeCtx).ready;
 }
 
 export function useThemePreference(): Pick<ThemeContextValue, 'preference' | 'setPreference'> {

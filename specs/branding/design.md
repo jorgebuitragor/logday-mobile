@@ -94,4 +94,4 @@ hacía falta era fijar el color de íconos/texto según el tema activo.
 
 - Revisión visual del ícono monocromático (generado automático, sin
   ajuste manual de forma/padding).
-- Pantalla de login/splash con branding propio.
+- Pantalla de login con branding propio (el splash está en `splash/`).

@@ -212,6 +212,21 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
       servidor, pero no hay nada que recuperar: la app sigue en
       desarrollo y no hay datos reales en ningún teléfono (21 oct 2026).
 
+## Colas sin pérdidas (nov 2026)
+
+- [x] `sendQueuedWrite` usa `isPermanentSyncError`: 401, 408 y 429 dejan
+      la escritura en cola (U-08 de la auditoría del 9 nov 2026).
+- [x] `syncQueue`: `dequeue` relee la cola guardada, `enqueue` y
+      `dequeue` van con candado y hay un solo drenado a la vez.
+- [x] `contentSyncQueue`: solo se borra la entrada enviada si nadie la
+      reemplazó mientras viajaba (Q-17), con el mismo candado y drenado
+      único.
+- [x] Pruebas de Jest de las dos colas y del drenado por status HTTP.
+      Fallan 7 de 19 sin el arreglo.
+- [ ] Confirmar en un teléfono: editar sin conexión, revocar el
+      dispositivo desde Web, volver a iniciar sesión y ver que la
+      edición llega.
+
 ## Pull por páginas y pull único (nov 2026)
 
 - [x] `reconcileSync` aplica y guarda el cursor página por página

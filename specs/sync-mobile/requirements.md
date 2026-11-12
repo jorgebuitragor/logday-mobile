@@ -76,6 +76,13 @@ que Hermes no expone).
 - Sin conexión (o si una escritura falla), el sistema DEBERÁ encolarla
   localmente y reintentarla más adelante, en el mismo orden en que se
   hicieron — sin perder la edición ni bloquearse esperando red.
+- Cuando el servidor responda 401 (sesión vencida o dispositivo
+  revocado), 408 o 429 al drenar una escritura en cola, el sistema
+  DEBERÁ dejarla en cola para reintentarla después de volver a iniciar
+  sesión, no descartarla. Solo los demás 4xx se descartan.
+- El sistema NO DEBERÁ perder una escritura que se encole mientras otra
+  se está drenando, ni reemplazar el contenido más nuevo de una nota o
+  un daily por el que se acaba de mandar.
 - El sistema DEBERÁ reconciliar cambios hechos en otros clientes
   (desktop, logday-web, otro dispositivo mobile) sin necesitar que el
   usuario haga nada — un chequeo periódico (~30s) alcanza, no hace

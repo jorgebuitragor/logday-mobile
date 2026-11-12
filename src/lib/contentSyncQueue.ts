@@ -1,5 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { withKeyLock } from './keyedLock';
+
 // Cola de contenido CRDT (Yjs) pendiente de mandar a logday-server —
 // puerto de task-manager/src/lib/contentSyncQueue.ts, `AsyncStorage`
 // en vez de `localStorage`. NO es un array FIFO como `syncQueue.ts`:
@@ -25,6 +27,12 @@ export interface QueuedContent {
 
 const STORAGE_KEY = 'contentSyncQueue';
 
+// Mismo motivo que en `syncQueue.ts`: serializa lectura → cambio →
+// escritura para que un `enqueue` no se pierda contra el drenado.
+function withQueueLock<T>(fn: () => Promise<T>): Promise<T> {
+  return withKeyLock(STORAGE_KEY, fn);
+}
+
 function storageKey(entity: ContentEntity, key: string): string {
   return `${entity}:${key}`;
 }
@@ -43,9 +51,11 @@ async function saveQueue(queue: Record<string, QueuedContent>): Promise<void> {
 }
 
 export async function enqueue(entity: ContentEntity, key: string, updateB64: string): Promise<void> {
-  const queue = await loadQueue();
-  queue[storageKey(entity, key)] = { updateB64, queuedAt: new Date().toISOString() };
-  await saveQueue(queue);
+  await withQueueLock(async () => {
+    const queue = await loadQueue();
+    queue[storageKey(entity, key)] = { updateB64, queuedAt: new Date().toISOString() };
+    await saveQueue(queue);
+  });
 }
 
 export async function queueLength(): Promise<number> {
@@ -55,12 +65,26 @@ export async function queueLength(): Promise<number> {
 /**
  * Drena la cola en orden de `queuedAt`, una entrada a la vez. Mismo
  * contrato que `syncQueue.drainQueue`: si `send` lanza (fallo
- * transitorio — red caída, 5xx), corta el drenado ahí; las entradas
- * restantes quedan en cola para el próximo intento.
+ * transitorio — red caída, 5xx, sesión vencida), corta el drenado ahí;
+ * las entradas restantes quedan en cola para el próximo intento.
+ *
+ * Tras un envío exitoso solo se quita la entrada si sigue siendo la misma
+ * que se mandó. Si mientras viajaba se guardó un estado más nuevo de la
+ * misma nota o daily, ese reemplazó a la entrada y tiene que quedarse para
+ * el próximo drenado. También aquí hay un solo drenado a la vez.
  */
-export async function drain(
-  send: (entity: ContentEntity, key: string, updateB64: string) => Promise<void>
-): Promise<void> {
+let draining: Promise<void> | null = null;
+
+export function drain(send: (entity: ContentEntity, key: string, updateB64: string) => Promise<void>): Promise<void> {
+  if (!draining) {
+    draining = drainOnce(send).finally(() => {
+      draining = null;
+    });
+  }
+  return draining;
+}
+
+async function drainOnce(send: (entity: ContentEntity, key: string, updateB64: string) => Promise<void>): Promise<void> {
   const queue = await loadQueue();
   const entries = Object.entries(queue).sort((a, b) => a[1].queuedAt.localeCompare(b[1].queuedAt));
   for (const [storageKeyStr, entry] of entries) {
@@ -70,11 +94,16 @@ export async function drain(
     const key = storageKeyStr.slice(sepIdx + 1);
     try {
       await send(entity, key, entry.updateB64);
-      const fresh = await loadQueue();
-      delete fresh[storageKeyStr];
-      await saveQueue(fresh);
     } catch {
       break;
     }
+    await withQueueLock(async () => {
+      const fresh = await loadQueue();
+      const current = fresh[storageKeyStr];
+      if (current && current.queuedAt === entry.queuedAt && current.updateB64 === entry.updateB64) {
+        delete fresh[storageKeyStr];
+        await saveQueue(fresh);
+      }
+    });
   }
 }

@@ -10,7 +10,10 @@ Estado: implementado, pendiente confirmación en vivo.
 - [x] Pestañas: Inicio primero; Tareas a `tasks.tsx`; Ajustes al stack
       (`app/settings/index.tsx`) con engranaje en la cabecera del Inicio.
 - [x] Textos es/en.
-- [ ] Verificar en vivo en Expo Go: que la pantalla quepa y se lea bien
-      en un teléfono chico, en tema claro y oscuro; que el engranaje abra
-      Ajustes y el botón atrás vuelva; que una tarea editada en Web
-      aparezca sin salir del Inicio.
+- [x] En Expo Go, en el simulador de iOS (iPhone 17, tema claro, 11 nov
+      2026): la pantalla carga con datos reales, una tarea de hoy aparece
+      en "Vencen hoy" y el engranaje abre Ajustes. Se corrigieron dos
+      cosas: el botón de volver de Ajustes decía "(tabs)" y "Tu semana"
+      tenía el ícono de calendario tachado.
+- [ ] Falta: un teléfono chico, el tema oscuro, Android, y que una tarea
+      editada en Web aparezca sin salir del Inicio.

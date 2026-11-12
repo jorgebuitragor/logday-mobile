@@ -23,3 +23,9 @@ código ya escrito durante el scaffold inicial.
       plano al formato compactado (ver "CRDT: pospuesto a propósito"
       en `design.md`). Bloqueado por lo mismo que el resto del cliente
       de sync (`arquitectura-inicial/design.md`).
+
+## Respaldo de Android (2026-11-11)
+
+- [x] `android.allowBackup: false` en `app.json` (M-08).
+- [ ] Al generar el build con EAS (fase 2 de la publicación), confirmar
+      `android:allowBackup="false"` en el `AndroidManifest.xml` final.

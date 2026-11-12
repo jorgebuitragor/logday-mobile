@@ -120,6 +120,16 @@ Se porta ese mismo modelo, no el formulario anterior:
 - Vista previa vacía (nota sin contenido) DEBERÁ mostrar un mensaje,
   no un área en blanco indistinguible de un error.
 
+### Enlaces de la vista previa (agregado 2026-11-11)
+
+- Al tocar un enlace en la vista previa, el sistema DEBERÁ mostrar la
+  URL real y pedir confirmación antes de abrirla: el texto del enlace
+  puede decir otra cosa.
+- El sistema SOLO DEBERÁ abrir enlaces `http`, `https` y `mailto`. Con
+  cualquier otro esquema (`intent://`, `tel:`, el de otra app) o sin
+  esquema, DEBERÁ decir que no se puede abrir (M-08 de la auditoría del
+  9 nov 2026).
+
 ## Fuera de este spec
 
 - Navegador/selector de carpetas existentes ("Mover a…", picker con

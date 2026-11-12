@@ -49,6 +49,13 @@ dispositivo para las 4 entidades del MVP (`Task`, `Note`, dailys,
   serializado, no como tabla normalizada — mismo criterio que el
   servidor.
 
+### Respaldo del sistema (agregado 2026-11-11)
+
+- La base local (incluidas las ausencias con motivo `incapacidad`, un
+  dato de salud) NO DEBERÁ copiarse al respaldo en la nube de Android
+  (M-08 de la auditoría del 9 nov 2026). Para tener los datos en otro
+  teléfono está el sync con `logday-server`.
+
 ## Diferencia deliberada con el esquema del servidor
 
 - `logday-server` usa CRDT (`content_crdt BLOB`) para `Note.content` y

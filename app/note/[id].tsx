@@ -3,7 +3,8 @@ import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Eye, EyeOff, Folder, MoreHorizontal, Pin, Plus, Tag as TagIcon, X } from 'lucide-react-native';
 import { useEffect, useEffectEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import type { TFunction } from 'i18next';
+import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 import Markdown from 'react-native-markdown-display';
 
@@ -16,6 +17,7 @@ import {
 } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { mapTextIndex, syncEditorText } from '../../src/lib/crdtText';
+import { isAllowedLink } from '../../src/lib/noteLinks';
 import { shareText } from '../../src/lib/exportFile';
 import { buildMarkdownDoc, exportNote, type NoteExportFormat } from '../../src/lib/noteExport';
 import { normalizeTag } from '../../src/lib/noteTags';
@@ -67,6 +69,23 @@ function buildMarkdownStyle(theme: ThemeTokens) {
     link: { color: theme.accent },
     text: { color: theme.textBody },
   };
+}
+
+// Un toque en un enlace de la vista previa nunca lo abre directo: se
+// muestra la URL real (el texto del enlace puede decir otra cosa) y se
+// pide confirmación, y solo se abren los esquemas de `noteLinks.ts`.
+// Devolver false le dice a `react-native-markdown-display` que no lo abra
+// por su cuenta.
+function handleLinkPress(url: string, t: TFunction): boolean {
+  if (!isAllowedLink(url)) {
+    Alert.alert(t('noteForm.linkBlockedTitle'), `${t('noteForm.linkBlockedMessage')}\n\n${url}`);
+    return false;
+  }
+  Alert.alert(t('noteForm.linkConfirmTitle'), url, [
+    { text: t('common.cancel'), style: 'cancel' },
+    { text: t('noteForm.linkOpen'), onPress: () => void Linking.openURL(url).catch(() => {}) },
+  ]);
+  return false;
 }
 
 /**
@@ -523,7 +542,9 @@ export default function NoteEditorScreen() {
         {previewMode ? (
           <ScrollView style={styles.previewScroll} contentContainerStyle={styles.previewContent}>
             {content.trim() ? (
-              <Markdown style={markdownStyle}>{content}</Markdown>
+              <Markdown style={markdownStyle} onLinkPress={(url) => handleLinkPress(url, t)}>
+                {content}
+              </Markdown>
             ) : (
               <Text style={{ color: theme.textFaint }}>{t('noteForm.previewEmpty')}</Text>
             )}

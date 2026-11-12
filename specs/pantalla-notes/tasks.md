@@ -246,3 +246,12 @@ design.md, "Primera versión... y por qué se reemplazó".
       confirmar en el listado (orden "Modificación") que `updated` avanza
       como mucho una vez por minuto, y que al volver atrás queda en la
       hora de la última edición.
+
+## Enlaces de la vista previa (2026-11-11)
+
+- [x] `src/lib/noteLinks.ts` con la lista de esquemas permitidos, y
+      `onLinkPress` con confirmación en `app/note/[id].tsx` (M-08).
+- [x] Pruebas: `src/lib/noteLinks.test.ts`.
+- [ ] Verificar en vivo: en una nota con `[web](https://logday.app)` y
+      `[x](intent://algo)`, el primero pide confirmación y abre el
+      navegador; el segundo dice que no se puede abrir.

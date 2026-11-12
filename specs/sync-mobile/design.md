@@ -399,6 +399,39 @@ LWW de Task: va siempre en el create, en el PATCH solo si cambió
 `/sync/changes` cuenta como `null`. La cola offline no cambia. Detalle
 en [`progreso-tasks/design.md`](../progreso-tasks/design.md).
 
+## Colas sin pérdidas (nov 2026)
+
+La auditoría del 9 nov 2026 (U-08) encontró que `sendQueuedWrite`
+trataba cualquier 4xx como fallo permanente. Con la sesión vencida, o
+el dispositivo revocado desde otro cliente, `withSyncAuth` desconecta y
+relanza el 401, y la primera escritura de la cola se descartaba: podía
+ser un create hecho sin conexión, y entonces los patch siguientes
+recibían 404 y también se descartaban. Ahora usa `isPermanentSyncError`,
+el mismo criterio que ya tenía la cola de contenido: 401, 408 y 429
+cortan el drenado y la escritura espera.
+
+Al probarlo aparecieron dos carreras más en las colas, las dos de
+lectura → cambio → escritura sobre AsyncStorage:
+
+- `syncQueue.drainQueue` guardaba, tras cada envío, la copia de la cola
+  con la que había arrancado. Todo lo encolado mientras tanto (por
+  ejemplo, una edición cuyo envío directo falló) se borraba sin
+  mandarse. Ahora `dequeue` relee la cola guardada.
+- `contentSyncQueue.drain` borraba la entrada `entidad:key` sin mirar si
+  era la que se mandó (Q-17). Si mientras viajaba se guardó un estado
+  más nuevo, ese se borraba. Ahora solo se borra si `queuedAt` y
+  `updateB64` coinciden con lo enviado.
+
+Las dos colas serializan sus lecturas y escrituras con `withKeyLock`
+(una clave por cola) y tienen un solo drenado a la vez: si el polling,
+la vuelta a primer plano y la reconexión coinciden, comparten el mismo
+drenado en vez de mandar dos veces las mismas escrituras. El candado no
+se sostiene durante el envío, así que encolar nunca espera a la red.
+
+Pruebas en `src/lib/syncQueue.test.ts`, `contentSyncQueue.test.ts` y
+`syncEngine.test.ts`, con los mocks de módulos nativos en
+`src/__mocks__/`. Contra el código anterior fallan 7 de las 19.
+
 ## Pull por páginas y pull único (nov 2026)
 
 M-11 de la auditoría del 9 nov 2026 (Q-36) proponía aplicar cada página

@@ -234,14 +234,19 @@ async function dispatchQueuedWrite(write: syncQueue.QueuedWrite): Promise<void> 
 /** Un 4xx nunca se va a arreglar solo reintentando el mismo payload
  * (a diferencia de una caída de red o un 5xx) — sin esto, una sola
  * entrada mal formada bloquearía el resto de la cola para siempre
- * (ver `syncQueue.drainQueue`). */
+ * (ver `syncQueue.drainQueue`). Salvo 401, 408 y 429
+ * (`isPermanentSyncError`): con la sesión vencida o el dispositivo
+ * revocado, `withSyncAuth` desconecta y relanza el 401; la escritura
+ * tiene que quedarse en cola hasta volver a iniciar sesión, no
+ * descartarse. */
 async function sendQueuedWrite(write: syncQueue.QueuedWrite): Promise<'ok' | 'permanent-failure'> {
   try {
     await dispatchQueuedWrite(write);
     return 'ok';
   } catch (e) {
-    if (e instanceof SyncApiError && e.status >= 400 && e.status < 500) return 'permanent-failure';
-    throw e;
+    if (!isPermanentSyncError(e)) throw e;
+    console.warn('[sync] escritura descartada de la cola', write.entity, write.entityId, write.op, (e as SyncApiError).status);
+    return 'permanent-failure';
   }
 }
 

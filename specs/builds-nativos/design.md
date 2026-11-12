@@ -61,3 +61,12 @@ Ahora las tres capas salen de los trazos de `LogoMark` (`src/components/LogoMark
 - **Frente** (`android-icon-foreground.png`): el documento blanco, el doblez con el acento al 24 % y la línea de tendencia en el acento.
 - **Fondo** (`android-icon-background.png`): el acento `#6366f1` liso.
 - **Monocroma** (`android-icon-monochrome.png`): el documento relleno, con la línea de tendencia (trazo de 3) y el doblez calados. El sistema la pinta con los colores del tema.
+
+## Ícono de iOS: claro, oscuro y teñido (12 nov 2026)
+
+`ios.icon` en `app.json` declara las tres variantes de iOS 18 o superior. Salen de los mismos trazos de `LogoMark`, con fuentes en `assets/icon-src/ios-*.svg`:
+- **Clara:** fondo de acento a sangre completa, sin alfa y sin esquinas dibujadas; la máscara la pone iOS. Antes las esquinas redondeadas venían dibujadas sobre blanco.
+- **Oscura:** el documento con su acento sobre fondo transparente; iOS pone el fondo oscuro.
+- **Teñida:** el documento en blanco con la línea de tendencia y el doblez calados; iOS lo pinta con el color que elija la persona.
+
+`expo prebuild --platform ios` genera el `AppIcon.appiconset` con las tres variantes (`luminosity` `dark` y `tinted`), y `CFBundleDisplayName` queda en "Logday". Falta verlo en un iPhone: el build de iOS necesita la cuenta de Apple Developer, y la publicación va primero en Android.

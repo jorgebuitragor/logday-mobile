@@ -13,7 +13,8 @@ asset de `task-manager`:
 
 | Archivo | Origen | Nota |
 |---|---|---|
-| `assets/icon.png` | `icon_square.png` aplanado sobre blanco | iOS rechaza íconos con canal alfa — se aplanó, ya no es transparente en las esquinas |
+| `assets/icon.png` | igual a `ios-icon-light.png` (12 nov 2026) | Cuadrado a sangre completa, sin alfa y sin esquinas dibujadas: la máscara la pone el sistema. Antes era `icon_square.png` aplanado sobre blanco, que dejaba esquinas blancas |
+| `assets/ios-icon-{light,dark,tinted}.png` | trazos de `LogoMark` (fuentes en `assets/icon-src/`) | Variantes de iOS 18+ en `ios.icon`. La oscura va sobre fondo transparente (el sistema pone el oscuro) y la teñida es el documento en blanco con la línea y el doblez calados |
 | `assets/favicon.png` | mismo aplanado, redimensionado a 48×48 | |
 | `assets/android-icon-foreground.png` | `icon_square_wiout_background.png` tal cual | Android aplica su propia máscara, no hace falta aplanar |
 | `assets/android-icon-background.png` | generado: `#6366f1` sólido, 1024×1024 | color de acento de marca (`light.accent`/`dark.accentStrong`) |

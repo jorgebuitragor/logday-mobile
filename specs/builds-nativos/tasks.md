@@ -18,5 +18,7 @@
 - [x] Nombre bajo el ícono: "Logday" (Jorge, 12 nov 2026). "Logday Mobile" se cortaba como "Logday Mob…".
 - [x] Ícono de Android dentro de la zona segura y capa monocroma con la línea de tendencia, para los íconos temáticos.
 - [ ] Ver el ícono temático en un build.
+- [x] Íconos claro, oscuro y teñido de iOS en `ios.icon`, revisados en el catálogo que genera `expo prebuild`.
+- [ ] Verlos en un iPhone (necesita el build de iOS).
 - [ ] Decidir HTTP sin cifrar (ver requirements).
 - [ ] Build `production` (AAB) y subida a la prueba interna de Play (con OK de Jorge).

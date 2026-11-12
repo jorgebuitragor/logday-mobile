@@ -87,7 +87,7 @@
     "loadingTask": "Loading...",
     "notFound": "Task not found.",
     "confirmDeleteTitle": "Delete task",
-    "confirmDeleteMessage": "Delete this task? This action cannot be undone.",
+    "confirmDeleteMessage": "Delete this task? It goes to the trash, where it can be restored.",
     "statusTodo": "To do",
     "statusInProgress": "In progress",
     "statusDone": "Done",
@@ -134,7 +134,7 @@
     "loadingNote": "Loading...",
     "notFound": "Note not found.",
     "confirmDeleteTitle": "Delete note",
-    "confirmDeleteMessage": "This action cannot be undone.",
+    "confirmDeleteMessage": "It goes to the trash, where it can be restored.",
     "formatBold": "Bold",
     "formatItalic": "Italic",
     "formatCode": "Code",
@@ -191,7 +191,7 @@
     "delete": "Delete",
     "loadingDaily": "Loading...",
     "confirmDeleteTitle": "Delete daily",
-    "confirmDeleteMessage": "This day's entry will be deleted. This action cannot be undone.",
+    "confirmDeleteMessage": "This day's entry will be deleted. It goes to the trash, where it can be restored.",
     "newActivityPlaceholder": "New activity…",
     "moveUp": "Move up",
     "moveDown": "Move down",
@@ -217,7 +217,7 @@
     "formatPdfHint": ".pdf — portable document",
     "deleteMonth": "Delete month",
     "deleteMonthTitle": "Delete entire month",
-    "deleteMonthMessage": "All dailys for {{month}} will be deleted. This action cannot be undone."
+    "deleteMonthMessage": "All dailys for {{month}} will be deleted. They go to the trash, where they can be restored."
   },
   "absence": {
     "markButton": "Mark absence",
@@ -241,7 +241,7 @@
     "cancel": "Cancel",
     "delete": "Delete",
     "confirmDeleteTitle": "Delete absence",
-    "confirmDeleteMessage": "This action cannot be undone.",
+    "confirmDeleteMessage": "It goes to the trash, where it can be restored.",
     "sensitiveConsentTitle": "Sensitive health data",
     "sensitiveConsentBody": "\"Sick leave\" is sensitive health data. You are not required to record it — if you continue, it syncs to the server under the current data-processing policy. This notice only appears once.",
     "sensitiveConsentAccept": "I understand, continue"
@@ -294,7 +294,7 @@
     "loadingEntry": "Loading...",
     "notFound": "Entry not found.",
     "confirmDeleteTitle": "Delete overtime entry",
-    "confirmDeleteMessage": "This action cannot be undone.",
+    "confirmDeleteMessage": "It goes to the trash, where it can be restored.",
     "conflictTitle": "Overlapping schedule",
     "conflictMessage_one": "The {{range}} time range overlaps with 1 existing entry the same day:",
     "conflictMessage_other": "The {{range}} time range overlaps with {{count}} existing entries the same day:",

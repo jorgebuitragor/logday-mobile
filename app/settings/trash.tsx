@@ -1,7 +1,7 @@
 import { useFocusEffect, useNavigation } from 'expo-router';
 import { CalendarOff, CheckSquare, Clock, FileText, NotebookPen, RotateCcw, Trash2, X } from 'lucide-react-native';
 import type { ComponentType } from 'react';
-import { useCallback, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, FlatList, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -12,7 +12,9 @@ import {
   deleteForever, emptyTrash, isAutoPurgeEnabled, listTrash, restoreFromTrash, setAutoPurgeEnabled, TRASH_RETENTION_DAYS,
   type TrashEntity, type TrashItem,
 } from '../../src/db/trash';
+import { useReloadOnRemoteChange } from '../../src/hooks/useReloadOnRemoteChange';
 import { absenceTypeLabel } from '../../src/lib/absenceLabels';
+import { onTrashed } from '../../src/lib/trashEvents';
 import { useTheme } from '../../src/theme/ThemeContext';
 
 // Papelera (specs/papelera/), dentro de Ajustes como en Web: lo borrado
@@ -66,6 +68,12 @@ export default function TrashScreen() {
       void isAutoPurgeEnabled().then(setAutoPurge);
     }, [reload])
   );
+
+  // También cambia sin perder el foco: "Deshacer" (restaura y emite el
+  // cambio), un borrado nuevo o lo que llega por el pull. Encontrado al
+  // probar en el simulador: tras "Deshacer" la fila seguía en la lista.
+  useReloadOnRemoteChange(['task', 'note', 'daily_entry', 'overtime_entry', 'absence_day'], reload);
+  useEffect(() => onTrashed(() => reload()), [reload]);
 
   const hasItems = !!items && items.length > 0;
   useLayoutEffect(() => {
@@ -146,7 +154,7 @@ export default function TrashScreen() {
               <Icon size={18} color={theme.textSecondary} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: theme.textPrimary, fontSize: 15 }} numberOfLines={1}>{title(item)}</Text>
-                <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }} numberOfLines={1}>{subtitle(item)}</Text>
+                <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }} numberOfLines={2}>{subtitle(item)}</Text>
               </View>
               <Pressable
                 onPress={() => void restore(item)}

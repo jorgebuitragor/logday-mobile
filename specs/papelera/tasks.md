@@ -25,6 +25,11 @@ Estado: implementado, pendiente confirmación en vivo.
       comprobar en los dos clientes que vuelve sin texto duplicado;
       borrar en Web y restaurar desde el teléfono; borrar sin conexión,
       restaurar y reconectar.
-- [ ] En Expo Go: el aviso aparece sobre la barra de pestañas, también
-      al borrar desde el detalle, y "Deshacer" devuelve el elemento a la
-      lista abierta.
+- [x] En Expo Go, en el simulador de iOS (iPhone 17, iOS 26.1, manejado
+      con Maestro, 11 nov 2026): crear una tarea, borrarla desde el detalle,
+      ver el aviso "Eliminado · Deshacer", deshacer, restaurarla desde la
+      papelera y eliminarla para siempre (la fila desaparece de SQLite).
+      Salieron y se corrigieron tres cosas: la papelera abierta no se
+      actualizaba tras "Deshacer", los diálogos de borrar decían "no se
+      puede deshacer" y el subtítulo no concordaba en género ("Nota ·
+      eliminado") y se cortaba. Sin probar en Android ni con sync real.

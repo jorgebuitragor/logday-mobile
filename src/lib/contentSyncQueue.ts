@@ -58,6 +58,10 @@ export async function enqueue(entity: ContentEntity, key: string, updateB64: str
   });
 }
 
+export async function hasPending(entity: ContentEntity, key: string): Promise<boolean> {
+  return storageKey(entity, key) in (await loadQueue());
+}
+
 export async function queueLength(): Promise<number> {
   return Object.keys(await loadQueue()).length;
 }

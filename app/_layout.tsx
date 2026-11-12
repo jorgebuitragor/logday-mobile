@@ -9,6 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import '../src/i18n';
 import { initDb } from '../src/db';
 import { PolicyGateModal } from '../src/components/PolicyGateModal';
+import { UndoToast } from '../src/components/UndoToast';
+import { autoPurgeTrash } from '../src/db/trash';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { SyncProvider } from '../src/settings/SyncContext';
 import { TemplatesProvider } from '../src/settings/TemplatesContext';
@@ -47,7 +49,12 @@ function RootLayoutInner() {
 
   useEffect(() => {
     initDb()
-      .then(() => setDbReady(true))
+      .then(() => {
+        setDbReady(true);
+        // Purga de la papelera a los 60 días (specs/papelera/), si está
+        // encendida. No bloquea la apertura.
+        autoPurgeTrash().catch((e: unknown) => console.warn('[papelera] purga fallida', e));
+      })
       .catch((error: Error) => setDbError(error.message));
   }, []);
 
@@ -108,7 +115,9 @@ function RootLayoutInner() {
         <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="search" options={{ title: t('search.placeholder'), presentation: 'modal' }} />
         <Stack.Screen name="settings/templates" options={{ title: t('settings.tabTemplates') }} />
+        <Stack.Screen name="settings/trash" options={{ title: t('trash.title') }} />
       </Stack>
+      <UndoToast />
       <PolicyGateModal />
     </>
   );

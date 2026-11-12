@@ -1,9 +1,11 @@
 import { randomUUID } from 'expo-crypto';
 
+import { withKeyLock } from '../lib/keyedLock';
 import { diffChangedFields } from '../lib/objectDiff';
 import { absenceDayFieldsToPatchPayload, absenceDayFromApiResponse, absenceDayToCreatePayload, ABSENCE_DAY_FIELD_MAP, type AbsenceDayApiResponse } from '../lib/syncMapping';
 import { createAbsenceDayRemote, deleteAbsenceDayRemote, patchAbsenceDayRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
 import * as syncQueue from '../lib/syncQueue';
+import { syncRestore, type RestoreResult } from '../lib/syncRestore';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import type { AbsenceDay, AbsenceType } from '../types/absence';
 import { getDb } from './index';
@@ -108,9 +110,13 @@ export async function saveAbsenceDayRange(
   }
 }
 
+// Candado por ausencia para borrar, restaurar y aplicar respuestas, como
+// las demás entidades (ver `softDeleteTask`).
+const absenceLock = (id: string) => `absence_day:${id}`;
+
 export async function deleteAbsenceDay(id: string): Promise<void> {
   const now = new Date().toISOString();
-  await getDb().runAsync('UPDATE absence_days SET deleted_at = ? WHERE id = ?', now, id);
+  await withKeyLock(absenceLock(id), () => getDb().runAsync('UPDATE absence_days SET deleted_at = ? WHERE id = ?', now, id));
   void syncDeleteAbsenceDay(id);
 }
 
@@ -187,9 +193,15 @@ async function writeAbsenceDayRow(absence: AbsenceDay, updatedAt: string): Promi
   );
 }
 
-export async function applyAbsenceDayResponse(id: string, sinceIso: string, response: AbsenceDayApiResponse): Promise<void> {
+export function applyAbsenceDayResponse(id: string, sinceIso: string, response: AbsenceDayApiResponse): Promise<void> {
+  return withKeyLock(absenceLock(id), () => applyAbsenceDayResponseLocked(id, sinceIso, response));
+}
+
+async function applyAbsenceDayResponseLocked(id: string, sinceIso: string, response: AbsenceDayApiResponse): Promise<void> {
   const current = await getAbsenceDay(id);
-  if (!current) return;
+  // Borrada aquí mientras viajaba la escritura: la respuesta no la revive
+  // (antes reaparecía; con la papelera, se restaura solo a propósito).
+  if (!current || current.deletedAt) return;
   const mapped = absenceDayFromApiResponse(response);
   const merged = { ...current } as Record<string, unknown>;
   for (const [localKey, serverKey] of Object.entries(ABSENCE_DAY_FIELD_MAP)) {
@@ -218,4 +230,31 @@ export async function applyRemoteAbsenceDayChange(change: SyncChange): Promise<v
     }
   }
   await writeAbsenceDayRow(merged as unknown as AbsenceDay, change.updated_at);
+}
+
+// ── Papelera (specs/papelera/) ─────────────────────────────────────
+
+/** Saca una ausencia de la papelera. No se restaura si ese día ya tiene
+ *  otra ausencia activa (una por fecha, ver `saveAbsenceDay`): devuelve
+ *  `dateTaken` y la deja en la papelera. En el servidor basta un create
+ *  del mismo id. */
+export async function restoreAbsenceDay(id: string): Promise<RestoreResult & { dateTaken?: boolean }> {
+  const outcome = await withKeyLock(absenceLock(id), async () => {
+    const current = await getAbsenceDay(id);
+    if (!current?.deletedAt) return 'missing' as const;
+    if (await getAbsenceDayByDate(current.date)) return 'dateTaken' as const;
+    const now = new Date().toISOString();
+    await getDb().runAsync('UPDATE absence_days SET deleted_at = NULL, updated_at = ? WHERE id = ?', now, id);
+    return { ...current, updatedAt: now, deletedAt: null } satisfies AbsenceDay;
+  });
+  if (outcome === 'missing') return { restored: false, synced: Promise.resolve() };
+  if (outcome === 'dateTaken') return { restored: false, dateTaken: true, synced: Promise.resolve() };
+  const restored = outcome;
+  const synced = syncRestore({
+    entity: 'absence_day',
+    id,
+    create: { payload: absenceDayToCreatePayload(restored), send: createAbsenceDayRemote },
+    apply: applyAbsenceDayResponse,
+  });
+  return { restored: true, synced };
 }

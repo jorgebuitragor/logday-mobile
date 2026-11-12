@@ -19,6 +19,7 @@ import { todayISO } from '../../src/lib/dates';
 import { usePreferences, type TasksViewMode } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Task, TaskStatus } from '../../src/types/task';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 // Mismo orden de ciclo que `cycleStatus` en TaskList.tsx de desktop.
 const STATUS_ORDER: TaskStatus[] = ['todo', 'in-progress', 'done'];
@@ -43,6 +44,7 @@ export default function TasksScreen() {
 
   async function performDelete(task: Task) {
     await softDeleteTask(task.id);
+    announceTrashed({ items: [{ entity: 'task', key: task.id }], label: task.title });
     reload();
   }
 

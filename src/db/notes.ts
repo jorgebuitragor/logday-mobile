@@ -16,6 +16,7 @@ import {
   fromServerNoteTitle, noteFieldsToPatchPayload, noteFromApiResponse, noteToCreatePayload, NOTE_FIELD_MAP, type NoteApiResponse,
 } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
+import { syncRestore, type RestoreResult } from '../lib/syncRestore';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import type { Note } from '../types/note';
 import { getDb } from './index';
@@ -187,7 +188,9 @@ export function stampPendingNoteEdit(id: string): Promise<void> {
 export async function softDeleteNote(id: string): Promise<void> {
   stampThrottle.forget(id);
   const now = nowInstant();
-  await getDb().runAsync('UPDATE notes SET deleted_at = ? WHERE id = ?', now, id);
+  // Bajo el candado de la entidad, igual que `apply*Response`: si no, una
+  // respuesta que leyó la fila antes de este UPDATE la reescribía viva.
+  await withKeyLock(noteLock(id), () => getDb().runAsync('UPDATE notes SET deleted_at = ? WHERE id = ?', now, id));
   void syncDeleteNote(id);
 }
 
@@ -294,7 +297,9 @@ export function applyNoteResponse(id: string, sinceIso: string, response: NoteAp
 
 async function applyNoteResponseLocked(id: string, sinceIso: string, response: NoteApiResponse): Promise<void> {
   const current = await getNote(id);
-  if (!current) return;
+  // Borrada aquí mientras viajaba la escritura: la respuesta no la revive
+  // (antes reaparecía; con la papelera, se restaura solo a propósito).
+  if (!current || current.deletedAt) return;
   const mapped = noteFromApiResponse(response);
   mapped.title = fromServerNoteTitle(mapped.title, current.title);
   const merged = { ...current } as Record<string, unknown>;
@@ -459,4 +464,34 @@ async function applyRemoteNoteChangeLocked(change: SyncChange): Promise<void> {
   merged.content = current?.content ?? data.content ?? '';
   await writeNoteRow(merged as unknown as Note, change.updated_at);
   if (data.content_state) await applyRemoteNoteContentState(change.id, data.content_state);
+}
+
+// ── Papelera (specs/papelera/) ─────────────────────────────────────
+
+/** Saca una nota de la papelera. En el servidor la revive con un create y
+ *  un patch de su metadata, **sin reenviar el contenido**: el servidor no
+ *  toca el CRDT al borrar, y reenviarlo duplicaba el texto en Web (ver
+ *  src/lib/syncRestore.ts). */
+export async function restoreNote(id: string): Promise<RestoreResult> {
+  const restored = await withKeyLock(noteLock(id), async () => {
+    const current = await getNote(id);
+    if (!current?.deletedAt) return null;
+    const now = nowInstant();
+    await getDb().runAsync('UPDATE notes SET deleted_at = NULL, updated_at = ? WHERE id = ?', now, id);
+    return { ...current, updatedAt: now, deletedAt: null };
+  });
+  if (!restored) return { restored: false, synced: Promise.resolve() };
+  const synced = syncRestore({
+    entity: 'note',
+    id,
+    create: { payload: noteToCreatePayload(restored), send: createNoteRemote },
+    patch: {
+      payload: noteFieldsToPatchPayload({
+        title: restored.title, folder: restored.folder, tags: restored.tags, pinned: restored.pinned, updated: restored.updated,
+      }),
+      send: patchNoteRemote,
+    },
+    apply: applyNoteResponse,
+  });
+  return { restored: true, synced };
 }

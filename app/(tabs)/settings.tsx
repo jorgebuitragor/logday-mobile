@@ -1,4 +1,4 @@
-import { AlertCircle, BookOpen, ChevronRight, Clock, Cloud, CloudOff, Download, Eye, EyeOff, FileText, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, TriangleAlert, UserX } from 'lucide-react-native';
+import { AlertCircle, BookOpen, ChevronRight, Clock, Cloud, CloudOff, Download, Eye, EyeOff, FileText, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, Trash2, TriangleAlert, UserX } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import type { ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -205,6 +205,17 @@ export default function SettingsScreen() {
           <View style={{ flex: 1 }}>
             <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>{t('settings.tabTemplates')}</Text>
             <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }}>{t('templates.rowDesc')}</Text>
+          </View>
+          <ChevronRight size={16} color={theme.textHint} />
+        </Pressable>
+      </Section>
+
+      {/* Papelera (specs/papelera/): pantalla aparte, como Plantillas. */}
+      <Section title={t('trash.title')} icon={Trash2}>
+        <Pressable style={[styles.row, { borderBottomWidth: 0 }]} onPress={() => router.push('/settings/trash')}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>{t('trash.title')}</Text>
+            <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }}>{t('trash.rowDesc')}</Text>
           </View>
           <ChevronRight size={16} color={theme.textHint} />
         </Pressable>

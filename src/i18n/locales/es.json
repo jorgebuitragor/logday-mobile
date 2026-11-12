@@ -455,5 +455,32 @@
     "shareCustom": "Compartir la cargada",
     "shareError": "No se pudo compartir la plantilla",
     "rowDesc": "Mensaje del Daily y Excel de horas extra"
+  },
+  "trash": {
+    "title": "Papelera",
+    "rowDesc": "Lo que borraste en este teléfono o en otro dispositivo. Puedes restaurarlo.",
+    "deleted": "Eliminado",
+    "deletedNamed": "Eliminado: {{name}}",
+    "deletedMany": "{{count}} elementos eliminados",
+    "undo": "Deshacer",
+    "restore": "Restaurar",
+    "deleteForever": "Eliminar para siempre",
+    "empty": "Vaciar",
+    "emptyState": "La papelera está vacía.",
+    "emptyHint": "Lo que borres aparece aquí y lo puedes restaurar.",
+    "autoPurge": "Vaciar automáticamente a los {{days}} días",
+    "autoPurgeDesc": "Borra de este teléfono lo que lleva más tiempo en la papelera.",
+    "confirmForeverTitle": "¿Eliminar para siempre?",
+    "confirmEmptyTitle": "¿Vaciar la papelera?",
+    "confirmForeverMessage": "Se borra de este teléfono y no se puede deshacer.",
+    "dateTakenTitle": "Ese día ya tiene una ausencia",
+    "dateTakenMessage": "Elimina o cambia la ausencia de ese día antes de restaurar esta.",
+    "deletedOn": "eliminado el {{when}}",
+    "untitled": "Sin título",
+    "entityTask": "Tarea",
+    "entityNote": "Nota",
+    "entityDaily": "Daily",
+    "entityOvertime": "Horas extra",
+    "entityAbsence": "Ausencia"
   }
 }

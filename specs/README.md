@@ -54,3 +54,4 @@ hasta tres archivos:
 | Progreso de tareas | implementado (pendiente confirmación en vivo; depende de logday-server#15) | [`progreso-tasks/`](./progreso-tasks/requirements.md) |
 | Sync con logday-server | en progreso — Fase 3 de 4 (Notes/Dailys CRDT), Fases 0-2 confirmadas en vivo | [`sync-mobile/`](./sync-mobile/requirements.md) |
 | Plantillas (Daily y Excel de horas extra) | implementado, v1 local (pendiente confirmación en vivo) | [`plantillas/`](./plantillas/requirements.md) |
+| Papelera | implementado (pendiente confirmación en vivo) | [`papelera/`](./papelera/requirements.md) |

@@ -13,6 +13,7 @@ import {
   type OvertimeEntryApiResponse, type OvertimeMonthMetaApiResponse,
 } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
+import { syncRestore, type RestoreResult } from '../lib/syncRestore';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import type { OvertimeEntry, OvertimeMonthMeta } from '../types/overtime';
 import { getDb } from './index';
@@ -160,7 +161,9 @@ export async function updateOvertimeEntry(id: string, input: OvertimeInput, base
 
 export async function softDeleteOvertimeEntry(id: string): Promise<void> {
   const now = new Date().toISOString();
-  await getDb().runAsync('UPDATE overtime_entries SET deleted_at = ? WHERE id = ?', now, id);
+  // Bajo el candado de la entidad, igual que `apply*Response`: si no, una
+  // respuesta que leyó la fila antes de este UPDATE la reescribía viva.
+  await withKeyLock(overtimeLock(id), () => getDb().runAsync('UPDATE overtime_entries SET deleted_at = ? WHERE id = ?', now, id));
   void syncDeleteOvertimeEntry(id);
 }
 
@@ -362,7 +365,9 @@ export function applyOvertimeEntryResponse(id: string, sinceIso: string, respons
 
 async function applyOvertimeEntryResponseLocked(id: string, sinceIso: string, response: OvertimeEntryApiResponse): Promise<void> {
   const current = await getOvertimeEntry(id);
-  if (!current) return;
+  // Borrada aquí mientras viajaba la escritura: la respuesta no la revive
+  // (antes reaparecía; con la papelera, se restaura solo a propósito).
+  if (!current || current.deletedAt) return;
   const mapped = overtimeEntryFromApiResponse(response);
   const merged = { ...current } as Record<string, unknown>;
   for (const [localKey, serverKey] of Object.entries(OVERTIME_ENTRY_FIELD_MAP)) {
@@ -439,4 +444,26 @@ export async function applyRemoteOvertimeMonthMetaChange(change: SyncChange): Pr
     merged.cedula as string,
     change.updated_at
   );
+}
+
+// ── Papelera (specs/papelera/) ─────────────────────────────────────
+
+/** Saca una entrada de horas extra de la papelera. En el servidor basta un
+ *  create del mismo id, que revive la fila con todos sus campos. */
+export async function restoreOvertimeEntry(id: string): Promise<RestoreResult> {
+  const restored = await withKeyLock(overtimeLock(id), async () => {
+    const current = await getOvertimeEntry(id);
+    if (!current?.deletedAt) return null;
+    const now = new Date().toISOString();
+    await getDb().runAsync('UPDATE overtime_entries SET deleted_at = NULL, updated_at = ? WHERE id = ?', now, id);
+    return { ...current, updatedAt: now, deletedAt: null };
+  });
+  if (!restored) return { restored: false, synced: Promise.resolve() };
+  const synced = syncRestore({
+    entity: 'overtime_entry',
+    id,
+    create: { payload: overtimeEntryToCreatePayload(restored), send: createOvertimeEntryRemote },
+    apply: applyOvertimeEntryResponse,
+  });
+  return { restored: true, synced };
 }

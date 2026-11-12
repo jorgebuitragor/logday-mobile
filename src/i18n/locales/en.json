@@ -455,5 +455,32 @@
     "shareCustom": "Share the uploaded one",
     "shareError": "Couldn't share the template",
     "rowDesc": "Daily message and overtime Excel"
+  },
+  "trash": {
+    "title": "Trash",
+    "rowDesc": "What you deleted on this phone or on another device. You can restore it.",
+    "deleted": "Deleted",
+    "deletedNamed": "Deleted: {{name}}",
+    "deletedMany": "{{count}} items deleted",
+    "undo": "Undo",
+    "restore": "Restore",
+    "deleteForever": "Delete forever",
+    "empty": "Empty",
+    "emptyState": "The trash is empty.",
+    "emptyHint": "What you delete shows up here, and you can restore it.",
+    "autoPurge": "Empty automatically after {{days}} days",
+    "autoPurgeDesc": "Removes from this phone what has been in the trash longer.",
+    "confirmForeverTitle": "Delete forever?",
+    "confirmEmptyTitle": "Empty the trash?",
+    "confirmForeverMessage": "It is removed from this phone and cannot be undone.",
+    "dateTakenTitle": "That day already has an absence",
+    "dateTakenMessage": "Delete or change the absence on that day before restoring this one.",
+    "deletedOn": "deleted {{when}}",
+    "untitled": "Untitled",
+    "entityTask": "Task",
+    "entityNote": "Note",
+    "entityDaily": "Daily",
+    "entityOvertime": "Overtime",
+    "entityAbsence": "Absence"
   }
 }

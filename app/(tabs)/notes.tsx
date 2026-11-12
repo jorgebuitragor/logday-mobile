@@ -22,6 +22,7 @@ import { normalizeTag } from '../../src/lib/noteTags';
 import { usePreferences, type NotesViewMode } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Note } from '../../src/types/note';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 // Mismo ámbar que desktop usa para el indicador de nota anclada
 // (`text-amber-400`, ver NoteList.tsx) — color semántico fijo, igual
@@ -95,6 +96,7 @@ export default function NotesScreen() {
 
   async function performDelete(note: Note) {
     await softDeleteNote(note.id);
+    announceTrashed({ items: [{ entity: 'note', key: note.id }], label: note.title || undefined });
     reload();
   }
 

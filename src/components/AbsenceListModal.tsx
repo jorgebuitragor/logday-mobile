@@ -12,6 +12,7 @@ import { useTheme } from '../theme/ThemeContext';
 import type { AbsenceDay } from '../types/absence';
 import { AbsenceModal } from './AbsenceModal';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { announceTrashed } from '../lib/trashEvents';
 
 interface AbsenceListModalProps {
   visible: boolean;
@@ -44,6 +45,7 @@ export function AbsenceListModal({ visible, absences, onClose, onChanged }: Abse
 
   async function performDelete(absence: AbsenceDay) {
     await deleteAbsenceDay(absence.id);
+    announceTrashed({ items: [{ entity: 'absence_day', key: absence.id }] });
     onChanged();
   }
 

@@ -113,7 +113,7 @@ function wireServer(): void {
 
 /** Lo que hace la app al iniciar sesión: marca la subida y corre el pull. */
 async function login(): Promise<void> {
-  setSyncRuntime({ enabled: true, connected: true, serverUrl: 'http://servidor.test', withSyncAuth: (fn) => fn('token') });
+  setSyncRuntime({ enabled: true, connected: true, serverUrl: 'https://servidor.test', withSyncAuth: (fn) => fn('token') });
   await requestInitialUpload();
   await reconcileSync();
 }

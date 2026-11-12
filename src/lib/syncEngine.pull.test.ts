@@ -52,7 +52,7 @@ beforeEach(async () => {
   fetchPage.mockReset();
   applyTask.mockReset();
   applyTask.mockResolvedValue(undefined);
-  setSyncRuntime({ enabled: true, connected: true, serverUrl: 'http://servidor.test', withSyncAuth: (fn) => fn('token') });
+  setSyncRuntime({ enabled: true, connected: true, serverUrl: 'https://servidor.test', withSyncAuth: (fn) => fn('token') });
 });
 
 describe('reconcileSync', () => {

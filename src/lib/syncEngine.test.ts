@@ -26,7 +26,7 @@ function connectedRuntimeFailingWith(status: number): void {
   setSyncRuntime({
     enabled: true,
     connected: true,
-    serverUrl: 'http://servidor.test',
+    serverUrl: 'https://servidor.test',
     withSyncAuth: () => Promise.reject(new SyncApiError(status, `HTTP ${status}`)),
   });
 }

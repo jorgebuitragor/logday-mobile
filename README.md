@@ -52,7 +52,7 @@ Los instaladores se generan en EAS (la nube de Expo) con los perfiles de [`eas.j
 eas build -p android --profile preview
 ```
 
-Un build real de Android o iOS no acepta servidores `http://` sin cifrar, a diferencia de Expo Go: el servidor de sync tiene que estar en HTTPS.
+En los builds reales, la app acepta `http://` solo hacia servidores de la red local (IPs privadas, `localhost`, nombres `.local`) y avisa que la conexión no va cifrada. Un servidor en internet tiene que estar en HTTPS. Detalle en `specs/builds-nativos/`.
 
 ## Documentación
 

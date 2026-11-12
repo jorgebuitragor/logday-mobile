@@ -20,5 +20,6 @@
 - [x] Ícono temático visto en el tercer build (emulador, íconos temáticos activados): en la pantalla de inicio toma los tonos del tema como Gmail o Fotos, con la línea de tendencia y el doblez. En el cajón de apps el ícono normal cabe entero en el círculo y el nombre "Logday" no se corta.
 - [x] Íconos claro, oscuro y teñido de iOS en `ios.icon`, revisados en el catálogo que genera `expo prebuild`.
 - [ ] Verlos en un iPhone (necesita el build de iOS).
-- [ ] Decidir HTTP sin cifrar (ver requirements).
+- [x] HTTP sin cifrar: solo hacia la red local (Jorge, 12 nov 2026). Regla en `src/lib/serverUrl.ts`, aviso en Ajustes, `usesCleartextTraffic` en Android y `NSAllowsLocalNetworking` en iOS.
+- [ ] Probar el sync por HTTP contra un servidor en la red local con un APK nuevo.
 - [ ] Build `production` (AAB) y subida a la prueba interna de Play (con OK de Jorge).

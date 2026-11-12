@@ -13,6 +13,7 @@ import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguag
 import {
   DEFAULT_DIGEST_TIME, disableDueDigest, enableDueDigest, getDueDigestTime, isDueDigestEnabled, setDueDigestTime,
 } from '../../src/lib/dueNotifications';
+import { checkServerUrl } from '../../src/lib/serverUrl';
 import { DeviceResponse, getPolicyRemote, SyncApiError } from '../../src/lib/syncApi';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useSync } from '../../src/settings/SyncContext';
@@ -34,6 +35,8 @@ function deviceIcon(deviceName: string): ComponentType<{ size?: number; color?: 
 
 const CONNECTED_COLOR = '#4ade80';
 const ERROR_COLOR = '#dc2626';
+// El mismo ámbar de los avisos de app/settings/templates.tsx.
+const WARN_COLOR = '#d97706';
 
 function relativeTime(t: (key: string, opts?: Record<string, unknown>) => string, iso: string): string {
   const diffMin = Math.floor((Date.now() - new Date(iso).getTime()) / 60_000);
@@ -250,6 +253,10 @@ function SyncSection({ scrollInputIntoView }: { scrollInputIntoView: (node: Text
 
   const isConnected = syncConnectionStatus === 'connected';
   const isConnecting = syncConnectionStatus === 'connecting';
+  // HTTP sin cifrar solo hacia la red local (src/lib/serverUrl.ts).
+  const urlCheck = checkServerUrl(serverUrl);
+  const savedUrlCheck = checkServerUrl(syncConfig.serverUrl);
+  const savedUrlUnencrypted = savedUrlCheck.ok && !savedUrlCheck.encrypted;
   const statusColor = isConnected ? CONNECTED_COLOR : syncConnectionStatus === 'error' ? ERROR_COLOR : theme.textFaint;
   const statusLabel =
     syncConnectionStatus === 'connected'
@@ -289,6 +296,12 @@ function SyncSection({ scrollInputIntoView }: { scrollInputIntoView: (node: Text
             <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 4 }}>
               {t('sync.connectedAs', { email: syncConfig.email })} · {syncConfig.serverUrl}
             </Text>
+            {savedUrlUnencrypted ? (
+              <View style={styles.urlNotice}>
+                <TriangleAlert size={12} color={WARN_COLOR} />
+                <Text style={{ color: WARN_COLOR, fontSize: 12, flexShrink: 1 }}>{t('sync.unencryptedConnection')}</Text>
+              </View>
+            ) : null}
             <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }}>
               {lastCheckedAt ? t('sync.lastChecked', { time: relativeTime(t, lastCheckedAt) }) : t('sync.lastCheckedNever')}
             </Text>
@@ -330,6 +343,17 @@ function SyncSection({ scrollInputIntoView }: { scrollInputIntoView: (node: Text
               autoCorrect={false}
               keyboardType="url"
             />
+            {!urlCheck.ok && urlCheck.reason === 'insecure-public' ? (
+              <View style={styles.urlNotice}>
+                <AlertCircle size={12} color={ERROR_COLOR} />
+                <Text style={{ color: ERROR_COLOR, fontSize: 12, flexShrink: 1 }}>{t('sync.insecurePublicUrl')}</Text>
+              </View>
+            ) : urlCheck.ok && !urlCheck.encrypted ? (
+              <View style={styles.urlNotice}>
+                <TriangleAlert size={12} color={WARN_COLOR} />
+                <Text style={{ color: WARN_COLOR, fontSize: 12, flexShrink: 1 }}>{t('sync.unencryptedLocalHint')}</Text>
+              </View>
+            ) : null}
             <TextInput
               ref={emailRef}
               style={[styles.syncInput, { borderColor: theme.border, backgroundColor: theme.bgInput, color: theme.textPrimary }]}
@@ -365,7 +389,7 @@ function SyncSection({ scrollInputIntoView }: { scrollInputIntoView: (node: Text
             <Pressable
               style={[styles.connectButton, { backgroundColor: theme.accentStrong }]}
               onPress={handleConnect}
-              disabled={isConnecting || !serverUrl.trim() || !email.trim() || !password}
+              disabled={isConnecting || !urlCheck.ok || !email.trim() || !password}
             >
               <Text style={styles.connectButtonText}>{isConnecting ? t('sync.connecting') : t('sync.connect')}</Text>
             </Pressable>
@@ -812,6 +836,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 10,
     marginTop: 10,
+  },
+  urlNotice: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 6,
+    marginTop: 6,
   },
   passwordRow: {
     flexDirection: 'row',

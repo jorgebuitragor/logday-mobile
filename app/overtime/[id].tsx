@@ -10,6 +10,7 @@ import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { OvertimeEntry } from '../../src/types/overtime';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 function toOvertimeInput(entry: OvertimeEntry): OvertimeInput {
   return {
@@ -44,6 +45,7 @@ export default function EditOvertimeScreen() {
 
   async function performDelete() {
     await softDeleteOvertimeEntry(id);
+    announceTrashed({ items: [{ entity: 'overtime_entry', key: id }] });
     router.back();
   }
 

@@ -6,6 +6,7 @@ import { diffChangedFields } from '../lib/objectDiff';
 import { createTaskRemote, deleteTaskRemote, patchTaskRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
 import { taskFieldsToPatchPayload, taskFromApiResponse, taskToCreatePayload, TASK_FIELD_MAP, type TaskApiResponse } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
+import { syncRestore, type RestoreResult } from '../lib/syncRestore';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import { nextCompletedAt } from '../lib/taskCompletion';
 import { isValidProgress } from '../lib/taskProgress';
@@ -180,7 +181,9 @@ export async function updateTaskStatus(id: string, status: TaskStatus): Promise<
 
 export async function softDeleteTask(id: string): Promise<void> {
   const now = new Date().toISOString();
-  await getDb().runAsync('UPDATE tasks SET deleted_at = ? WHERE id = ?', now, id);
+  // Bajo el candado de la entidad, igual que `apply*Response`: si no, una
+  // respuesta que leyó la fila antes de este UPDATE la reescribía viva.
+  await withKeyLock(taskLock(id), () => getDb().runAsync('UPDATE tasks SET deleted_at = ? WHERE id = ?', now, id));
   void syncDeleteTask(id);
 }
 
@@ -265,7 +268,9 @@ export function applyTaskResponse(id: string, sinceIso: string, response: TaskAp
 
 async function applyTaskResponseLocked(id: string, sinceIso: string, response: TaskApiResponse): Promise<void> {
   const current = await getTask(id);
-  if (!current) return; // se borró localmente mientras tanto
+  // Borrada aquí mientras viajaba la escritura: la respuesta no la revive
+  // (antes reaparecía; con la papelera, se restaura solo a propósito).
+  if (!current || current.deletedAt) return;
   const mapped = taskFromApiResponse(response);
   const merged = { ...current } as Record<string, unknown>;
   for (const [localKey, serverKey] of Object.entries(TASK_FIELD_MAP)) {
@@ -328,4 +333,29 @@ async function applyRemoteTaskChangeLocked(change: SyncChange): Promise<void> {
     }
   }
   await writeTaskRow(merged as unknown as Task, change.updated_at);
+}
+
+// ── Papelera (specs/papelera/) ─────────────────────────────────────
+
+/** Saca una task de la papelera. En el servidor la revive con un create
+ *  del mismo id y un patch de sus campos (ver src/lib/syncRestore.ts). */
+export async function restoreTask(id: string): Promise<RestoreResult> {
+  const restored = await withKeyLock(taskLock(id), async () => {
+    const current = await getTask(id);
+    if (!current?.deletedAt) return null;
+    const now = nowInstant();
+    await getDb().runAsync('UPDATE tasks SET deleted_at = NULL, updated_at = ? WHERE id = ?', now, id);
+    return { ...current, updatedAt: now, deletedAt: null };
+  });
+  if (!restored) return { restored: false, synced: Promise.resolve() };
+  const { title, taskCode, status, tags, project, completedAt, due, progress, content } = restored;
+  const fields = { title, taskCode, status, tags, project, completedAt, due, progress, content };
+  const synced = syncRestore({
+    entity: 'task',
+    id,
+    create: { payload: taskToCreatePayload(restored), send: createTaskRemote },
+    patch: { payload: taskFieldsToPatchPayload(fields), send: patchTaskRemote },
+    apply: applyTaskResponse,
+  });
+  return { restored: true, synced };
 }

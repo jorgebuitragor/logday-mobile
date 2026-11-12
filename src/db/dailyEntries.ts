@@ -6,6 +6,7 @@ import { withKeyLock } from '../lib/keyedLock';
 import { deleteDailyEntryRemote, isPermanentSyncError, putDailyEntryContentRemote, SyncApiError, type SyncChange } from '../lib/syncApi';
 import type { DailyEntryApiResponse } from '../lib/syncMapping';
 import * as syncQueue from '../lib/syncQueue';
+import type { RestoreResult } from '../lib/syncRestore';
 import { getSyncRuntime } from '../lib/syncRuntime';
 import type { DailyEntry } from '../types/dailyEntry';
 import { getDb } from './index';
@@ -82,7 +83,9 @@ export function upsertDailyEntry(date: string, content: string, base: string): P
 
 export async function softDeleteDailyEntry(date: string): Promise<void> {
   const now = new Date().toISOString();
-  await getDb().runAsync('UPDATE daily_entries SET deleted_at = ? WHERE date = ?', now, date);
+  // Bajo el candado de la entidad, igual que `apply*Response`: si no, una
+  // respuesta que leyó la fila antes de este UPDATE la reescribía viva.
+  await withKeyLock(dailyLock(date), () => getDb().runAsync('UPDATE daily_entries SET deleted_at = ? WHERE date = ?', now, date));
   void syncDeleteDailyEntry(date);
 }
 
@@ -91,13 +94,19 @@ export async function softDeleteDailyEntry(date: string): Promise<void> {
 // esa función): NO sincroniza nada, es una operación puramente local
 // — mismo comportamiento (también sin sync) se replica acá, no es un
 // corte de alcance de mobile.
-export async function softDeleteDailyMonth(yearMonth: string): Promise<void> {
+// Devuelve las fechas que borró, para el "Deshacer" (specs/papelera/).
+export async function softDeleteDailyMonth(yearMonth: string): Promise<string[]> {
   const now = new Date().toISOString();
+  const rows = await getDb().getAllAsync<{ date: string }>(
+    'SELECT date FROM daily_entries WHERE date LIKE ? AND deleted_at IS NULL',
+    `${yearMonth}-%`
+  );
   await getDb().runAsync(
     "UPDATE daily_entries SET deleted_at = ? WHERE date LIKE ? AND deleted_at IS NULL",
     now,
     `${yearMonth}-%`
   );
+  return rows.map((r) => r.date);
 }
 
 // ── Sync (logday-server) — contenido (CRDT) ───────────────────────
@@ -161,10 +170,14 @@ async function applyRemoteDailyContentState(date: string, contentStateB64: strin
   const content = getContentText(doc);
   doc.destroy();
   const now = new Date().toISOString();
+  // Sin `deleted_at = NULL` en el UPDATE: esto también aplica la respuesta
+  // de un envío propio, y un daily borrado mientras viajaba no tiene que
+  // revivir. El pull ya revive la fila antes de llamar aquí
+  // (`applyRemoteDailyEntryChangeLocked`).
   await getDb().runAsync(
     `INSERT INTO daily_entries (date, content, content_state, updated_at, deleted_at)
      VALUES (?, ?, ?, ?, NULL)
-     ON CONFLICT(date) DO UPDATE SET content = excluded.content, content_state = excluded.content_state, updated_at = excluded.updated_at, deleted_at = NULL`,
+     ON CONFLICT(date) DO UPDATE SET content = excluded.content, content_state = excluded.content_state, updated_at = excluded.updated_at`,
     date,
     content,
     nextStateB64,
@@ -233,4 +246,41 @@ async function applyRemoteDailyEntryChangeLocked(change: SyncChange): Promise<vo
     now
   );
   if (data.content_state) await applyRemoteDailyContentState(date, data.content_state);
+}
+
+// ── Papelera (specs/papelera/) ─────────────────────────────────────
+
+/** Saca un daily de la papelera. DailyEntry no tiene create ni metadata:
+ *  el único modo de revivirlo en el servidor es el `PUT` de contenido, que
+ *  mezcla el update con el CRDT guardado (el borrado no lo toca) y limpia
+ *  `deleted_at`.
+ *
+ *  Se manda el estado CRDT local entero, no un update vacío como Web. Es
+ *  el mismo documento que el servidor ya conoce (mismas operaciones, no
+ *  uno nuevo sembrado desde el texto, que es lo que duplicaba el texto en
+ *  Web), así que la mezcla no duplica nada. Y la cola de contenido guarda
+ *  un estado por día que **reemplaza** al anterior: encolar un update
+ *  vacío borraría lo escrito sin conexión antes del borrado. Solo un daily
+ *  sin estado CRDT (anterior a la Fase 3) manda el update vacío. */
+export async function restoreDailyEntry(date: string): Promise<RestoreResult> {
+  const stateB64 = await withKeyLock(dailyLock(date), async () => {
+    const row = await getDb().getFirstAsync<{ deleted_at: string | null; content_state: string | null }>(
+      'SELECT deleted_at, content_state FROM daily_entries WHERE date = ?',
+      date
+    );
+    if (!row?.deleted_at) return undefined;
+    await getDb().runAsync('UPDATE daily_entries SET deleted_at = NULL, updated_at = ? WHERE date = ?', new Date().toISOString(), date);
+    return row.content_state;
+  });
+  if (stateB64 === undefined) return { restored: false, synced: Promise.resolve() };
+  const synced = (async () => {
+    if (!getSyncRuntime()?.enabled) return;
+    await syncQueue.cancelPendingDeletes('daily_entry', date);
+    if (stateB64) {
+      await pushDailyContent(date, stateB64);
+    } else if (!(await contentSyncQueue.hasPending('daily_entry', date))) {
+      await pushDailyContent(date, encodeDocStateB64(docFromStateB64(null)));
+    }
+  })();
+  return { restored: true, synced };
 }

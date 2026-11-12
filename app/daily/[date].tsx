@@ -20,6 +20,7 @@ import { buildDailyMessage } from '../../src/lib/templates/choice';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTemplates } from '../../src/settings/TemplatesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 export default function DailyEditorScreen() {
   const { t, i18n } = useTranslation();
@@ -223,6 +224,7 @@ export default function DailyEditorScreen() {
 
   async function performDelete() {
     await softDeleteDailyEntry(date);
+    announceTrashed({ items: [{ entity: 'daily_entry', key: date }] });
     router.back();
   }
 

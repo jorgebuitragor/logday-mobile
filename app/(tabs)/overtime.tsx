@@ -23,6 +23,7 @@ import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTemplates } from '../../src/settings/TemplatesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { OvertimeEntry, OvertimeMonthMeta } from '../../src/types/overtime';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 interface MonthSection {
   title: string; // "YYYY-MM"
@@ -105,6 +106,7 @@ export default function OvertimeScreen() {
 
   async function performDelete(entry: OvertimeEntry) {
     await softDeleteOvertimeEntry(entry.id);
+    announceTrashed({ items: [{ entity: 'overtime_entry', key: entry.id }] });
     reload();
   }
 

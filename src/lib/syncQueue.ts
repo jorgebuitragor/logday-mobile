@@ -74,6 +74,23 @@ function dequeue(id: string): Promise<void> {
   });
 }
 
+/** Quita de la cola los borrados todavía sin enviar de esa entidad. Lo
+ *  usa la papelera al restaurar: un borrado que no llegó al servidor ya no
+ *  tiene que llegar. Devuelve cuántos quitó. */
+export function cancelPendingDeletes(entity: EntityType, entityId: string): Promise<number> {
+  return withQueueLock(async () => {
+    const queue = await loadQueue();
+    const kept = queue.filter((w) => !(w.entity === entity && w.entityId === entityId && w.op === 'delete'));
+    if (kept.length !== queue.length) await saveQueue(kept);
+    return queue.length - kept.length;
+  });
+}
+
+/** ¿Queda alguna escritura en cola para esa entidad? */
+export async function hasPendingWrites(entity: EntityType, entityId: string): Promise<boolean> {
+  return (await loadQueue()).some((w) => w.entity === entity && w.entityId === entityId);
+}
+
 /**
  * ¿Hay una entrada en cola, más nueva que `sinceIso`, que también
  * toca ese mismo campo de esa misma entidad? Si sí, una respuesta/

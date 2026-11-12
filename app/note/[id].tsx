@@ -26,6 +26,7 @@ import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { ThemeTokens } from '../../src/theme/tokens';
 import type { Note } from '../../src/types/note';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 // Mismo ámbar que desktop usa para el indicador de nota anclada
 // (`text-amber-400`, ver NoteEditor.tsx/NoteList.tsx).
@@ -416,6 +417,7 @@ export default function NoteEditorScreen() {
   async function performDelete() {
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     await softDeleteNote(id);
+    announceTrashed({ items: [{ entity: 'note', key: id }], label: titleRef.current || undefined });
     router.back();
   }
 

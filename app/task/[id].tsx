@@ -10,6 +10,7 @@ import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { Task } from '../../src/types/task';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 function toTaskInput(task: Task): TaskInput {
   return {
@@ -46,6 +47,7 @@ export default function EditTaskScreen() {
 
   async function performDelete() {
     await softDeleteTask(id);
+    announceTrashed({ items: [{ entity: 'task', key: id }] });
     router.back();
   }
 

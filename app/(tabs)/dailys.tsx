@@ -24,6 +24,7 @@ import { usePreferences } from '../../src/settings/PreferencesContext';
 import { useTheme } from '../../src/theme/ThemeContext';
 import type { AbsenceDay } from '../../src/types/absence';
 import type { DailyEntry } from '../../src/types/dailyEntry';
+import { announceTrashed } from '../../src/lib/trashEvents';
 
 // El contenido almacenado es una lista de actividades ("- item1\n- item2");
 // se muestra como una vista previa de una línea uniendo los items en vez
@@ -108,11 +109,13 @@ export default function DailysScreen() {
 
   async function performDelete(entry: DailyEntry) {
     await softDeleteDailyEntry(entry.date);
+    announceTrashed({ items: [{ entity: 'daily_entry', key: entry.date }] });
     reload();
   }
 
   async function performDeleteAbsence(absence: AbsenceDay) {
     await deleteAbsenceDay(absence.id);
+    announceTrashed({ items: [{ entity: 'absence_day', key: absence.id }] });
     reloadAbsences();
   }
 
@@ -121,7 +124,8 @@ export default function DailysScreen() {
   // mobile, agregado 2026-08-30 junto al resto de la revisión de esta
   // pantalla.
   async function performDeleteMonth(yearMonth: string) {
-    await softDeleteDailyMonth(yearMonth);
+    const dates = await softDeleteDailyMonth(yearMonth);
+    announceTrashed({ items: dates.map((date) => ({ entity: 'daily_entry' as const, key: date })) });
     reload();
   }
 

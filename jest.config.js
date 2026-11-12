@@ -1,7 +1,13 @@
-// Pruebas de lógica pura (src/lib/templates, por ahora): Jest en Node, con
+// Pruebas de lógica pura y de src/db (sobre node:sqlite, ver src/__mocks__): Jest en Node, con
 // babel-preset-expo, el mismo Babel que usa Metro. No usa el preset
 // jest-expo: con SDK 57, expo-modules-core queda dentro de
 // expo/node_modules y el setup de jest-expo no lo encuentra.
+
+// Zona horaria fija para que las pruebas de fechas den lo mismo en la Mac
+// de Jorge y en la CI: la de Colombia, donde aparecieron los bugs de "hoy"
+// en UTC (de 7 p. m. a medianoche ya es mañana en UTC).
+process.env.TZ = 'America/Bogota';
+
 const babelPresetExpo = require.resolve('babel-preset-expo', { paths: [require.resolve('expo/package.json')] });
 
 module.exports = {

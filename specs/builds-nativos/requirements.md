@@ -24,11 +24,14 @@ Hasta la 1.0, Logday Mobile solo se probó en Expo Go. Para publicar en las tien
   - Android: Play App Signing, con la llave de subida gestionada por EAS.
   - iOS: certificados gestionados por EAS.
 
+- El nombre bajo el ícono DEBERÁ ser "Logday" (decidido por Jorge el 12 nov 2026; "Logday Mobile" se cortaba en el lanzador). El nombre de la ficha de la tienda es aparte.
+- En Android 13 o superior, con los íconos temáticos activados, el ícono DEBERÁ tomar los colores del tema del sistema como el resto de apps, y seguir mostrando el documento con su doblez y la línea de tendencia.
+- El ícono de Android DEBERÁ caber en la zona segura del ícono adaptativo, para que ninguna máscara del lanzador (círculo, squircle, cuadrado) le corte el documento.
+
 ## PENDIENTE DE DECISIÓN
 
 - **HTTP sin cifrar.** En un build real, Android 9 o superior bloquea por omisión las conexiones `http://`, e iOS también, por App Transport Security. En Expo Go sí funcionan. Un servidor de sync en la red local con `http://192.168.x.x:8080` dejaría de conectar. Hay tres opciones:
   - Solo HTTPS, que es lo más seguro y lo que piden las tiendas.
   - Permitir HTTP en general (`usesCleartextTraffic` en Android y `NSAllowsArbitraryLoads` en iOS), que obliga a justificarlo ante Apple.
   - En iOS, permitir solo la red local (`NSAllowsLocalNetworking`). Android no tiene un equivalente para IPs arbitrarias.
-- **Nombre bajo el ícono.** Hoy es "Logday Mobile" (`name` de `app.json`). En el teléfono quizá baste "Logday". El nombre de la ficha de la tienda es aparte.
 - **Workflow de release por tag** que adjunte el APK al Release de GitHub, como el de Desktop. Va después del primer build.

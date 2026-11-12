@@ -15,5 +15,8 @@
   - [x] los íconos de los accesos rápidos en Android: salían como círculos vacíos, porque `task`, `compose` y `date` son símbolos de iOS. Arreglado con `androidIcons` del plugin y `quickActionIcon` (los glifos de Lucide del Inicio en `assets/quick-actions/`). En el segundo build se ven los tres y "Nueva tarea" abre el formulario;
   - [ ] tocar una notificación;
   - [ ] "reducir movimiento".
-- [ ] Decidir HTTP sin cifrar y el nombre bajo el ícono (ver requirements). En el cajón de apps del Pixel, "Logday Mobile" se corta como "Logday Mob…".
+- [x] Nombre bajo el ícono: "Logday" (Jorge, 12 nov 2026). "Logday Mobile" se cortaba como "Logday Mob…".
+- [x] Ícono de Android dentro de la zona segura y capa monocroma con la línea de tendencia, para los íconos temáticos.
+- [ ] Ver el ícono temático en un build.
+- [ ] Decidir HTTP sin cifrar (ver requirements).
 - [ ] Build `production` (AAB) y subida a la prueba interna de Play (con OK de Jorge).

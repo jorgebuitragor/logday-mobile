@@ -51,3 +51,13 @@ Android busca un recurso (drawable o mipmap) con el nombre del `icon` de cada at
 - **Prueba.** Una prueba revisa que cada nombre de Android exista en `androidIcons`.
 
 Usar el plugin destapó un problema del árbol de npm. Con `legacy-peer-deps`, `ajv-keywords@5`, que pide `ajv ^8` como peer, quedaba junto al `ajv` 6 de ESLint, y el prebuild fallaba también en EAS. Por eso `ajv ^8` está en `devDependencies`; la razón está en `.npmrc`.
+
+## Ícono de Android y su versión con tema (12 nov 2026)
+
+Antes, el documento ocupaba el 87 % del alto visible: las máscaras redondas le cortaban los bordes. Además, la capa monocroma era solo la silueta rellena, así que con íconos temáticos se veía un documento en blanco.
+
+Ahora las tres capas salen de los trazos de `LogoMark` (`src/components/LogoMark.tsx`). Los SVG fuente están en `assets/icon-src/` y se pasaron a PNG de 1024 px:
+- **Lienzo.** El adaptativo mide 108 unidades. El documento mide 40 de alto, centrado, dentro del círculo seguro de 66.
+- **Frente** (`android-icon-foreground.png`): el documento blanco, el doblez con el acento al 24 % y la línea de tendencia en el acento.
+- **Fondo** (`android-icon-background.png`): el acento `#6366f1` liso.
+- **Monocroma** (`android-icon-monochrome.png`): el documento relleno, con la línea de tendencia (trazo de 3) y el doblez calados. El sistema la pinta con los colores del tema.

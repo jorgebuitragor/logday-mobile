@@ -20,6 +20,7 @@ import type {
   OvertimeEntryCreatePayload, OvertimeEntryPatchPayload, OvertimeMonthMetaPatchPayload,
   TaskCreatePayload, TaskPatchPayload,
 } from './syncMapping';
+import { isOwnWriteSeq } from './ownWrites';
 import { emitRemoteChange } from './syncEvents';
 import * as syncQueue from './syncQueue';
 import { isInitialUploadPending, runInitialUpload } from './syncInitialUpload';
@@ -150,6 +151,19 @@ export function reconcileSync(): Promise<void> {
     }
   })();
   return pullInFlight;
+}
+
+/** Decide qué hacer con un grupo de avisos de `/ws` (ver realtime.ts).
+ *  Si todos son de cambios que el teléfono ya tiene (su `seq` ya lo
+ *  cubrió el cursor, o es el eco de una escritura propia, ver
+ *  ownWrites.ts), no pide nada. Si alguno es nuevo o no trae `seq`,
+ *  hace el pull de siempre. Lo mismo que hacen Desktop y Web. */
+export async function handleRealtimeNotices(seqs: (number | null)[]): Promise<void> {
+  if (seqs.length > 0) {
+    const cursor = await getCursor();
+    if (seqs.every((seq) => seq !== null && (seq <= cursor || isOwnWriteSeq(seq)))) return;
+  }
+  await reconcileSync();
 }
 
 /** Reenvía una escritura que quedó en cola — mismo despacho por

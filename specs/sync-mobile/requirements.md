@@ -125,6 +125,19 @@ que Hermes no expone).
 - Si la subida se corta, el sistema DEBERÁ terminarla en un pull
   siguiente, y correrla de nuevo NO DEBERÁ duplicar nada.
 
+## Requisitos (EARS) — Tiempo real sin eco (nov 2026)
+
+- Cuando llegue un aviso de `/ws` por una escritura hecha en este mismo
+  teléfono (el eco), el sistema NO DEBERÁ pedir `/sync/changes`: ya
+  tiene ese cambio. Tampoco cuando el `seq` del aviso ya lo cubre el
+  cursor.
+- Cuando llegue una ráfaga de avisos, el sistema DEBERÁ decidir una sola
+  vez por todos (250 ms) y hacer como mucho un pull.
+- Si alguno de los avisos es de otro cliente o no trae `seq`, el sistema
+  DEBERÁ hacer el pull de siempre desde el cursor.
+- El sistema NO DEBERÁ avanzar el cursor con el `seq` de una escritura
+  propia: se saltaría los cambios de otros clientes que haya en medio.
+
 ## Fuera de este spec
 
 - ~~**WebSocket en tiempo real**~~ — quedó fuera al escribir este spec

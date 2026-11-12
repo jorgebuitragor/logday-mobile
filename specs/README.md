@@ -58,3 +58,4 @@ hasta tres archivos:
 | Inicio | implementado (pendiente confirmación en vivo) | [`inicio/`](./inicio/requirements.md) |
 | Notificaciones de vencimientos | implementado (pendiente confirmación en un build propio) | [`notificaciones/`](./notificaciones/requirements.md) |
 | Captura rápida | implementado (pendiente de probar en un build propio) | [`captura-rapida/`](./captura-rapida/requirements.md) |
+| Splash | implementado (splash nativo pendiente del build propio) | [`splash/`](./splash/requirements.md) |

@@ -17,7 +17,7 @@
   - [ ] "reducir movimiento".
 - [x] Nombre bajo el ícono: "Logday" (Jorge, 12 nov 2026). "Logday Mobile" se cortaba como "Logday Mob…".
 - [x] Ícono de Android dentro de la zona segura y capa monocroma con la línea de tendencia, para los íconos temáticos.
-- [ ] Ver el ícono temático en un build.
+- [x] Ícono temático visto en el tercer build (emulador, íconos temáticos activados): en la pantalla de inicio toma los tonos del tema como Gmail o Fotos, con la línea de tendencia y el doblez. En el cajón de apps el ícono normal cabe entero en el círculo y el nombre "Logday" no se corta.
 - [x] Íconos claro, oscuro y teñido de iOS en `ios.icon`, revisados en el catálogo que genera `expo prebuild`.
 - [ ] Verlos en un iPhone (necesita el build de iOS).
 - [ ] Decidir HTTP sin cifrar (ver requirements).

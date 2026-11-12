@@ -1,14 +1,18 @@
-import { AlertCircle, BookOpen, ChevronRight, Clock, Cloud, CloudOff, Download, Eye, EyeOff, FileText, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, Trash2, TriangleAlert, UserX } from 'lucide-react-native';
+import { AlertCircle, Bell, BookOpen, ChevronRight, Clock, Cloud, CloudOff, Download, Eye, EyeOff, FileText, Globe, HelpCircle, Languages, LogOut, Monitor, Moon, Puzzle, RefreshCw, ShieldAlert, ShieldCheck, Smartphone, Snowflake, Sun, Trash2, TriangleAlert, UserX } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import type { ComponentType } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Animated, { useAnimatedKeyboard, useAnimatedStyle } from 'react-native-reanimated';
 
+import { AppTimePicker } from '../../src/components/AppTimePicker';
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
 import i18n, { SUPPORTED_LANGUAGES, setLanguagePreference, type SupportedLanguage } from '../../src/i18n';
+import {
+  DEFAULT_DIGEST_TIME, disableDueDigest, enableDueDigest, getDueDigestTime, isDueDigestEnabled, setDueDigestTime,
+} from '../../src/lib/dueNotifications';
 import { DeviceResponse, getPolicyRemote, SyncApiError } from '../../src/lib/syncApi';
 import { usePreferences, type TimeFormat } from '../../src/settings/PreferencesContext';
 import { useSync } from '../../src/settings/SyncContext';
@@ -197,6 +201,8 @@ export default function SettingsScreen() {
           />
         </Pressable>
       </Section>
+
+      <DueDigestSection />
 
       {/* Plantillas del Daily y del Excel (specs/plantillas): pantalla
           aparte, no cabe como una fila más. */}
@@ -626,6 +632,61 @@ const modalStyles = StyleSheet.create({
     fontWeight: '600',
   },
 });
+
+// Resumen diario de vencimientos (specs/notificaciones/). El permiso se
+// pide al encender el interruptor; si se niega, queda apagado y se explica
+// cómo darlo desde los ajustes del sistema.
+function DueDigestSection() {
+  const { t } = useTranslation();
+  const theme = useTheme();
+  const [enabled, setEnabled] = useState(false);
+  const [time, setTime] = useState(DEFAULT_DIGEST_TIME);
+
+  useEffect(() => {
+    void isDueDigestEnabled().then(setEnabled);
+    void getDueDigestTime().then(setTime);
+  }, []);
+
+  async function toggle(value: boolean) {
+    setEnabled(value);
+    if (!value) {
+      await disableDueDigest();
+      return;
+    }
+    if (!(await enableDueDigest())) {
+      setEnabled(false);
+      Alert.alert(t('notifications.deniedTitle'), t('notifications.deniedMessage'), [
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('notifications.openSettings'), onPress: () => void Linking.openSettings() },
+      ]);
+    }
+  }
+
+  function changeTime(hhmm: string) {
+    setTime(hhmm);
+    void setDueDigestTime(hhmm);
+  }
+
+  return (
+    <Section title={t('notifications.sectionTitle')} icon={Bell}>
+      <View style={[styles.row, { borderBottomWidth: enabled ? StyleSheet.hairlineWidth : 0, borderColor: theme.border }]}>
+        <View style={{ flex: 1 }}>
+          <Text style={{ color: theme.textPrimary, fontWeight: '600' }}>{t('notifications.digestToggle')}</Text>
+          <Text style={{ color: theme.textHint, fontSize: 12, marginTop: 2 }}>{t('notifications.digestDesc')}</Text>
+        </View>
+        <Switch value={enabled} onValueChange={(v) => void toggle(v)} trackColor={{ true: theme.accentStrong }} />
+      </View>
+      {enabled ? (
+        <View style={[styles.row, { borderBottomWidth: 0 }]}>
+          <Text style={{ color: theme.textPrimary, flex: 1 }}>{t('notifications.digestTime')}</Text>
+          <View style={{ minWidth: 120 }}>
+            <AppTimePicker value={time} onChange={changeTime} />
+          </View>
+        </View>
+      ) : null}
+    </Section>
+  );
+}
 
 function Section({
   title,

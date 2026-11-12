@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import { initDb } from '../src/db';
 import { PolicyGateModal } from '../src/components/PolicyGateModal';
 import { UndoToast } from '../src/components/UndoToast';
 import { autoPurgeTrash } from '../src/db/trash';
+import { startDueDigestScheduling } from '../src/lib/dueNotifications';
 import { PreferencesProvider } from '../src/settings/PreferencesContext';
 import { SyncProvider } from '../src/settings/SyncContext';
 import { TemplatesProvider } from '../src/settings/TemplatesContext';
@@ -46,6 +47,7 @@ function RootLayoutInner() {
   const scheme = useThemeScheme();
   const [dbReady, setDbReady] = useState(false);
   const [dbError, setDbError] = useState<string | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
     initDb()
@@ -57,6 +59,13 @@ function RootLayoutInner() {
       })
       .catch((error: Error) => setDbError(error.message));
   }, []);
+
+  // Resumen de vencimientos (specs/notificaciones/): se reprograma con la
+  // base lista. Tocar la notificación abre el Inicio.
+  useEffect(() => {
+    if (!dbReady) return;
+    return startDueDigestScheduling((url) => router.navigate(url as '/'));
+  }, [dbReady, router]);
 
   // Sin esta pieza, Android no tenía ningún <StatusBar> declarado — el
   // estilo de íconos quedaba en lo que sea que el SO decidiera por

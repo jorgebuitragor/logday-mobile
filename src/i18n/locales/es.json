@@ -502,5 +502,22 @@
     "overtimeHours": "{{hours}} h extra",
     "recentNotes": "Notas recientes",
     "noNotes": "Todavía no hay notas."
+  },
+  "notifications": {
+    "sectionTitle": "Notificaciones",
+    "digestToggle": "Resumen diario de vencimientos",
+    "digestDesc": "Una notificación al día con las tareas que vencen hoy y las vencidas. Se arma en este teléfono, sin enviar nada a ningún servidor.",
+    "digestTime": "Hora del resumen",
+    "digestTitle": "Tus vencimientos",
+    "dueToday_one": "1 tarea vence hoy",
+    "dueToday_other": "{{count}} tareas vencen hoy",
+    "overdue_one": "1 vencida",
+    "overdue_other": "{{count}} vencidas",
+    "onlyOverdue_one": "Tienes 1 tarea vencida",
+    "onlyOverdue_other": "Tienes {{count}} tareas vencidas",
+    "channelName": "Resumen de vencimientos",
+    "deniedTitle": "Notificaciones desactivadas",
+    "deniedMessage": "Para recibir el resumen, permite las notificaciones de Logday en los ajustes del teléfono.",
+    "openSettings": "Abrir ajustes"
   }
 }

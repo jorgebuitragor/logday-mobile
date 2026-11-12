@@ -23,3 +23,34 @@ export function onRemoteChange(listener: RemoteChangeListener): () => void {
 export function emitRemoteChange(type: SyncEntityType, id: string): void {
   for (const listener of listeners) listener(type, id);
 }
+
+// ── Fin de un pull y cambios locales de tareas ─────────────────────
+// Los usa el resumen de vencimientos (src/lib/dueNotifications.ts) para
+// reprogramarse después de cada sync y al cambiar una tarea aquí.
+
+type Listener = () => void;
+
+const pullListeners = new Set<Listener>();
+const taskListeners = new Set<Listener>();
+
+export function onPullFinished(listener: Listener): () => void {
+  pullListeners.add(listener);
+  return () => {
+    pullListeners.delete(listener);
+  };
+}
+
+export function emitPullFinished(): void {
+  for (const listener of pullListeners) listener();
+}
+
+export function onLocalTaskChange(listener: Listener): () => void {
+  taskListeners.add(listener);
+  return () => {
+    taskListeners.delete(listener);
+  };
+}
+
+export function emitLocalTaskChange(): void {
+  for (const listener of taskListeners) listener();
+}

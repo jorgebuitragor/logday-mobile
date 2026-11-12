@@ -56,3 +56,4 @@ hasta tres archivos:
 | Plantillas (Daily y Excel de horas extra) | implementado, v1 local (pendiente confirmación en vivo) | [`plantillas/`](./plantillas/requirements.md) |
 | Papelera | implementado (pendiente confirmación en vivo) | [`papelera/`](./papelera/requirements.md) |
 | Inicio | implementado (pendiente confirmación en vivo) | [`inicio/`](./inicio/requirements.md) |
+| Notificaciones de vencimientos | implementado (pendiente confirmación en un build propio) | [`notificaciones/`](./notificaciones/requirements.md) |

@@ -21,7 +21,7 @@ import type {
   TaskCreatePayload, TaskPatchPayload,
 } from './syncMapping';
 import { isOwnWriteSeq } from './ownWrites';
-import { emitRemoteChange } from './syncEvents';
+import { emitPullFinished, emitRemoteChange } from './syncEvents';
 import * as syncQueue from './syncQueue';
 import { isInitialUploadPending, runInitialUpload } from './syncInitialUpload';
 import { getSyncRuntime } from './syncRuntime';
@@ -148,6 +148,7 @@ export function reconcileSync(): Promise<void> {
       } while (pullPending);
     } finally {
       pullInFlight = null;
+      emitPullFinished();
     }
   })();
   return pullInFlight;

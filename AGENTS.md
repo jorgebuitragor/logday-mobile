@@ -15,7 +15,7 @@ App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo
   3. `npm test`: Jest en Node, solo para lógica pura (por ahora los motores de `src/lib/templates/`). Config en `jest.config.js`; no usa el preset `jest-expo`, que con SDK 57 no encuentra `expo-modules-core`.
   4. Pedir el bundle de Metro de `expo-router/entry` y buscar errores reales de "Unable to resolve module". Ignorar los que aparecen como texto dentro del propio código de errores de Metro.
   5. Que las claves de i18n en español y en inglés sean las mismas.
-- CI: typecheck y lint con Node 22.
+- CI: typecheck, lint y `npm test` con Node 22. Jest fija `TZ=America/Bogota` (`jest.config.js`).
 
 ## Convenciones
 

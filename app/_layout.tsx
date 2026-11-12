@@ -114,6 +114,7 @@ function RootLayoutInner() {
         <Stack.Screen name="overtime/new" options={{ title: t('overtimeForm.newTitle'), presentation: 'modal' }} />
         <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), presentation: 'modal' }} />
         <Stack.Screen name="search" options={{ title: t('search.placeholder'), presentation: 'modal' }} />
+        <Stack.Screen name="settings/index" options={{ title: t('tabs.settings') }} />
         <Stack.Screen name="settings/templates" options={{ title: t('settings.tabTemplates') }} />
         <Stack.Screen name="settings/trash" options={{ title: t('trash.title') }} />
       </Stack>

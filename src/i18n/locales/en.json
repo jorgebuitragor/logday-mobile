@@ -12,6 +12,7 @@
     "months": ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
   },
   "tabs": {
+    "home": "Home",
     "tasks": "Tasks",
     "notes": "Notes",
     "dailys": "Dailys",
@@ -482,5 +483,24 @@
     "entityDaily": "Daily",
     "entityOvertime": "Overtime",
     "entityAbsence": "Absence"
+  },
+  "home": {
+    "newTask": "New task",
+    "newNote": "New note",
+    "newOvertime": "Overtime",
+    "welcomeTitle": "Welcome to Logday",
+    "welcomeBody": "Here you'll see what's due, today's daily, your week and your recent notes. Start with a task, a note or your daily.",
+    "dailyTitle": "Today's daily",
+    "dailyStart": "Start today's daily",
+    "tasksTitle": "Due dates",
+    "nothingDue": "Nothing is due this week.",
+    "overdue": "Overdue",
+    "dueToday": "Due today",
+    "dueThisWeek": "This week",
+    "weekTitle": "Your week",
+    "holiday": "holiday",
+    "overtimeHours": "{{hours}} h overtime",
+    "recentNotes": "Recent notes",
+    "noNotes": "No notes yet."
   }
 }

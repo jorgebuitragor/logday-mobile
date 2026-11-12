@@ -26,7 +26,10 @@ aquí).
   agregó un 5º tab **Ajustes** el mismo día al construir el selector
   manual de tema/idioma (ver `pantalla-ajustes/`) — no ameritó volver
   a preguntar por el patrón de navegación en sí (tabs), solo agregó
-  una entrada más.
+  una entrada más. **Desde nov 2026** (ver `inicio/`): la primera
+  pestaña es **Inicio**, seguida de Tareas, Notas, Dailys y Extras.
+  Ajustes salió de la barra a un engranaje en la cabecera del Inicio,
+  junto a la búsqueda (decidido por Jorge el 11 nov 2026).
 
 ### Alcance de esta fase
 

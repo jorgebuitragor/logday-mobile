@@ -12,6 +12,7 @@
     "months": ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
   },
   "tabs": {
+    "home": "Inicio",
     "tasks": "Tareas",
     "notes": "Notas",
     "dailys": "Dailys",
@@ -482,5 +483,24 @@
     "entityDaily": "Daily",
     "entityOvertime": "Horas extra",
     "entityAbsence": "Ausencia"
+  },
+  "home": {
+    "newTask": "Nueva tarea",
+    "newNote": "Nueva nota",
+    "newOvertime": "Horas extra",
+    "welcomeTitle": "Te damos la bienvenida a Logday",
+    "welcomeBody": "Aquí verás lo que vence, tu daily de hoy, la semana y tus notas recientes. Empieza con una tarea, una nota o tu daily.",
+    "dailyTitle": "Daily de hoy",
+    "dailyStart": "Empezar el daily de hoy",
+    "tasksTitle": "Vencimientos",
+    "nothingDue": "Nada vence esta semana.",
+    "overdue": "Vencidas",
+    "dueToday": "Vencen hoy",
+    "dueThisWeek": "Esta semana",
+    "weekTitle": "Tu semana",
+    "holiday": "festivo",
+    "overtimeHours": "{{hours}} h extra",
+    "recentNotes": "Notas recientes",
+    "noNotes": "Todavía no hay notas."
   }
 }

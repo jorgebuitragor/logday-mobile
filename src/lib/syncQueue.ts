@@ -1,6 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { randomUUID } from 'expo-crypto';
 
+import { withKeyLock } from './keyedLock';
+
 // Cola de escrituras pendientes de mandar a logday-server — puerto de
 // task-manager/src/lib/syncQueue.ts, `AsyncStorage` en vez de
 // `localStorage`. Persistida, no en memoria: sobrevive a que la app se
@@ -25,6 +27,14 @@ export interface QueuedWrite {
 
 const STORAGE_KEY = 'syncQueue';
 
+// Toda lectura → cambio → escritura de la cola pasa por este candado.
+// AsyncStorage es async: sin él, un `enqueue` que cae mientras el drenado
+// quita una entrada se pierde (cada uno guarda su propia copia de la cola
+// y la que escribe última borra lo que agregó la otra).
+function withQueueLock<T>(fn: () => Promise<T>): Promise<T> {
+  return withKeyLock(STORAGE_KEY, fn);
+}
+
 async function loadQueue(): Promise<QueuedWrite[]> {
   try {
     const parsed = JSON.parse((await AsyncStorage.getItem(STORAGE_KEY)) || '[]');
@@ -44,19 +54,24 @@ export async function enqueue(
   op: WriteOp,
   fields: Record<string, unknown> = {}
 ): Promise<void> {
-  const queue = await loadQueue();
-  queue.push({ id: randomUUID(), entity, entityId, op, fields, queuedAt: new Date().toISOString() });
-  await saveQueue(queue);
+  await withQueueLock(async () => {
+    const queue = await loadQueue();
+    queue.push({ id: randomUUID(), entity, entityId, op, fields, queuedAt: new Date().toISOString() });
+    await saveQueue(queue);
+  });
 }
 
 export async function queueLength(): Promise<number> {
   return (await loadQueue()).length;
 }
 
-async function dequeue(id: string, queue: QueuedWrite[]): Promise<QueuedWrite[]> {
-  const next = queue.filter((w) => w.id !== id);
-  await saveQueue(next);
-  return next;
+// Relee la cola guardada en vez de filtrar la copia con la que arrancó el
+// drenado: esa copia no tiene lo que se encoló mientras tanto.
+function dequeue(id: string): Promise<void> {
+  return withQueueLock(async () => {
+    const queue = await loadQueue();
+    await saveQueue(queue.filter((w) => w.id !== id));
+  });
 }
 
 /**
@@ -84,18 +99,34 @@ export async function hasNewerQueuedField(
  *   reintentarla nunca va a funcionar — se saca igual, sin
  *   reintentar, para no bloquear el resto de la cola para siempre por
  *   una sola entrada irrecuperable.
- * - lanza una excepción: fallo transitorio (red caída, 5xx) — corta
- *   el drenado acá, las entradas restantes (esta incluida) quedan en
- *   cola en su orden original para el próximo intento.
+ * - lanza una excepción: fallo transitorio (red caída, 5xx, sesión
+ *   vencida) — corta el drenado acá, las entradas restantes (esta
+ *   incluida) quedan en cola en su orden original para el próximo intento.
+ *
+ * Un solo drenado a la vez: si ya hay uno en curso (el polling, la vuelta
+ * a primer plano y la reconexión pueden coincidir), se devuelve ese mismo.
+ * Dos en paralelo mandarían dos veces las mismas escrituras. Lo encolado
+ * mientras tanto se manda en el próximo drenado.
  */
-export async function drainQueue(send: (write: QueuedWrite) => Promise<'ok' | 'permanent-failure'>): Promise<void> {
-  let queue = [...(await loadQueue())].sort((a, b) => a.queuedAt.localeCompare(b.queuedAt));
+let draining: Promise<void> | null = null;
+
+export function drainQueue(send: (write: QueuedWrite) => Promise<'ok' | 'permanent-failure'>): Promise<void> {
+  if (!draining) {
+    draining = drainOnce(send).finally(() => {
+      draining = null;
+    });
+  }
+  return draining;
+}
+
+async function drainOnce(send: (write: QueuedWrite) => Promise<'ok' | 'permanent-failure'>): Promise<void> {
+  const queue = [...(await loadQueue())].sort((a, b) => a.queuedAt.localeCompare(b.queuedAt));
   for (const write of queue) {
     try {
       await send(write);
-      queue = await dequeue(write.id, queue);
     } catch {
       break;
     }
+    await dequeue(write.id);
   }
 }

@@ -1,0 +1,14 @@
+# Toca el campo vacío ${CAMPO} y escribe ${TEXTO}. Espera a que el teclado
+# termine de aparecer antes de escribir: si no, en el emulador se
+# duplican las primeras letras.
+appId: dev.logday.app
+---
+- tapOn: ${CAMPO}
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "__nada__"
+    timeout: 1200
+    optional: true
+- inputText: ${TEXTO}
+- hideKeyboard

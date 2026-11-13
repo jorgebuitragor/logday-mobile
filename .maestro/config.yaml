@@ -1,0 +1,13 @@
+# Flujos de Maestro de Logday Mobile: ver .maestro/README.md.
+# Corre los flujos de esta carpeta en orden (por su `name`); los de comunes/ son
+# subflujos y no se corren solos.
+flows:
+  - "*.yaml"
+executionOrder:
+  continueOnFailure: true
+  flowsOrder:
+    - Arrancar la app e Inicio
+    - Crear y editar una tarea
+    - Crear y editar una nota
+    - Daily de hoy
+    - Borrar y restaurar desde la papelera

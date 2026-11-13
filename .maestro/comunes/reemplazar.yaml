@@ -1,0 +1,16 @@
+# Toca el campo ${CAMPO}, borra hasta 25 caracteres y escribe ${TEXTO}.
+# Borrar va tecla por tecla: con muchos caracteres es lento y el driver de
+# Maestro en el emulador se puede caer, así que los textos a reemplazar son
+# cortos. Espera al teclado antes de escribir, como escribir.yaml.
+appId: dev.logday.app
+---
+- tapOn: ${CAMPO}
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "__nada__"
+    timeout: 1200
+    optional: true
+- eraseText: 25
+- inputText: ${TEXTO}
+- hideKeyboard

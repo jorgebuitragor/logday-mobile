@@ -336,6 +336,8 @@
     "hoursAgo_one": "{{count}} h ago",
     "hoursAgo_other": "{{count}} h ago",
     "sessionExpiredMsg": "The sync session expired — connect again.",
+    "appTooOld": "This version of Logday is too old for your server. Update the app to keep syncing. Your data is still saved on this phone.",
+    "serverTooOld": "Your Logday server is out of date for this version of the app. Ask whoever runs it to update it. Meanwhile, your data is still saved on this phone.",
     "insecurePublicUrl": "This server is on the internet: use an https:// address. Plain http:// is only allowed on a local network.",
     "invalidServerUrl": "The server address isn't valid.",
     "unencryptedLocalHint": "The connection won't be encrypted. Use it only on a network you trust.",

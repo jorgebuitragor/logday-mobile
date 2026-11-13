@@ -1,0 +1,46 @@
+appId: dev.logday.app
+name: Borrar y restaurar desde la papelera
+tags: [fase-1]
+---
+- runFlow: comunes/abrir-limpia.yaml
+- tapOn: "Nueva tarea"
+- runFlow:
+    file: comunes/escribir.yaml
+    env:
+      CAMPO: "Título de la tarea"
+      TEXTO: "Tarea para la papelera"
+- scrollUntilVisible:
+    element: "Crear tarea"
+- tapOn: "Crear tarea"
+- tapOn: "Tareas"
+- tapOn: "Tarea para la papelera"
+- scrollUntilVisible:
+    element: "Eliminar"
+- tapOn: "Eliminar"
+# Confirmar en el diálogo (el "Eliminar" que está bajo la pregunta).
+- tapOn:
+    text: "Eliminar"
+    below: "¿Eliminar esta tarea.*"
+- tapOn: "Tareas"
+- assertVisible: "Sin tareas. ¡Crea la primera!"
+- assertNotVisible: "Tarea para la papelera"
+# Ajustes se abre desde el ícono de Inicio.
+- tapOn: "Inicio"
+- tapOn: "Ajustes"
+# Se toca la descripción de la tarjeta: "Papelera" también es el título
+# de la sección.
+- scrollUntilVisible:
+    element: "Lo que borraste en este teléfono.*"
+- tapOn: "Lo que borraste en este teléfono.*"
+- extendedWaitUntil:
+    visible: "Tarea para la papelera"
+    timeout: 10000
+- tapOn: "Restaurar"
+- extendedWaitUntil:
+    visible: "La papelera está vacía."
+    timeout: 10000
+# Papelera → Ajustes → Inicio.
+- tapOn: "Navigate up|Navegar hacia arriba"
+- tapOn: "Navigate up|Navegar hacia arriba"
+- tapOn: "Tareas"
+- assertVisible: "Tarea para la papelera"

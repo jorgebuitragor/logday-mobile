@@ -23,3 +23,14 @@
 - [x] HTTP sin cifrar: solo hacia la red local (Jorge, 12 nov 2026). Regla en `src/lib/serverUrl.ts`, aviso en Ajustes, `usesCleartextTraffic` en Android y `NSAllowsLocalNetworking` en iOS.
 - [x] Probar el sync por HTTP contra un servidor en la red local con un APK nuevo (12 nov 2026, build preview 4 en el emulador contra un `logday-server` local en `http://192.168.20.121:8099`): login, política, subida y bajada de tareas, y el tiempo real por `ws://`. En Ajustes se ven el error rojo con `http://` público, y el aviso ámbar al escribir la URL local y ya conectado.
 - [ ] Build `production` (AAB) y subida a la prueba interna de Play (con OK de Jorge).
+
+## Flujos de Maestro (13 nov 2026)
+
+- [x] `.maestro/` con 5 flujos: arranque e Inicio, tarea, nota, daily de
+      hoy y papelera (borrar y restaurar). Cada uno empieza sin datos y en
+      español. Se corren con `npm run e2e`; detalle en `.maestro/README.md`.
+- [x] Corridos en el emulador con el build preview 6 (código de `develop`):
+      5 de 5 en 10 min 31 s.
+- [ ] Correrlos en CI (necesita un emulador en el runner o Maestro Cloud).
+- [ ] Flujos de iOS: los textos sirven, pero falta probarlos en el
+      simulador con un build de iOS.

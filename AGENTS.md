@@ -15,6 +15,7 @@ App de Logday para Android e iOS: Expo SDK 57 (managed), React Native 0.86, Expo
   3. `npm test`: Jest en Node ≥ 22.13 (las pruebas de `src/db/` usan `node:sqlite`; con el Node 20 local, correrlo con otro Node). Config en `jest.config.js`; no usa el preset `jest-expo`, que con SDK 57 no encuentra `expo-modules-core`. Los módulos nativos (`expo-sqlite`, AsyncStorage, `expo-crypto`) tienen mocks automáticos en `src/__mocks__/`.
   4. Pedir el bundle de Metro de `expo-router/entry` y buscar errores reales de "Unable to resolve module". Ignorar los que aparecen como texto dentro del propio código de errores de Metro.
   5. Que las claves de i18n en español y en inglés sean las mismas.
+- Pruebas de punta a punta con Maestro: `npm run e2e`, con un emulador o teléfono Android y la app instalada. Borran los datos de la app. Ver `.maestro/README.md`.
 - CI: typecheck, lint y `npm test` con Node 22. Jest fija `TZ=America/Bogota` (`jest.config.js`).
 
 ## Convenciones

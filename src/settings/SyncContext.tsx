@@ -7,8 +7,9 @@ import { useTranslation } from 'react-i18next';
 import {
   SyncApiError, DeviceResponse, listDevicesRemote, revokeDeviceRemote, logoutRemote, login as loginRemote, refreshToken as refreshTokenRemote,
   TokenResponse, getPolicyRemote, acceptPolicyRemote, acceptSensitiveDataRemote,
-  exportAccountRemote, deleteAccountRemote,
+  exportAccountRemote, deleteAccountRemote, getServerVersionRemote,
 } from '../lib/syncApi';
+import { compatIssueFor, IncompatibleServerError, onAppTooOld, type CompatIssue } from '../lib/protocol';
 import { drainSyncQueue, handleRealtimeNotices, reconcileSync, startPolling, stopPolling } from '../lib/syncEngine';
 import { requestInitialUpload } from '../lib/syncInitialUpload';
 import { InsecureServerUrlError, InvalidServerUrlError } from '../lib/serverUrl';
@@ -113,8 +114,40 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   function syncErrorText(e: unknown): string {
     if (e instanceof InsecureServerUrlError) return t('sync.insecurePublicUrl');
     if (e instanceof InvalidServerUrlError) return t('sync.invalidServerUrl');
+    if (e instanceof IncompatibleServerError) return compatIssueText(e.issue);
+    if (e instanceof SyncApiError && e.status === 426) return compatIssueText('appTooOld');
     return e instanceof Error ? e.message : String(e);
   }
+  function compatIssueText(issue: CompatIssue): string {
+    return t(issue === 'appTooOld' ? 'sync.appTooOld' : 'sync.serverTooOld');
+  }
+
+  /** Deja de sincronizar sin tocar la sesión ni los datos locales: la
+   *  cola sigue en SQLite y el sync sigue donde estaba al actualizar la
+   *  app o el servidor ("Comprobar conexión" o reabrir la app). Ver
+   *  logday-server/specs/protocolo-version. */
+  function markIncompatible(issue: CompatIssue): void {
+    setSyncConnectionStatus('error');
+    setSyncErrorMsg(compatIssueText(issue));
+  }
+
+  /** `GET /version` del servidor. Un fallo de red no bloquea: la
+   *  comprobación se repite en la próxima conexión. Los errores de URL
+   *  sí suben, para mostrar el mismo mensaje que el login. */
+  async function verifyServerCompat(serverUrl: string): Promise<CompatIssue | null> {
+    try {
+      return compatIssueFor(await getServerVersionRemote(serverUrl));
+    } catch (e) {
+      if (e instanceof InsecureServerUrlError || e instanceof InvalidServerUrlError) throw e;
+      return null;
+    }
+  }
+
+  // Para los efectos que se montan una sola vez: siempre la versión más
+  // reciente, con el `t` del idioma actual.
+  const markIncompatibleRef = useRef(markIncompatible);
+  markIncompatibleRef.current = markIncompatible;
+
   const [lastCheckedAt, setLastCheckedAt] = useState<string | null>(null);
   const [policyGate, setPolicyGate] = useState<{ text: string; version: number } | null>(null);
   const [sensitiveDataAccepted, setSensitiveDataAccepted] = useState(true);
@@ -150,13 +183,24 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         const restored: SyncConfig = { ...stored, accessToken: accessToken ?? '', refreshToken: refreshTokenValue ?? '' };
         commitSyncConfig(restored);
         if (restored.enabled && restored.accessToken) {
+          // Offline-first: conectado de inmediato, y la compatibilidad se
+          // comprueba aparte. Si el servidor exige una app más nueva, el
+          // primer pull también recibe el 426 (ver onAppTooOld abajo).
           setSyncConnectionStatus('connected');
+          void verifyServerCompat(restored.serverUrl)
+            .then((issue) => {
+              if (issue) markIncompatibleRef.current(issue);
+            })
+            .catch(() => {});
         }
       } catch {
         // config corrupta — se ignora, queda desconectado
       }
     })();
   }, []);
+
+  // Un 426 en cualquier pedido (pull, cola, login).
+  useEffect(() => onAppTooOld(() => markIncompatibleRef.current('appTooOld')), []);
 
   async function persistConfig(next: SyncConfig): Promise<void> {
     const { accessToken, refreshToken: refreshTokenValue, ...rest } = next;
@@ -173,6 +217,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     setSyncConnectionStatus('connecting');
     setSyncErrorMsg(null);
     try {
+      const issue = await verifyServerCompat(serverUrl);
+      if (issue) throw new IncompatibleServerError(issue);
       const deviceName = `Logday Mobile (${Platform.OS})`;
       const tokens = await loginRemote(serverUrl, email, password, deviceName);
       const next: SyncConfig = {
@@ -301,6 +347,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
   async function checkConnection(): Promise<void> {
     if (!syncConfig.enabled) return;
     try {
+      const issue = await verifyServerCompat(configRef.current.serverUrl);
+      if (issue) {
+        markIncompatible(issue);
+        return;
+      }
       await withSyncAuth((token) => listDevicesRemote(configRef.current.serverUrl, token));
       setSyncConnectionStatus('connected');
       setSyncErrorMsg(null);

@@ -287,3 +287,23 @@ Cada fase termina en un checkpoint en vivo obligatorio contra un
 - [x] Probado el 12 nov 2026 con el build preview 5 en el emulador,
       contra un servidor local: al conectar, la app pide `GET /devices`
       justo después del login y la lista aparece sin tocar "Reintentar".
+
+## Versión de protocolo (nov 2026)
+
+Contrato en `logday-server/specs/protocolo-version` (decisión de Jorge
+del 13 nov 2026: número de protocolo propio, no la versión de la app).
+
+- [x] `src/lib/protocol.ts`: `CLIENT_PROTOCOL` y `MIN_SERVER_PROTOCOL`
+      (los dos en 1), `compatIssueFor` y el aviso de 426 (`onAppTooOld`).
+- [x] `syncApi.request` manda `X-Logday-Protocol`, avisa ante un 426, y
+      `getServerVersionRemote` lee `GET /version` (un `404` es protocolo 1).
+- [x] `isPermanentSyncError` excluye el 426: una escritura que lo recibe
+      se queda en la cola hasta que se actualice la app.
+- [x] `SyncContext`: comprueba `/version` antes del login, en "Comprobar
+      conexión" y al restaurar la sesión. Ante un problema deja el sync en
+      error con un mensaje claro, sin cerrar la sesión ni tocar los datos
+      locales. Un fallo de red en `/version` no bloquea.
+- [x] Textos `sync.appTooOld` y `sync.serverTooOld` en español e inglés.
+- [x] Pruebas: `protocol.test.ts` (9).
+- [ ] Probarlo contra un servidor con `MinClientProtocol = 2` y con uno
+      que no tenga `/version`.

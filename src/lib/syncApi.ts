@@ -13,6 +13,7 @@ import type {
   TaskCreatePayload, TaskApiResponse, TaskPatchPayload,
 } from './syncMapping';
 import { recordOwnWriteSeq } from './ownWrites';
+import { CLIENT_PROTOCOL, LEGACY_SERVER, PROTOCOL_HEADER, reportAppTooOld, type ServerVersionInfo } from './protocol';
 import { resolveServerUrl } from './serverUrl';
 
 export class SyncApiError extends Error {
@@ -25,9 +26,11 @@ export class SyncApiError extends Error {
 
 /** Error que no se arregla reintentando el mismo envío: un 4xx (payload
  *  inválido, entidad que no existe en el servidor). Se excluyen 401
- *  (sesión vencida: al reconectar el envío vuelve a servir), 408 y 429. */
+ *  (sesión vencida: al reconectar el envío vuelve a servir), 408, 429 y
+ *  426 (app demasiado vieja para el servidor: el envío tiene que esperar
+ *  en la cola a que se actualice la app, no descartarse). */
 export function isPermanentSyncError(e: unknown): boolean {
-  return e instanceof SyncApiError && e.status >= 400 && e.status < 500 && ![401, 408, 429].includes(e.status);
+  return e instanceof SyncApiError && e.status >= 400 && e.status < 500 && ![401, 408, 426, 429].includes(e.status);
 }
 
 async function request<T>(
@@ -40,11 +43,13 @@ async function request<T>(
     method,
     headers: {
       'Content-Type': 'application/json',
+      [PROTOCOL_HEADER]: String(CLIENT_PROTOCOL),
       ...(opts?.token ? { Authorization: `Bearer ${opts.token}` } : {}),
     },
     body: opts?.body !== undefined ? JSON.stringify(opts.body) : undefined,
   });
   const text = await res.text();
+  if (res.status === 426) reportAppTooOld();
   if (!res.ok) {
     throw new SyncApiError(res.status, text || `HTTP ${res.status}`);
   }
@@ -54,6 +59,21 @@ async function request<T>(
   const seq = (body as { seq?: unknown } | undefined)?.seq;
   if (method !== 'GET' && typeof seq === 'number') recordOwnWriteSeq(seq);
   return body;
+}
+
+/** `GET /version` (sin autenticación). Un servidor sin el endpoint
+ *  (`404`) es anterior al contrato y habla el protocolo 1. */
+export async function getServerVersionRemote(baseUrl: string): Promise<ServerVersionInfo> {
+  try {
+    const info = await request<Partial<ServerVersionInfo> | undefined>(baseUrl, 'GET', '/version');
+    if (typeof info?.protocol !== 'number' || typeof info.min_client_protocol !== 'number') {
+      throw new SyncApiError(502, 'invalid /version response');
+    }
+    return { server_version: info.server_version ?? '', protocol: info.protocol, min_client_protocol: info.min_client_protocol };
+  } catch (e) {
+    if (e instanceof SyncApiError && e.status === 404) return LEGACY_SERVER;
+    throw e;
+  }
 }
 
 export interface TokenResponse {

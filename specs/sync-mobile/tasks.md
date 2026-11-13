@@ -305,5 +305,18 @@ del 13 nov 2026: número de protocolo propio, no la versión de la app).
       locales. Un fallo de red en `/version` no bloquea.
 - [x] Textos `sync.appTooOld` y `sync.serverTooOld` en español e inglés.
 - [x] Pruebas: `protocol.test.ts` (9).
-- [ ] Probarlo contra un servidor con `MinClientProtocol = 2` y con uno
-      que no tenga `/version`.
+- [x] Probado el 13 nov 2026 con el build preview 6 en el emulador:
+      - servidor que exige protocolo 2: al conectar solo pide `/version`,
+        no intenta el login y muestra el aviso; con la sesión ya guardada,
+        al abrir la app el pull recibe `426` y Ajustes muestra el aviso;
+      - una tarea creada con el sync así bloqueado sube (`POST /tasks`)
+        al tocar "Comprobar conexión" cuando el servidor vuelve a aceptar
+        la app;
+      - servidor actual (protocolo 1): todo normal;
+      - servidor anterior al contrato: `/version` da `404` y sigue
+        conectado.
+- [ ] El aviso de servidor desactualizado (`serverTooOld`) solo está
+      probado en Jest: hace falta una app con `MIN_SERVER_PROTOCOL = 2`.
+- [ ] Con la app bloqueada, "Sesiones activas" dice "No se pudieron
+      cargar las sesiones" (también recibe el `426`). Podría ocultarse o
+      repetir el aviso.

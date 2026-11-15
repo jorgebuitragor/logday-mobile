@@ -1,0 +1,35 @@
+appId: dev.logday.app
+name: Crear y editar una tarea
+tags: [fase-1]
+---
+- runFlow: comunes/abrir-limpia.yaml
+- tapOn: "Nueva tarea"
+- runFlow:
+    file: comunes/escribir.yaml
+    env:
+      CAMPO: "Título de la tarea"
+      TEXTO: "Tarea Maestro"
+- scrollUntilVisible:
+    element: "Crear tarea"
+- tapOn: "Crear tarea"
+- tapOn: "Tareas"
+- assertVisible: "Tarea Maestro"
+- tapOn: "Tarea Maestro"
+- extendedWaitUntil:
+    visible: "Guardar cambios|Editar tarea"
+    timeout: 10000
+- runFlow:
+    file: comunes/reemplazar.yaml
+    env:
+      CAMPO: "Tarea Maestro"
+      TEXTO: "Tarea Maestro editada"
+- tapOn: "En progreso"
+- scrollUntilVisible:
+    element: "Guardar cambios"
+- tapOn: "Guardar cambios"
+- extendedWaitUntil:
+    visible: "Tarea Maestro editada"
+    timeout: 10000
+- assertVisible: "Lista"
+- assertVisible: "En progreso"
+- assertNotVisible: "Tarea Maestro"

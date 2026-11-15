@@ -1,0 +1,46 @@
+appId: dev.logday.app
+name: Daily de hoy
+tags: [fase-1]
+---
+- runFlow: comunes/abrir-limpia.yaml
+- tapOn: "Empezar el daily de hoy"
+- extendedWaitUntil:
+    visible: "Nueva actividad…"
+    timeout: 15000
+# Hay dos campos "Nueva actividad…": el del día previo (0) y el de hoy (1).
+- tapOn:
+    text: "Nueva actividad…"
+    index: 1
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "__nada__"
+    timeout: 1200
+    optional: true
+- inputText: "Actividad Maestro"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Actividad Maestro"
+    timeout: 10000
+# Editar: al tocar la actividad se vuelve un campo de texto.
+- tapOn: "Actividad Maestro"
+- waitForAnimationToEnd:
+    timeout: 3000
+- extendedWaitUntil:
+    visible: "__nada__"
+    timeout: 1200
+    optional: true
+- eraseText: 25
+- inputText: "Actividad editada"
+- pressKey: Enter
+- extendedWaitUntil:
+    visible: "Actividad editada"
+    timeout: 10000
+- tapOn: "Navigate up|Navegar hacia arriba"
+# Inicio muestra el daily de hoy con la actividad editada.
+- extendedWaitUntil:
+    visible: "Daily de hoy"
+    timeout: 10000
+- assertVisible: "- Actividad editada"
+- tapOn: "Dailys"
+- assertVisible: "1 actividad"

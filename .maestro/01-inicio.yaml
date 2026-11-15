@@ -1,0 +1,34 @@
+appId: dev.logday.app
+name: Arrancar la app e Inicio
+tags: [fase-1]
+---
+- runFlow: comunes/abrir-limpia.yaml
+# Inicio vacío: bienvenida y sus secciones.
+- assertVisible: "Te damos la bienvenida a Logday"
+- assertVisible: "Daily de hoy"
+- assertVisible: "Nada vence esta semana."
+- assertVisible: "Tu semana"
+- scrollUntilVisible:
+    element: "Todavía no hay notas."
+- scrollUntilVisible:
+    element: "Nueva nota"
+    direction: UP
+# Una nota nueva aparece en "Notas recientes".
+- tapOn: "Nueva nota"
+- runFlow:
+    file: comunes/escribir.yaml
+    env:
+      CAMPO: "Título de la nota"
+      TEXTO: "Nota de Inicio"
+- tapOn: "Navigate up|Navegar hacia arriba"
+- scrollUntilVisible:
+    element: "Nota de Inicio"
+- assertNotVisible: "Todavía no hay notas."
+# Al cerrar y volver a abrir la app, Inicio carga con los datos guardados.
+- stopApp
+- launchApp
+- extendedWaitUntil:
+    visible: "Inicio"
+    timeout: 60000
+- scrollUntilVisible:
+    element: "Nota de Inicio"

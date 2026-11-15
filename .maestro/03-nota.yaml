@@ -1,0 +1,38 @@
+appId: dev.logday.app
+name: Crear y editar una nota
+tags: [fase-1]
+---
+- runFlow: comunes/abrir-limpia.yaml
+- tapOn: "Nueva nota"
+- extendedWaitUntil:
+    visible: "Título de la nota"
+    timeout: 15000
+- runFlow:
+    file: comunes/escribir.yaml
+    env:
+      CAMPO: "Título de la nota"
+      TEXTO: "Nota Maestro"
+- runFlow:
+    file: comunes/escribir.yaml
+    env:
+      CAMPO: "Escribe en markdown..."
+      TEXTO: "Primera version"
+- tapOn: "Navigate up|Navegar hacia arriba"
+- tapOn: "Notas"
+- extendedWaitUntil:
+    visible: "Nota Maestro"
+    timeout: 10000
+# Editar: se reabre, se cambia el contenido y se comprueba al volver a abrirla.
+- tapOn: "Nota Maestro"
+- runFlow:
+    file: comunes/reemplazar.yaml
+    env:
+      CAMPO: "Primera version"
+      TEXTO: "Segunda version"
+- tapOn: "Navigate up|Navegar hacia arriba"
+- tapOn: "Nota Maestro"
+- extendedWaitUntil:
+    visible: "Segunda version"
+    timeout: 10000
+- assertNotVisible: "Primera version"
+- tapOn: "Navigate up|Navegar hacia arriba"

@@ -1,0 +1,22 @@
+# Abre la app sin datos y la deja en español, en la pestaña Inicio.
+# El idioma se fija desde Ajustes para que los textos de los flujos no
+# dependan del idioma del teléfono.
+appId: dev.logday.app
+---
+- launchApp:
+    clearState: true
+- extendedWaitUntil:
+    visible: "Home|Inicio"
+    timeout: 60000
+- tapOn:
+    text: "Settings|Ajustes"
+    index: 0
+- scrollUntilVisible:
+    element:
+      text: "Español"
+    direction: DOWN
+- tapOn: "Español"
+- tapOn: "Navigate up|Navegar hacia arriba"
+- extendedWaitUntil:
+    visible: "Inicio"
+    timeout: 10000

@@ -12,7 +12,7 @@ import type { OvertimeEntry } from '../types/overtime';
 const COMP_OPTIONS = ['comp', 'pay', 'other'] as const;
 
 // Color de advertencia hardcodeado a propósito, igual que el rojo de
-// destructivo en ConfirmDeleteModal/SwipeableRow — es un color
+// destructivo en ConfirmDeleteModal — es un color
 // semántico (no de marca), no un token de tema.
 const WARNING_COLOR = '#f59e0b';
 

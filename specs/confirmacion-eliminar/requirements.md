@@ -21,7 +21,8 @@ borrar notas, tareas, dailys y registros de extras").
 - El sistema DEBERÁ recordar la elección entre sesiones (persistida,
   mismo patrón que tema/idioma).
 - Cuando el toggle esté activado, toda acción de eliminar (desde el
-  swipe de una lista o desde el botón "Eliminar" de una pantalla de
+  menú de una fila de una lista (antes, el swipe; desde el 17 nov 2026,
+  la pulsación larga) o desde el botón "Eliminar" de una pantalla de
   edición) DEBERÁ mostrar un modal de confirmación antes de ejecutar
   el soft-delete.
 - Cuando el toggle esté desactivado, eliminar DEBERÁ ejecutarse

@@ -74,7 +74,9 @@ ofrece.
   etc.), no duplica el criterio con textos nuevos.
 - **Eliminar** desde la hoja DEBERÁ convivir con el swipe-para-eliminar
   ya existente (`SwipeableRow`) — dos caminos al mismo resultado a
-  propósito, no un reemplazo del gesto.
+  propósito, no un reemplazo del gesto. (Desde el 17 nov 2026 ya no hay
+  swipe-para-eliminar: el deslizamiento cambia de pestaña, ver
+  `navegacion/`. La hoja es el camino para eliminar.)
 - Mantener presionada una fila/tarjeta de la lista (Lista o Cuadrícula)
   DEBERÁ abrir la misma hoja que el botón "⋮" — pedido explícito del
   usuario, un segundo camino de descubrimiento además del botón

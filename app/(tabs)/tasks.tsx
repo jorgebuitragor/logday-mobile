@@ -6,7 +6,7 @@ import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-n
 
 import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
-import { SwipeableRow } from '../../src/components/SwipeableRow';
+import { openDeleteMenu } from '../../src/lib/rowActions';
 import { TaskCalendarView } from '../../src/components/TaskCalendarView';
 import { TaskKanbanBoard } from '../../src/components/TaskKanbanBoard';
 import { TaskProgressBar } from '../../src/components/TaskProgressBar';
@@ -100,65 +100,68 @@ export default function TasksScreen() {
         renderItem={({ item }) => {
           const isOverdue = !!item.due && item.due < today && item.status !== 'done';
           return (
-            <SwipeableRow
-              deleteLabel={t('common.delete')}
-              onDelete={() => confirmDelete.request(item, performDelete)}
+            <Pressable
+              style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
+              onPress={() => router.push(`/task/${item.id}`)}
+              onLongPress={() =>
+                openDeleteMenu({
+                  title: item.title,
+                  deleteLabel: t('common.delete'),
+                  cancelLabel: t('common.cancel'),
+                  onDelete: () => confirmDelete.request(item, performDelete),
+                })
+              }
             >
               <Pressable
-                style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
-                onPress={() => router.push(`/task/${item.id}`)}
+                onPress={() => cycleStatus(item)}
+                hitSlop={8}
+                style={styles.statusIcon}
+                accessibilityLabel={statusLabel(item.status)}
               >
-                <Pressable
-                  onPress={() => cycleStatus(item)}
-                  hitSlop={8}
-                  style={styles.statusIcon}
-                  accessibilityLabel={statusLabel(item.status)}
-                >
-                  <TaskStatusIcon status={item.status} />
-                </Pressable>
-                <View style={styles.content}>
-                  <Text
-                    style={[
-                      styles.title,
-                      {
-                        color: item.status === 'done' ? theme.textMuted : theme.textPrimary,
-                        textDecorationLine: item.status === 'done' ? 'line-through' : 'none',
-                      },
-                    ]}
-                  >
-                    {item.title}
-                  </Text>
-                  {(item.taskCode ||
-                    (item.project && item.project !== 'inbox') ||
-                    item.due ||
-                    item.progress !== null ||
-                    item.tags.length > 0) && (
-                    <View style={styles.metaRow}>
-                      {item.taskCode && (
-                        <Text style={[styles.metaText, { color: theme.textHint }]}>#{item.taskCode}</Text>
-                      )}
-                      {item.project && item.project !== 'inbox' && (
-                        <Text style={[styles.metaText, { color: theme.textHint }]}>{item.project}</Text>
-                      )}
-                      {item.due && (
-                        <View style={styles.dueWrap}>
-                          <Calendar size={10} color={isOverdue ? OVERDUE_COLOR : theme.textHint} />
-                          <Text style={[styles.metaText, { color: isOverdue ? OVERDUE_COLOR : theme.textHint }]}>
-                            {item.due}
-                          </Text>
-                        </View>
-                      )}
-                      {item.progress !== null && <TaskProgressBar progress={item.progress} />}
-                      {item.tags.slice(0, 3).map((tag) => (
-                        <View key={tag} style={[styles.tagPill, { backgroundColor: theme.accentSoft }]}>
-                          <Text style={[styles.tagText, { color: theme.accentInk }]}>{tag}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
+                <TaskStatusIcon status={item.status} />
               </Pressable>
-            </SwipeableRow>
+              <View style={styles.content}>
+                <Text
+                  style={[
+                    styles.title,
+                    {
+                      color: item.status === 'done' ? theme.textMuted : theme.textPrimary,
+                      textDecorationLine: item.status === 'done' ? 'line-through' : 'none',
+                    },
+                  ]}
+                >
+                  {item.title}
+                </Text>
+                {(item.taskCode ||
+                  (item.project && item.project !== 'inbox') ||
+                  item.due ||
+                  item.progress !== null ||
+                  item.tags.length > 0) && (
+                  <View style={styles.metaRow}>
+                    {item.taskCode && (
+                      <Text style={[styles.metaText, { color: theme.textHint }]}>#{item.taskCode}</Text>
+                    )}
+                    {item.project && item.project !== 'inbox' && (
+                      <Text style={[styles.metaText, { color: theme.textHint }]}>{item.project}</Text>
+                    )}
+                    {item.due && (
+                      <View style={styles.dueWrap}>
+                        <Calendar size={10} color={isOverdue ? OVERDUE_COLOR : theme.textHint} />
+                        <Text style={[styles.metaText, { color: isOverdue ? OVERDUE_COLOR : theme.textHint }]}>
+                          {item.due}
+                        </Text>
+                      </View>
+                    )}
+                    {item.progress !== null && <TaskProgressBar progress={item.progress} />}
+                    {item.tags.slice(0, 3).map((tag) => (
+                      <View key={tag} style={[styles.tagPill, { backgroundColor: theme.accentSoft }]}>
+                        <Text style={[styles.tagText, { color: theme.accentInk }]}>{tag}</Text>
+                      </View>
+                    ))}
+                  </View>
+                )}
+              </View>
+            </Pressable>
           );
         }}
       />

@@ -44,6 +44,11 @@ if (!IS_EXPO_GO) SplashScreen.setOptions({ fade: true, duration: 150 });
 // muestra igual (con la fuente del sistema) para no dejar trabado el nativo.
 const BRAND_TIMEOUT_MS = 3000;
 
+// Pantallas que se abren encima de las pestañas: formularios, búsqueda y
+// captura. `presentation: 'modal'` en iOS es la hoja; en Android no cambia
+// la animación, así que se fija `fade_from_bottom`.
+const MODAL = { presentation: 'modal', animation: 'fade_from_bottom' } as const;
+
 export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -155,20 +160,25 @@ function RootLayoutInner() {
           headerShadowVisible: false,
           headerTitleStyle: { fontWeight: '700', fontSize: 17 },
           contentStyle: { backgroundColor: theme.bgBase },
+          // Transiciones suaves en cada cambio de pantalla (pedido de Jorge,
+          // 17 nov 2026; specs/navegacion/): Ajustes y sus subpantallas
+          // entran de lado; los formularios y la búsqueda (`MODAL`), desde
+          // abajo con fundido.
+          animation: 'slide_from_right',
         }}
       >
         {/* `title` es lo que muestra el botón de volver de las pantallas que
             se abren desde las pestañas (Ajustes): sin él decía "(tabs)". */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false, title: t('tabs.home') }} />
-        <Stack.Screen name="task/new" options={{ title: t('taskForm.newTitle'), presentation: 'modal' }} />
-        <Stack.Screen name="task/[id]" options={{ title: t('taskForm.editTitle'), presentation: 'modal' }} />
-        <Stack.Screen name="note/new" options={{ title: t('noteForm.editTitle'), presentation: 'modal' }} />
-        <Stack.Screen name="note/[id]" options={{ title: t('noteForm.editTitle'), presentation: 'modal' }} />
-        <Stack.Screen name="daily/[date]" options={{ title: t('tabs.dailys'), presentation: 'modal' }} />
-        <Stack.Screen name="overtime/new" options={{ title: t('overtimeForm.newTitle'), presentation: 'modal' }} />
-        <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), presentation: 'modal' }} />
-        <Stack.Screen name="search" options={{ title: t('search.placeholder'), presentation: 'modal' }} />
-        <Stack.Screen name="capture" options={{ title: t('capture.title'), presentation: 'modal' }} />
+        <Stack.Screen name="task/new" options={{ title: t('taskForm.newTitle'), ...MODAL }} />
+        <Stack.Screen name="task/[id]" options={{ title: t('taskForm.editTitle'), ...MODAL }} />
+        <Stack.Screen name="note/new" options={{ title: t('noteForm.editTitle'), ...MODAL }} />
+        <Stack.Screen name="note/[id]" options={{ title: t('noteForm.editTitle'), ...MODAL }} />
+        <Stack.Screen name="daily/[date]" options={{ title: t('tabs.dailys'), ...MODAL }} />
+        <Stack.Screen name="overtime/new" options={{ title: t('overtimeForm.newTitle'), ...MODAL }} />
+        <Stack.Screen name="overtime/[id]" options={{ title: t('overtimeForm.editTitle'), ...MODAL }} />
+        <Stack.Screen name="search" options={{ title: t('search.placeholder'), ...MODAL }} />
+        <Stack.Screen name="capture" options={{ title: t('capture.title'), ...MODAL }} />
         <Stack.Screen name="settings/index" options={{ title: t('tabs.settings') }} />
         <Stack.Screen name="settings/templates" options={{ title: t('settings.tabTemplates') }} />
         <Stack.Screen name="settings/trash" options={{ title: t('trash.title') }} />

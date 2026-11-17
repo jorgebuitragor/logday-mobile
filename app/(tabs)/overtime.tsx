@@ -8,7 +8,7 @@ import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { EmptyState } from '../../src/components/EmptyState';
 import { OvertimeMonthActionsSheet } from '../../src/components/OvertimeMonthActionsSheet';
 import { OvertimePreviewModal } from '../../src/components/OvertimePreviewModal';
-import { SwipeableRow } from '../../src/components/SwipeableRow';
+import { openDeleteMenu } from '../../src/lib/rowActions';
 import {
   getOvertimeMonthMeta,
   listOvertimeEntries,
@@ -184,39 +184,42 @@ export default function OvertimeScreen() {
           </View>
         )}
         renderItem={({ item }) => (
-          <SwipeableRow
-            deleteLabel={t('common.delete')}
-            onDelete={() => confirmDelete.request(item, performDelete)}
+          <Pressable
+            style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
+            onPress={() => router.push(`/overtime/${item.id}`)}
+            onLongPress={() =>
+              openDeleteMenu({
+                title: item.fecha,
+                deleteLabel: t('common.delete'),
+                cancelLabel: t('common.cancel'),
+                onDelete: () => confirmDelete.request(item, performDelete),
+              })
+            }
           >
-            <Pressable
-              style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
-              onPress={() => router.push(`/overtime/${item.id}`)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={[styles.title, { color: theme.textPrimary }]}>{item.fecha}</Text>
-                <Text style={{ color: theme.textMuted }}>
-                  {item.horaInicio}–{item.horaFinal} · {item.actividad || t('overtimeList.noDescription')}
-                </Text>
-                {item.solicitadaPor || item.observaciones ? (
-                  <View style={styles.detailRow}>
-                    {item.solicitadaPor ? (
-                      <Text style={[styles.detailText, { color: theme.textHint }]} numberOfLines={1}>
-                        {item.solicitadaPor}
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.title, { color: theme.textPrimary }]}>{item.fecha}</Text>
+              <Text style={{ color: theme.textMuted }}>
+                {item.horaInicio}–{item.horaFinal} · {item.actividad || t('overtimeList.noDescription')}
+              </Text>
+              {item.solicitadaPor || item.observaciones ? (
+                <View style={styles.detailRow}>
+                  {item.solicitadaPor ? (
+                    <Text style={[styles.detailText, { color: theme.textHint }]} numberOfLines={1}>
+                      {item.solicitadaPor}
+                    </Text>
+                  ) : null}
+                  {item.observaciones ? (
+                    <View style={[styles.obsPill, { backgroundColor: theme.accentSoft }]}>
+                      <Text style={[styles.obsPillText, { color: theme.accentInk }]}>
+                        {observacionesLabel(t, item.observaciones)}
                       </Text>
-                    ) : null}
-                    {item.observaciones ? (
-                      <View style={[styles.obsPill, { backgroundColor: theme.accentSoft }]}>
-                        <Text style={[styles.obsPillText, { color: theme.accentInk }]}>
-                          {observacionesLabel(t, item.observaciones)}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                ) : null}
-              </View>
-              <Text style={{ color: theme.accent, fontWeight: '700' }}>{fmt(item.totalHoras)}h</Text>
-            </Pressable>
-          </SwipeableRow>
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+            <Text style={{ color: theme.accent, fontWeight: '700' }}>{fmt(item.totalHoras)}h</Text>
+          </Pressable>
         )}
       />
       <Pressable style={[styles.fab, { backgroundColor: theme.accentStrong }]} onPress={() => router.push('/overtime/new')}>

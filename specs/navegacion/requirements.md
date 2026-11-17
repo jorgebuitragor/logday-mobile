@@ -65,3 +65,26 @@ al entrar en pantallas de detalles para extras, notas, Dailys, etc."
   `overtime/new`, `overtime/[id]`) NO DEBERÁ mostrar un destello de
   fondo blanco durante la transición, en ningún tema (incluidos los
   oscuros, donde el contraste contra blanco es más notorio).
+
+## Requisitos (EARS) — Pestañas deslizables (agregado 2026-11-17)
+
+Pedido de Jorge al probar el APK en su teléfono: "Añade ligeras
+animaciones para cada cambio de pantalla. Y que se pueda cambiar de
+pantalla deslizando de lado como en Facebook o Instagram".
+
+- Deslizar de lado sobre el contenido de una pestaña DEBERÁ pasar a la
+  pestaña vecina (Inicio ↔ Tareas ↔ Notas ↔ Dailys ↔ Extras), con la
+  página siguiendo el dedo. Tocar la barra de abajo DEBERÁ seguir
+  funcionando igual.
+- La cabecera (logo, título de la pestaña, búsqueda y Ajustes) y la
+  barra de abajo DEBERÁN verse como antes.
+- Abrir Ajustes y sus subpantallas DEBERÁ animar con una entrada de
+  lado; abrir un formulario, la búsqueda o la captura, con una entrada
+  desde abajo con fundido. Las transiciones DEBERÁN ser cortas y
+  ligeras.
+- Deslizar una fila YA NO DEBERÁ borrarla (el gesto es para cambiar de
+  pestaña). Mantener pulsada una fila de Tareas, Dailys o Extras
+  DEBERÁ abrir un menú con Eliminar; en Notas, la pulsación larga ya
+  abría su menú de acciones, que incluye Eliminar. Eliminar sigue
+  pasando por la confirmación opcional y el aviso de deshacer.
+  Decisión de Jorge, 17 nov 2026.

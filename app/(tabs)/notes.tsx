@@ -10,7 +10,6 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { FilterChip } from '../../src/components/FilterChip';
 import { NoteActionsSheet } from '../../src/components/NoteActionsSheet';
 import { NoteSortSheet } from '../../src/components/NoteSortSheet';
-import { SwipeableRow } from '../../src/components/SwipeableRow';
 import { ViewSwitch } from '../../src/components/ViewSwitch';
 import { createNote, listNotes, setNotePinned, softDeleteNote, toNoteInput, updateNote } from '../../src/db/notes';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
@@ -272,7 +271,6 @@ export default function NotesScreen() {
                     notes={pinnedNotes}
                     onOpen={(note) => router.push(`/note/${note.id}`)}
                     onMore={setActionsNote}
-                    onDelete={(note) => confirmDelete.request(note, performDelete)}
                   />
                 </>
               ) : null}
@@ -285,7 +283,6 @@ export default function NotesScreen() {
                     notes={otherNotes}
                     onOpen={(note) => router.push(`/note/${note.id}`)}
                     onMore={setActionsNote}
-                    onDelete={(note) => confirmDelete.request(note, performDelete)}
                   />
                 </>
               ) : null}
@@ -304,55 +301,50 @@ export default function NotesScreen() {
           />
         }
         renderItem={({ item }) => (
-          <SwipeableRow
-            deleteLabel={t('common.delete')}
-            onDelete={() => confirmDelete.request(item, performDelete)}
+          <Pressable
+            style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
+            onPress={() => router.push(`/note/${item.id}`)}
+            onLongPress={() => setActionsNote(item)}
           >
-            <Pressable
-              style={[styles.row, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
-              onPress={() => router.push(`/note/${item.id}`)}
-              onLongPress={() => setActionsNote(item)}
-            >
-              <View style={styles.titleRow}>
-                <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
-                  {item.title}
-                </Text>
-                {item.pinned ? (
-                  <Pin
-                    size={13}
-                    color={PIN_COLOR}
-                    fill={PIN_COLOR}
-                    accessibilityLabel={t('noteList.pinnedLabel')}
-                  />
+            <View style={styles.titleRow}>
+              <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={1}>
+                {item.title}
+              </Text>
+              {item.pinned ? (
+                <Pin
+                  size={13}
+                  color={PIN_COLOR}
+                  fill={PIN_COLOR}
+                  accessibilityLabel={t('noteList.pinnedLabel')}
+                />
+              ) : null}
+              <Pressable
+                onPress={() => setActionsNote(item)}
+                hitSlop={8}
+                style={styles.moreButton}
+                accessibilityLabel={t('noteActions.menuLabel')}
+              >
+                <MoreHorizontal size={16} color={theme.textFaint} />
+              </Pressable>
+            </View>
+            {item.folder || item.tags.length > 0 ? (
+              <View style={styles.metaRow}>
+                {item.folder ? (
+                  <Text style={[styles.folderText, { color: theme.textHint }]} numberOfLines={1}>
+                    {item.folder}
+                  </Text>
                 ) : null}
-                <Pressable
-                  onPress={() => setActionsNote(item)}
-                  hitSlop={8}
-                  style={styles.moreButton}
-                  accessibilityLabel={t('noteActions.menuLabel')}
-                >
-                  <MoreHorizontal size={16} color={theme.textFaint} />
-                </Pressable>
+                {item.tags.map((tag) => (
+                  <View key={tag} style={[styles.tagChip, { backgroundColor: theme.accentSoft }]}>
+                    <Text style={[styles.tagChipText, { color: theme.accentInk }]}>{tag}</Text>
+                  </View>
+                ))}
               </View>
-              {item.folder || item.tags.length > 0 ? (
-                <View style={styles.metaRow}>
-                  {item.folder ? (
-                    <Text style={[styles.folderText, { color: theme.textHint }]} numberOfLines={1}>
-                      {item.folder}
-                    </Text>
-                  ) : null}
-                  {item.tags.map((tag) => (
-                    <View key={tag} style={[styles.tagChip, { backgroundColor: theme.accentSoft }]}>
-                      <Text style={[styles.tagChipText, { color: theme.accentInk }]}>{tag}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-              {item.content ? (
-                <Text style={{ color: theme.textMuted }}>{preview(item.content)}</Text>
-              ) : null}
-            </Pressable>
-          </SwipeableRow>
+            ) : null}
+            {item.content ? (
+              <Text style={{ color: theme.textMuted }}>{preview(item.content)}</Text>
+            ) : null}
+          </Pressable>
         )}
       />
       )}
@@ -412,24 +404,22 @@ function NoteGrid({
   notes,
   onOpen,
   onMore,
-  onDelete,
 }: {
   notes: Note[];
   onOpen: (note: Note) => void;
   onMore: (note: Note) => void;
-  onDelete: (note: Note) => void;
 }) {
   const [left, right] = useMemo(() => splitIntoColumns(notes), [notes]);
   return (
     <View style={styles.columns}>
       <View style={styles.column}>
         {left.map((note) => (
-          <NoteCard key={note.id} note={note} onPress={() => onOpen(note)} onMore={() => onMore(note)} onDelete={() => onDelete(note)} />
+          <NoteCard key={note.id} note={note} onPress={() => onOpen(note)} onMore={() => onMore(note)} />
         ))}
       </View>
       <View style={styles.column}>
         {right.map((note) => (
-          <NoteCard key={note.id} note={note} onPress={() => onOpen(note)} onMore={() => onMore(note)} onDelete={() => onDelete(note)} />
+          <NoteCard key={note.id} note={note} onPress={() => onOpen(note)} onMore={() => onMore(note)} />
         ))}
       </View>
     </View>
@@ -438,62 +428,55 @@ function NoteGrid({
 
 // Tarjeta de la vista Cuadrícula — estilo Google Keep (título +
 // preview más larga que en Lista, sin fila de metadata separada para
-// no recargar una tarjeta angosta). Sigue envuelta en `SwipeableRow`
-// (swipe-para-eliminar) aunque el menú "⋮" ahora también ofrece
-// Eliminar (agregado 2026-08-30, ver
-// specs/menu-contextual-notas/design.md) — dos caminos al mismo
-// destino a propósito, no una redundancia accidental: el usuario pidió
-// explícitamente tener todas las opciones disponibles rápido desde el
-// menú, sin que eso reemplace el swipe ya existente.
+// no recargar una tarjeta angosta). Se elimina desde el menú "⋮" o la
+// pulsación larga (specs/menu-contextual-notas/design.md). Hasta el 17
+// nov 2026 también se borraba deslizando; ese gesto quedó para cambiar
+// de pestaña (specs/navegacion/).
 function NoteCard({
   note,
   onPress,
   onMore,
-  onDelete,
 }: {
   note: Note;
   onPress: () => void;
   onMore: () => void;
-  onDelete: () => void;
 }) {
   const { t } = useTranslation();
   const theme = useTheme();
   return (
-    <SwipeableRow deleteLabel={t('common.delete')} onDelete={onDelete}>
-      <Pressable
-        style={[styles.card, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
-        onPress={onPress}
-        onLongPress={onMore}
-      >
-        <View style={styles.cardTitleRow}>
-          <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={2}>
-            {note.title || t('noteForm.titlePlaceholder')}
-          </Text>
-          <Pressable onPress={onMore} hitSlop={8} style={styles.moreButton} accessibilityLabel={t('noteActions.menuLabel')}>
-            <MoreHorizontal size={16} color={theme.textFaint} />
-          </Pressable>
+    <Pressable
+      style={[styles.card, { backgroundColor: theme.bgPanel, borderColor: theme.border }]}
+      onPress={onPress}
+      onLongPress={onMore}
+    >
+      <View style={styles.cardTitleRow}>
+        <Text style={[styles.title, { color: theme.textPrimary }]} numberOfLines={2}>
+          {note.title || t('noteForm.titlePlaceholder')}
+        </Text>
+        <Pressable onPress={onMore} hitSlop={8} style={styles.moreButton} accessibilityLabel={t('noteActions.menuLabel')}>
+          <MoreHorizontal size={16} color={theme.textFaint} />
+        </Pressable>
+      </View>
+      {note.content ? (
+        <Text style={{ color: theme.textMuted, fontSize: 13 }} numberOfLines={6}>
+          {preview(note.content, 180)}
+        </Text>
+      ) : null}
+      {note.folder || note.tags.length > 0 ? (
+        <View style={styles.metaRow}>
+          {note.folder ? (
+            <Text style={[styles.folderText, { color: theme.textHint }]} numberOfLines={1}>
+              {note.folder}
+            </Text>
+          ) : null}
+          {note.tags.slice(0, 2).map((tag) => (
+            <View key={tag} style={[styles.tagChip, { backgroundColor: theme.accentSoft }]}>
+              <Text style={[styles.tagChipText, { color: theme.accentInk }]}>{tag}</Text>
+            </View>
+          ))}
         </View>
-        {note.content ? (
-          <Text style={{ color: theme.textMuted, fontSize: 13 }} numberOfLines={6}>
-            {preview(note.content, 180)}
-          </Text>
-        ) : null}
-        {note.folder || note.tags.length > 0 ? (
-          <View style={styles.metaRow}>
-            {note.folder ? (
-              <Text style={[styles.folderText, { color: theme.textHint }]} numberOfLines={1}>
-                {note.folder}
-              </Text>
-            ) : null}
-            {note.tags.slice(0, 2).map((tag) => (
-              <View key={tag} style={[styles.tagChip, { backgroundColor: theme.accentSoft }]}>
-                <Text style={[styles.tagChipText, { color: theme.accentInk }]}>{tag}</Text>
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </Pressable>
-    </SwipeableRow>
+      ) : null}
+    </Pressable>
   );
 }
 

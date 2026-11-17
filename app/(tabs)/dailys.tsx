@@ -11,7 +11,7 @@ import { ConfirmDeleteModal } from '../../src/components/ConfirmDeleteModal';
 import { parseActivityItems } from '../../src/components/DailyActivityList';
 import { DailyMonthActionsSheet } from '../../src/components/DailyMonthActionsSheet';
 import { EmptyState } from '../../src/components/EmptyState';
-import { SwipeableRow } from '../../src/components/SwipeableRow';
+import { openDeleteMenu } from '../../src/lib/rowActions';
 import { deleteAbsenceDay, listAbsenceDays } from '../../src/db/absences';
 import { listDailyEntries, softDeleteDailyEntry, softDeleteDailyMonth } from '../../src/db/dailyEntries';
 import { useConfirmDelete } from '../../src/hooks/useConfirmDelete';
@@ -200,51 +200,54 @@ export default function DailysScreen() {
           const previewText = preview(item.content);
           const absence = absenceByDate.get(item.date);
           return (
-            <SwipeableRow
-              deleteLabel={t('common.delete')}
-              onDelete={() => confirmDelete.request(item, performDelete)}
+            <Pressable
+              style={[
+                styles.row,
+                { backgroundColor: theme.bgPanel, borderColor: isToday ? theme.accent : theme.border },
+              ]}
+              onPress={() => router.push(`/daily/${item.date}`)}
+              onLongPress={() =>
+                openDeleteMenu({
+                  title: item.date,
+                  deleteLabel: t('common.delete'),
+                  cancelLabel: t('common.cancel'),
+                  onDelete: () => confirmDelete.request(item, performDelete),
+                })
+              }
             >
-              <Pressable
-                style={[
-                  styles.row,
-                  { backgroundColor: theme.bgPanel, borderColor: isToday ? theme.accent : theme.border },
-                ]}
-                onPress={() => router.push(`/daily/${item.date}`)}
-              >
-                <View style={styles.rowTop}>
-                  <View style={styles.dateBlock}>
-                    <Text style={[styles.dayNum, { color: isToday ? theme.accent : theme.textPrimary }]}>
-                      {dayNumber(item.date)}
+              <View style={styles.rowTop}>
+                <View style={styles.dateBlock}>
+                  <Text style={[styles.dayNum, { color: isToday ? theme.accent : theme.textPrimary }]}>
+                    {dayNumber(item.date)}
+                  </Text>
+                  <View>
+                    <Text style={[styles.dayName, { color: isToday ? theme.accent : theme.textSecondary }]}>
+                      {weekdayShort(item.date, i18n.language)}
                     </Text>
-                    <View>
-                      <Text style={[styles.dayName, { color: isToday ? theme.accent : theme.textSecondary }]}>
-                        {weekdayShort(item.date, i18n.language)}
+                    {taskCount > 0 ? (
+                      <Text style={[styles.taskCount, { color: theme.textFaint }]}>
+                        {t('dailyList.taskCount', { count: taskCount })}
                       </Text>
-                      {taskCount > 0 ? (
-                        <Text style={[styles.taskCount, { color: theme.textFaint }]}>
-                          {t('dailyList.taskCount', { count: taskCount })}
-                        </Text>
-                      ) : null}
-                    </View>
-                  </View>
-                  <View style={styles.badgeColumn}>
-                    {absence ? (
-                      <View style={[styles.absenceBadge, { borderColor: '#f59e0b' }]}>
-                        <Text style={styles.absenceBadgeText}>{absenceTypeLabel(t, absence.type)}</Text>
-                      </View>
-                    ) : null}
-                    {isToday ? (
-                      <View style={[styles.todayBadge, { backgroundColor: theme.accentSoft }]}>
-                        <Text style={[styles.todayBadgeText, { color: theme.accentInk }]}>{t('dailyForm.todayBadge')}</Text>
-                      </View>
                     ) : null}
                   </View>
                 </View>
-                {previewText ? (
-                  <Text style={[styles.previewText, { color: theme.textMuted }]}>{previewText}</Text>
-                ) : null}
-              </Pressable>
-            </SwipeableRow>
+                <View style={styles.badgeColumn}>
+                  {absence ? (
+                    <View style={[styles.absenceBadge, { borderColor: '#f59e0b' }]}>
+                      <Text style={styles.absenceBadgeText}>{absenceTypeLabel(t, absence.type)}</Text>
+                    </View>
+                  ) : null}
+                  {isToday ? (
+                    <View style={[styles.todayBadge, { backgroundColor: theme.accentSoft }]}>
+                      <Text style={[styles.todayBadgeText, { color: theme.accentInk }]}>{t('dailyForm.todayBadge')}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              </View>
+              {previewText ? (
+                <Text style={[styles.previewText, { color: theme.textMuted }]}>{previewText}</Text>
+              ) : null}
+            </Pressable>
           );
         }}
       />

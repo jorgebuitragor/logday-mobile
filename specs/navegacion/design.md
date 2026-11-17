@@ -117,3 +117,39 @@ oscuro/claro), incluidos los de fondo no-neutro como sepia.
   también cambiando de tema desde Ajustes y confirmando que la
   siguiente navegación ya usa el fondo nuevo (no el anterior, ver que
   el `useEffect` corrió a tiempo).
+
+## Pestañas deslizables: `TopTabs` con la barra abajo (agregado 2026-11-17)
+
+- `app/(tabs)/_layout.tsx` usa `TopTabs` de `expo-router/js-top-tabs`
+  (su copia de `@react-navigation/material-top-tabs`, que pide
+  `react-native-tab-view` y `react-native-pager-view`, instalados con
+  `npx expo install`) con `tabBarPosition="bottom"` y `swipeEnabled`.
+  El deslizamiento es el de `ViewPager2` en Android, así que reemplaza
+  al fundido de `Tabs` (`animation: 'fade'`, de 2026-08-30).
+- `TopTabs` no tiene cabecera, y su barra es la de Material (indicador
+  y etiquetas). Las dos son propias en el layout: `TabsHeader` (logo,
+  título según `useSegments()`, búsqueda y engranaje, con el margen
+  superior de `useSafeAreaInsets`) y `BottomBar` (ícono y nombre, el
+  acento en la activa, con el margen inferior del sistema). Copian el
+  aspecto de la barra de bottom-tabs.
+- `lazy` con `lazyPreloadDistance: 1`: cada pestaña se monta al
+  llegar, y la vecina se adelanta para que el deslizamiento no muestre
+  un hueco. Las pantallas siguen recargando con `useFocusEffect`.
+- `SwipeableRow` (deslizar para borrar) se quitó: chocaba con el
+  deslizamiento entre pestañas. Tareas, Dailys y Extras abren con la
+  pulsación larga un menú nativo (`openDeleteMenu`, en
+  `src/lib/rowActions.ts`, con `Alert`) cuyo Eliminar llama a
+  `useConfirmDelete` igual que antes. Notas ya tenía su hoja de
+  acciones en la pulsación larga.
+- El kanban de Tareas arrastra con pulsación larga y luego `Pan` (RNGH);
+  falta confirmar en el teléfono que el arrastre no lo roba el
+  deslizamiento entre pestañas.
+
+## Transiciones del stack (agregado 2026-11-17)
+
+- `screenOptions.animation: 'slide_from_right'` en el `Stack` raíz:
+  Ajustes, Plantillas y Papelera entran de lado.
+- Formularios, búsqueda y captura usan `MODAL` en `app/_layout.tsx`:
+  `presentation: 'modal'` (la hoja en iOS) y `animation:
+  'fade_from_bottom'` (en Android `presentation` no cambia la
+  animación).

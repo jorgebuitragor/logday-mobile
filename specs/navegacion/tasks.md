@@ -63,3 +63,20 @@ al entrar en pantallas de detalles para extras, notas, Dailys, etc."
       uno claro, confirmando que no aparece ningún destello blanco;
       cambiar de tema desde Ajustes y confirmar que la siguiente
       navegación ya refleja el fondo nuevo.
+
+## Pestañas deslizables y transiciones (2026-11-17)
+
+- [x] `react-native-tab-view` y `react-native-pager-view` con
+      `npx expo install`.
+- [x] `app/(tabs)/_layout.tsx` con `TopTabs` abajo, `TabsHeader` y
+      `BottomBar` propias.
+- [x] Quitar `SwipeableRow`; pulsación larga con `openDeleteMenu` en
+      Tareas, Dailys y Extras.
+- [x] Transiciones del `Stack`: `slide_from_right` y `MODAL`.
+- [x] `tsc`, lint (sin avisos nuevos), `npm test` (228/228) y
+      `expo export --platform android`.
+- [ ] En Expo Go el emulador se quedó en la pantalla de carga (está
+      lento con Expo Go, ver el vault); probar en un APK preview:
+      deslizar entre las 5 pestañas, la cabecera y la barra en claro y
+      oscuro, la pulsación larga en las 4 listas, las transiciones y
+      el arrastre del kanban.

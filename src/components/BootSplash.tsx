@@ -17,8 +17,9 @@ import { useTheme } from '../theme/ThemeContext';
 import { LOGO_DOC_PATH, LOGO_FOLD_PATH, LOGO_TREND_LENGTH, LOGO_TREND_PATH } from './LogoMark';
 
 // Splash de arranque (specs/splash/). Toma el relevo del splash nativo
-// (`expo-splash-screen`, ícono sobre el fondo claro u oscuro del sistema) y
-// lo cierra en cuanto pinta su primer cuadro. Muestra el ícono y el
+// (`expo-splash-screen`, solo el fondo claro u oscuro del sistema, sin
+// ícono: así el logo aparece una sola vez, ya animado) y lo cierra en
+// cuanto pinta su primer cuadro. Muestra el ícono y el
 // wordmark de la marca ("log" + "day" en JetBrains Mono, como la landing)
 // con los colores del tema activo, y anima la entrada:
 //   1. el ícono aparece con un leve zoom;
@@ -26,12 +27,12 @@ import { LOGO_DOC_PATH, LOGO_FOLD_PATH, LOGO_TREND_LENGTH, LOGO_TREND_PATH } fro
 //   3. el wordmark sube y aparece.
 // Cuando la app está lista (`done`) y la entrada terminó, se desvanece y
 // avisa con `onHidden`. La app ya está montada debajo, así que la espera
-// extra es como mucho lo que dura la entrada. Con "reducir movimiento"
+// extra es como mucho lo que dura la entrada (1,2 s). Con "reducir movimiento"
 // no anima: aparece completo y se quita sin desvanecerse.
 
 const LOGO_SIZE = 88;
-const INTRO_MS = 700;
-const EXIT_MS = 220;
+const INTRO_MS = 1200;
+const EXIT_MS = 280;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -59,9 +60,9 @@ export function BootSplash({ done, onHidden, accessibilityLabel }: BootSplashPro
     introEnd.current = Date.now() + (reduceMotion ? 0 : INTRO_MS);
     if (reduceMotion) return;
     const ease = Easing.out(Easing.cubic);
-    logo.value = withTiming(1, { duration: 380, easing: ease });
-    line.value = withDelay(220, withTiming(1, { duration: 480, easing: Easing.inOut(Easing.quad) }));
-    word.value = withDelay(320, withTiming(1, { duration: 380, easing: ease }));
+    logo.value = withTiming(1, { duration: 520, easing: ease });
+    line.value = withDelay(340, withTiming(1, { duration: 700, easing: Easing.inOut(Easing.quad) }));
+    word.value = withDelay(560, withTiming(1, { duration: 520, easing: ease }));
   }, [reduceMotion, logo, line, word]);
 
   useEffect(() => {

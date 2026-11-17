@@ -18,6 +18,9 @@ Estado: implementado; el splash nativo, pendiente del build propio.
       El ícono, el wordmark y los colores cambian con cada tema, la línea
       se dibuja y el splash se desvanece sobre el Inicio.
 - [ ] Con "reducir movimiento" activado: que no anime.
-- [ ] En el build propio de la fase 2: el splash nativo (ícono y fondo
-      en claro y oscuro; en Android 12+ el ícono va dentro de la máscara
-      del sistema) y que el paso al splash de la app no tenga saltos.
+- [x] APK preview en el teléfono de Jorge (17 nov 2026): el nativo con
+      el logo solo duraba más que la animación, que pasaba muy rápido.
+- [x] Splash nativo sin ícono (`assets/splash-blank.png`), animación de
+      1,2 s y fuente embebida con el plugin `expo-font`.
+- [ ] En un APK nuevo: que el nativo se vea solo con el fondo, en claro
+      y en oscuro, y que el paso a la animación no tenga saltos.

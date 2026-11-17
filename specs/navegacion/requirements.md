@@ -29,7 +29,8 @@ aquí).
   una entrada más. **Desde nov 2026** (ver `inicio/`): la primera
   pestaña es **Inicio**, seguida de Tareas, Notas, Dailys y Extras.
   Ajustes salió de la barra a un engranaje en la cabecera del Inicio,
-  junto a la búsqueda (decidido por Jorge el 11 nov 2026).
+  junto a la búsqueda (decidido por Jorge el 11 nov 2026). Desde el 17
+  nov 2026 el engranaje está en la cabecera de todas las pestañas.
 
 ### Alcance de esta fase
 

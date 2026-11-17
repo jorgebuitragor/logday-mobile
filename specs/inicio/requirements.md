@@ -14,7 +14,9 @@ cabecera del Inicio.
 
 - El Inicio DEBERÁ ser la primera pestaña. La barra queda en Inicio,
   Tareas, Notas, Dailys y Extras; Ajustes DEBERÁ abrirse desde un
-  engranaje en la cabecera del Inicio, junto a la búsqueda.
+  engranaje en la cabecera de todas las pestañas, junto a la búsqueda.
+  (Hasta el 17 nov 2026 estaba solo en el Inicio, y Jorge no lo
+  encontró al instalar el APK.)
 - El Inicio DEBERÁ mostrar:
   - las tareas vencidas, las que vencen hoy y las que vencen en los
     próximos 6 días (sin las hechas ni las que no tienen fecha);

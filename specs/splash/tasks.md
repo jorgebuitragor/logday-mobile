@@ -20,7 +20,7 @@ Estado: implementado; el splash nativo, pendiente del build propio.
 - [ ] Con "reducir movimiento" activado: que no anime.
 - [x] APK preview en el teléfono de Jorge (17 nov 2026): el nativo con
       el logo solo duraba más que la animación, que pasaba muy rápido.
-- [x] Splash nativo sin ícono (`assets/splash-blank.png`), animación de
-      1,2 s y fuente embebida con el plugin `expo-font`.
-- [ ] En un APK nuevo: que el nativo se vea solo con el fondo, en claro
-      y en oscuro, y que el paso a la animación no tenga saltos.
+- [x] Animación de 1 s y fuente embebida con el plugin `expo-font`. El
+      nativo sigue con el logo (Jorge, 17 nov 2026).
+- [ ] En un APK nuevo: el ritmo de la animación, y que el nativo se vea
+      bien en claro y en oscuro.

@@ -2,12 +2,13 @@
 
 ## Dos etapas
 
-1. **Splash nativo** (`expo-splash-screen`, plugin en `app.json`): solo
-   el fondo, `#f4f4f5` (tema claro) o `#121212` (oscuro). El plugin
-   exige una imagen (en Android es el `windowSplashScreenAnimatedIcon`),
-   así que lleva `assets/splash-blank.png`, un PNG transparente. Así el
-   logo aparece una sola vez, en la animación, que arranca desde el
-   fondo vacío sin saltos. Solo se ve en un build propio.
+1. **Splash nativo** (`expo-splash-screen`, plugin en `app.json`):
+   `assets/splash-mark.png`, que es el `icon_square.png` de
+   `task-manager` (cuadrado índigo con las esquinas transparentes), con
+   88 dp de ancho, sobre `#f4f4f5` (fondo del tema claro) o `#121212`
+   (oscuro). Solo se ve en un build propio. Desde Android 12 el sistema
+   lo muestra siempre en el arranque en frío: se puede cambiar la
+   imagen, no quitarlo.
 2. **`BootSplash`** (`src/components/BootSplash.tsx`): el splash de la
    app, con los colores del tema activo. Reemplaza al texto
    "Inicializando DB…".
@@ -33,22 +34,23 @@
 
 ## Animación (Reanimated 4)
 
-- Ícono: opacidad de 0 a 1 y escala de 0,9 a 1, en 520 ms.
+- Ícono: opacidad de 0 a 1 y escala de 0,9 a 1, en 450 ms.
 - Línea de tendencia: `strokeDashoffset` animado sobre `Path`
-  (`createAnimatedComponent`), de 340 a 1040 ms. Las formas del logo se
+  (`createAnimatedComponent`), de 280 a 880 ms. Las formas del logo se
   comparten con `LogoMark` (`LOGO_*_PATH`).
-- Wordmark: opacidad y desplazamiento de 10 px hacia arriba, de 560 a
-  1080 ms.
-- Salida: opacidad del contenedor a 0 en 280 ms, no antes del fin de la
-  entrada (1,2 s desde que se monta).
+- Wordmark: opacidad y desplazamiento de 10 px hacia arriba, de 460 a
+  900 ms.
+- Salida: opacidad del contenedor a 0 en 250 ms, no antes del fin de la
+  entrada (1 s desde que se monta).
 - Hasta el 17 nov 2026 duraba 0,7 s (salida de 220 ms); en el teléfono
   pasaba tan rápido que casi no se veía.
 - `useReducedMotion()`: todo arranca completo y se quita sin fundido.
 
 ## Alternativas descartadas
 
-- **Splash nativo con el logo y la animación arrancando desde ese logo:**
-  seguía la espera con el logo solo, que es lo que no le gustó a Jorge.
+- **Splash nativo sin ícono** (solo el fondo, con un PNG transparente):
+  se implementó el 17 nov 2026, pero Jorge prefirió mantener el logo,
+  porque el splash del sistema no se puede quitar del todo.
 
 - **Un video o Lottie:** suma una dependencia y un archivo por tema. Con
   SVG y Reanimated el logo toma el acento de cada tema.

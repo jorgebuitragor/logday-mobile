@@ -14,8 +14,9 @@
   recarga con `useReloadOnRemoteChange` para las cinco entidades.
 - Rutas: Tareas pasó de `app/(tabs)/index.tsx` a `app/(tabs)/tasks.tsx`.
   Ajustes pasó de pestaña (`app/(tabs)/settings.tsx`) a pantalla del
-  stack (`app/settings/index.tsx`), al lado de Plantillas y Papelera. La
-  cabecera del Inicio sobrescribe `headerRight` con búsqueda y engranaje.
+  stack (`app/settings/index.tsx`), al lado de Plantillas y Papelera. El
+  `headerRight` común de las pestañas (`screenOptions`) lleva búsqueda y
+  engranaje.
   Ninguna otra ruta apuntaba a la pestaña de Ajustes.
 
 ## Alternativas descartadas

@@ -40,10 +40,17 @@ export default function TabsLayout() {
             <LogoMark size={24} />
           </View>
         ),
+        // Búsqueda y Ajustes en la cabecera de todas las pestañas: con
+        // Ajustes solo en el Inicio, costaba encontrarlo.
         headerRight: () => (
-          <Pressable onPress={() => router.push('/search')} style={styles.headerSearch}>
-            <Search color={theme.textPrimary} size={20} />
-          </Pressable>
+          <View style={styles.headerActions}>
+            <Pressable onPress={() => router.push('/search')} style={styles.headerIcon} accessibilityLabel={t('search.placeholder')}>
+              <Search color={theme.textPrimary} size={20} />
+            </Pressable>
+            <Pressable onPress={() => router.push('/settings')} style={styles.headerIcon} accessibilityLabel={t('tabs.settings')}>
+              <Settings color={theme.textPrimary} size={20} />
+            </Pressable>
+          </View>
         ),
         tabBarStyle: { backgroundColor: theme.bgPanel, borderTopColor: theme.border },
         tabBarActiveTintColor: theme.accent,
@@ -52,23 +59,13 @@ export default function TabsLayout() {
       }}
     >
       {/* Inicio (specs/inicio/) es la primera pestaña. Ajustes salió de la
-          barra (ya eran 5 pestañas) a un engranaje en la cabecera del
-          Inicio, junto a la búsqueda. */}
+          barra (ya eran 5 pestañas) a un engranaje en la cabecera de todas
+          las pestañas, junto a la búsqueda. */}
       <Tabs.Screen
         name="index"
         options={{
           title: t('tabs.home'),
           tabBarIcon: ({ color, size }) => <House color={color} size={size} />,
-          headerRight: () => (
-            <View style={styles.headerActions}>
-              <Pressable onPress={() => router.push('/search')} style={styles.headerIcon} accessibilityLabel={t('search.placeholder')}>
-                <Search color={theme.textPrimary} size={20} />
-              </Pressable>
-              <Pressable onPress={() => router.push('/settings')} style={styles.headerIcon} accessibilityLabel={t('tabs.settings')}>
-                <Settings color={theme.textPrimary} size={20} />
-              </Pressable>
-            </View>
-          ),
         }}
       />
       <Tabs.Screen
@@ -108,10 +105,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     marginLeft: 16,
-  },
-  headerSearch: {
-    marginRight: 16,
-    padding: 4,
   },
   headerActions: {
     flexDirection: 'row',

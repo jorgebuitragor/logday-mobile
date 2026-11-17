@@ -87,6 +87,12 @@
         }
       ],
       [
+        "expo-font",
+        {
+          "fonts": ["node_modules/@expo-google-fonts/jetbrains-mono/600SemiBold/JetBrainsMono_600SemiBold.ttf"]
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "image": "./assets/splash-mark.png",

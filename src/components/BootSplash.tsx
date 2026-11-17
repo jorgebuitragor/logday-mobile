@@ -26,12 +26,12 @@ import { LOGO_DOC_PATH, LOGO_FOLD_PATH, LOGO_TREND_LENGTH, LOGO_TREND_PATH } fro
 //   3. el wordmark sube y aparece.
 // Cuando la app está lista (`done`) y la entrada terminó, se desvanece y
 // avisa con `onHidden`. La app ya está montada debajo, así que la espera
-// extra es como mucho lo que dura la entrada. Con "reducir movimiento"
+// extra es como mucho lo que dura la entrada (1 s). Con "reducir movimiento"
 // no anima: aparece completo y se quita sin desvanecerse.
 
 const LOGO_SIZE = 88;
-const INTRO_MS = 700;
-const EXIT_MS = 220;
+const INTRO_MS = 1000;
+const EXIT_MS = 250;
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 
@@ -59,9 +59,9 @@ export function BootSplash({ done, onHidden, accessibilityLabel }: BootSplashPro
     introEnd.current = Date.now() + (reduceMotion ? 0 : INTRO_MS);
     if (reduceMotion) return;
     const ease = Easing.out(Easing.cubic);
-    logo.value = withTiming(1, { duration: 380, easing: ease });
-    line.value = withDelay(220, withTiming(1, { duration: 480, easing: Easing.inOut(Easing.quad) }));
-    word.value = withDelay(320, withTiming(1, { duration: 380, easing: ease }));
+    logo.value = withTiming(1, { duration: 450, easing: ease });
+    line.value = withDelay(280, withTiming(1, { duration: 600, easing: Easing.inOut(Easing.quad) }));
+    word.value = withDelay(460, withTiming(1, { duration: 440, easing: ease }));
   }, [reduceMotion, logo, line, word]);
 
   useEffect(() => {

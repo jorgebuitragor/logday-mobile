@@ -10,6 +10,14 @@ fondo del tema. Jorge pidió el 12 nov 2026 un splash con solo el ícono de
 Logday, la tipografía y los colores de la marca, con una animación, y
 probado en los distintos temas.
 
+El 17 nov 2026, al probar el APK en su teléfono, Jorge vio dos splash:
+el nativo con el logo solo, que duraba más, y la animación, que pasaba
+muy rápido. Desde Android 12 el splash del sistema no se puede quitar,
+solo cambiar su imagen; se probó dejarlo sin ícono, pero Jorge prefirió
+mantener el logo. Se decidió alargar un poco la animación (de 0,7 s a
+1 s) y embeber la fuente del wordmark en el build para acortar la
+espera previa.
+
 ## Requisitos (EARS)
 
 - Al abrir la app, el sistema DEBERÁ mostrar solo el ícono de Logday y
@@ -18,12 +26,12 @@ probado en los distintos temas.
 - Los colores DEBERÁN ser los del tema activo, cualquiera de los 8: el
   fondo (`bgBase`), el texto (`textPrimary`) y el acento del ícono y de
   "day". Con el tema Sistema, los del modo claro u oscuro del teléfono.
-- El sistema DEBERÁ animar la entrada en menos de un segundo: el ícono
+- El sistema DEBERÁ animar la entrada en alrededor de un segundo: el ícono
   aparece con un leve zoom, la línea de tendencia del documento se
   dibuja y el wordmark sube y aparece. Cuando la app esté lista, el
   splash DEBERÁ desvanecerse y dejar ver la app, ya montada debajo.
 - El splash NO DEBERÁ retrasar el arranque más que lo que dura su
-  entrada (unos 0,7 s más la salida).
+  entrada (1 s más la salida).
 - Con "reducir movimiento" activado en el sistema, el splash NO DEBERÁ
   animarse.
 - El splash nativo (antes de cargar JavaScript) DEBERÁ mostrar el ícono
